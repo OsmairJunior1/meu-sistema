@@ -2181,9 +2181,9 @@ function showUpgradeModal(page) {
   document.getElementById('upgrade-diff').textContent    = diffText;
   document.getElementById('upgrade-fullprice').textContent = `R$ ${req.price},00/mês`;
 
-  // Parcelamento anual no cartão (valor cheio do plano ÷ 12)
-  const annual      = req.price * 12;
-  const installment = (annual / 12).toFixed(0);
+  // Parcelamento anual no cartão (diferença ÷ 12)
+  const annual      = diff * 12;
+  const installment = diff.toFixed(0);
   document.getElementById('upgrade-installment').textContent = `ou 12x de R$ ${installment},00 no cartão (anuidade)`;
 
   el.style.display = 'flex';
