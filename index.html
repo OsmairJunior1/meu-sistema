@@ -5962,12 +5962,10 @@ function fabAction(name){
 <script>
 const SUPABASE_URL = 'https://zcyipbnfejwalygboduf.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjeWlwYm5mZWp3YWx5Z2JvZHVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyNDI1NzcsImV4cCI6MjA4ODgxODU3N30._M0pkbO2MzYGIyYOJiPZfecaaFg9pkeNpBACJx39BLk';
-const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+window._sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+window._currentUser = null;
 
 // ─── SUPABASE DATA SYNC ──────────────────────────────────────
-
-// Usuário logado atual
-let _currentUser = null;
 
 // Carrega todos os dados do Supabase para o estado S
 async function loadData() {
