@@ -2531,10 +2531,13 @@ function quickNewCC(returnModal){
 }
 
 // ─── SAVERS ──────────────────────────────────────────────
-function saveAccount(){
+async function saveAccount(){
   const name=$('accName').value.trim();
   if(!name){toast('Informe o nome da conta','error');return;}
-  const acc={id:uid(),name,balance:pv($('accBal').value),balanceDate:$('accBalDate').value||today(),active:$('accActive').value==='1',number:$('accNum').value,agency:$('accAgency').value,pixKey:$('accPixKey').value};
+  const balance=pv($('accBal').value);
+  const saved = await sbInsert('accounts',{name,balance,type:$('accActive').value});
+  if(!saved) return;
+  const acc={id:saved.id,name,balance,balanceDate:$('accBalDate').value||today(),active:$('accActive').value==='1',number:$('accNum').value,agency:$('accAgency').value,pixKey:$('accPixKey').value};
   S.accounts.push(acc);
   toast('Conta adicionada! 🏦'); closeModal('account');
   // If came from receivable/payable, reopen that modal and pre-select the new account
@@ -2545,13 +2548,20 @@ function saveAccount(){
   } else { S._returnModal=null; refresh(); }
 }
 
-function saveReceivable(keepOpen=false){
+async function saveReceivable(keepOpen=false){
   const value=pv($('recvVal').value);
   if(!value){toast('Informe o valor','error');return;}
   const done=$('recvDone').checked, accId=$('recvAcc').value;
   const doneDate=done&&$('recvDoneDate').value ? $('recvDoneDate').value : (done?today():null);
-  const r={id:uid(),value,done,dueDate:$('recvDue').value,compDate:$('recvComp').value,doneDate,desc:$('recvDesc').value,categoryId:$('recvCat').value,accountId:accId,clientId:$('recvClient').value,costCenterId:$('recvCC').value};
-  if(done&&accId) S.accounts=S.accounts.map(a=>a.id===accId?{...a,balance:a.balance+value}:a);
+  const saved = await sbInsert('transactions',{
+    type:'receivable', amount:value, description:$('recvDesc').value,
+    due_date:$('recvDue').value||null, paid_date:doneDate||null,
+    status:done?'paid':'pending', category:$('recvCat').value||null,
+    account_id:accId||null, contact_id:$('recvClient').value||null
+  });
+  if(!saved) return;
+  const r={id:saved.id,value,done,dueDate:$('recvDue').value,compDate:$('recvComp').value,doneDate,desc:$('recvDesc').value,categoryId:$('recvCat').value,accountId:accId,clientId:$('recvClient').value,costCenterId:$('recvCC').value};
+  if(done&&accId){ S.accounts=S.accounts.map(a=>a.id===accId?{...a,balance:a.balance+value}:a); await sbUpdate('accounts',accId,{balance:S.accounts.find(a=>a.id===accId)?.balance}); }
   S.receivables.push(r);
   toast('Recebimento adicionado! ✅');
   if(!keepOpen) closeModal('receivable');
@@ -2563,13 +2573,20 @@ function saveReceivable(keepOpen=false){
   refresh();
 }
 
-function savePayable(keepOpen=false){
+async function savePayable(keepOpen=false){
   const value=pv($('payVal').value);
   if(!value){toast('Informe o valor','error');return;}
   const done=$('payDone').checked, accId=$('payAcc').value;
   const doneDate=done&&$('payDoneDate').value ? $('payDoneDate').value : (done?today():null);
-  const p={id:uid(),value,done,dueDate:$('payDue').value,compDate:$('payComp').value,doneDate,desc:$('payDesc').value,categoryId:$('payCat').value,accountId:accId,supplierId:$('paySupplier').value,costCenterId:$('payCC').value};
-  if(done&&accId) S.accounts=S.accounts.map(a=>a.id===accId?{...a,balance:a.balance-value}:a);
+  const saved = await sbInsert('transactions',{
+    type:'payable', amount:value, description:$('payDesc').value,
+    due_date:$('payDue').value||null, paid_date:doneDate||null,
+    status:done?'paid':'pending', category:$('payCat').value||null,
+    account_id:accId||null, contact_id:$('paySupplier').value||null
+  });
+  if(!saved) return;
+  const p={id:saved.id,value,done,dueDate:$('payDue').value,compDate:$('payComp').value,doneDate,desc:$('payDesc').value,categoryId:$('payCat').value,accountId:accId,supplierId:$('paySupplier').value,costCenterId:$('payCC').value};
+  if(done&&accId){ S.accounts=S.accounts.map(a=>a.id===accId?{...a,balance:a.balance-value}:a); await sbUpdate('accounts',accId,{balance:S.accounts.find(a=>a.id===accId)?.balance}); }
   S.payables.push(p);
   syncPayableToPrecificacao(p);
   toast('Pagamento adicionado! 📤');
@@ -2581,12 +2598,16 @@ function savePayable(keepOpen=false){
   }
   refresh();
 }
-function saveTransfer(){
+async function saveTransfer(){
   const value=pv($('transVal').value), fromId=$('transFrom').value, toId=$('transTo').value;
   if(!value||!fromId||!toId){toast('Preencha todos os campos','error');return;}
   if(fromId===toId){toast('Contas devem ser diferentes','error');return;}
+  const saved = await sbInsert('transfers',{amount:value,from_account_id:fromId,to_account_id:toId,date:$('transDate').value||null,notes:$('transDesc').value});
+  if(!saved) return;
   S.accounts=S.accounts.map(a=>a.id===fromId?{...a,balance:a.balance-value}:a.id===toId?{...a,balance:a.balance+value}:a);
-  S.transfers.push({id:uid(),value,fromId,toId,date:$('transDate').value,desc:$('transDesc').value});
+  await sbUpdate('accounts',fromId,{balance:S.accounts.find(a=>a.id===fromId)?.balance});
+  await sbUpdate('accounts',toId,{balance:S.accounts.find(a=>a.id===toId)?.balance});
+  S.transfers.push({id:saved.id,value,fromId,toId,date:$('transDate').value,desc:$('transDesc').value});
   toast('Transferência realizada! ↔️'); closeModal('transfer'); refresh();
 }
 function toggleCliFilter(){ toast('Filtros avançados em breve','info'); }
@@ -2629,10 +2650,12 @@ function exportContacts(type){
   const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv); a.download=type+'.csv'; a.click();
   toast('CSV exportado! 📥');
 }
-function saveClient(){
+async function saveClient(){
   const name=$('cliName').value.trim();
   if(!name){toast('Informe o nome','error');return;}
-  const cli={id:uid(),name,email:$('cliEmail').value,phone:$('cliPhone').value,doc:$('cliDoc').value,
+  const saved = await sbInsert('contacts',{type:'client',name,email:$('cliEmail').value||null,phone:$('cliPhone').value||null,document:$('cliDoc').value||null,notes:$('cliNotes')?.value||null});
+  if(!saved) return;
+  const cli={id:saved.id,name,email:$('cliEmail').value,phone:$('cliPhone').value,doc:$('cliDoc').value,
     pessoa:$('cliPessoa').value,addr:$('cliAddr')?.value,addrNum:$('cliAddrNum')?.value,
     bairro:$('cliBairro')?.value,cep:$('cliCep')?.value,city:$('cliCity')?.value,state:$('cliState')?.value,
     notes:$('cliNotes')?.value};
@@ -2643,10 +2666,12 @@ function saveClient(){
     setTimeout(()=>{ populateSelects(); $('recvClient').value=cli.id; },50);
   } else { S._returnModal=null; if(S.currentPage==='clientes')renderClientes(); }
 }
-function saveSupplier(){
+async function saveSupplier(){
   const name=$('supName').value.trim();
   if(!name){toast('Informe o nome','error');return;}
-  const sup={id:uid(),name,email:$('supEmail').value,phone:$('supPhone').value,doc:$('supDoc').value,
+  const saved = await sbInsert('contacts',{type:'supplier',name,email:$('supEmail').value||null,phone:$('supPhone').value||null,document:$('supDoc').value||null,notes:$('supNotes')?.value||null});
+  if(!saved) return;
+  const sup={id:saved.id,name,email:$('supEmail').value,phone:$('supPhone').value,doc:$('supDoc').value,
     pessoa:$('supPessoa').value,addr:$('supAddr')?.value,addrNum:$('supAddrNum')?.value,
     bairro:$('supBairro')?.value,cep:$('supCep')?.value,city:$('supCity')?.value,state:$('supState')?.value,
     notes:$('supNotes')?.value};
@@ -2831,9 +2856,23 @@ function renderDayChart(elId, items, color){
   el.innerHTML=`<div style="display:flex;flex-direction:column;height:100%;gap:6px"><div style="font-size:11px;color:#64748b;text-align:right">${now.toLocaleDateString('pt-BR',{month:'long',year:'numeric'})}</div><div style="flex:1;display:flex;align-items:flex-end;gap:3px">${bars}</div></div>`;
 }
 
-function markDone(id, type){
-  if(type==='income'){ const r=S.receivables.find(x=>x.id===id); if(r&&!r.done){ r.done=true; if(r.accountId)S.accounts=S.accounts.map(a=>a.id===r.accountId?{...a,balance:a.balance+r.value}:a); } }
-  if(type==='expense'){ const p=S.payables.find(x=>x.id===id); if(p&&!p.done){ p.done=true; if(p.accountId)S.accounts=S.accounts.map(a=>a.id===p.accountId?{...a,balance:a.balance-p.value}:a); } }
+async function markDone(id, type){
+  if(type==='income'){
+    const r=S.receivables.find(x=>x.id===id);
+    if(r&&!r.done){
+      r.done=true; r.doneDate=today();
+      await sbUpdate('transactions',id,{status:'paid',paid_date:today()});
+      if(r.accountId){ S.accounts=S.accounts.map(a=>a.id===r.accountId?{...a,balance:a.balance+r.value}:a); await sbUpdate('accounts',r.accountId,{balance:S.accounts.find(a=>a.id===r.accountId)?.balance}); }
+    }
+  }
+  if(type==='expense'){
+    const p=S.payables.find(x=>x.id===id);
+    if(p&&!p.done){
+      p.done=true; p.doneDate=today();
+      await sbUpdate('transactions',id,{status:'paid',paid_date:today()});
+      if(p.accountId){ S.accounts=S.accounts.map(a=>a.id===p.accountId?{...a,balance:a.balance-p.value}:a); await sbUpdate('accounts',p.accountId,{balance:S.accounts.find(a=>a.id===p.accountId)?.balance}); }
+    }
+  }
   toast('Efetuado! ✅'); refresh();
 }
 
@@ -3285,16 +3324,15 @@ function renderLancamentos(){
 }
 
 function deleteLanc(id, type){
-  // Find the item to show its description in the confirm dialog
   const item = type==='income'
     ? S.receivables.find(r=>r.id===id)
     : S.payables.find(p=>p.id===id);
   const desc = item?.desc ? `"${item.desc}"` : 'este lançamento';
   const val  = item ? ` — ${fmt(item.value)}` : '';
   $('confirm-delete-desc').innerHTML = `Você está prestes a excluir o lançamento <strong>${desc}</strong>${val}.`;
-  // Wire up the confirm button
   const btn = $('confirm-delete-btn');
-  btn.onclick = () => {
+  btn.onclick = async () => {
+    await sbDelete('transactions', id);
     if(type==='income') S.receivables = S.receivables.filter(r=>r.id!==id);
     else                S.payables    = S.payables.filter(p=>p.id!==id);
     S.selectedLancs.delete(id);
@@ -4217,7 +4255,12 @@ function renderConfig(){
     <div style="font-size:11px;font-weight:700;color:#ef4444;margin:12px 0 6px">DESPESAS</div>${html('expense')}`;
 }
 
-function deleteItem(key,id){ S[key]=S[key].filter(x=>x.id!==id); toast('Removido','info'); refresh(); navigate(S.currentPage); }
+async function deleteItem(key,id){
+  const tableMap = {accounts:'accounts',clients:'contacts',suppliers:'contacts',transfers:'transfers'};
+  const table = tableMap[key];
+  if(table) await sbDelete(table, id);
+  S[key]=S[key].filter(x=>x.id!==id); toast('Removido','info'); refresh(); navigate(S.currentPage);
+}
 
 // ── SETTINGS MODAL ──────────────────────────────────────
 function openSettingsModal(){
@@ -5921,7 +5964,106 @@ const SUPABASE_URL = 'https://zcyipbnfejwalygboduf.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjeWlwYm5mZWp3YWx5Z2JvZHVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyNDI1NzcsImV4cCI6MjA4ODgxODU3N30._M0pkbO2MzYGIyYOJiPZfecaaFg9pkeNpBACJx39BLk';
 const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-function showApp(user) {
+// ─── SUPABASE DATA SYNC ──────────────────────────────────────
+
+// Usuário logado atual
+let _currentUser = null;
+
+// Carrega todos os dados do Supabase para o estado S
+async function loadData() {
+  if (!_currentUser) return;
+  const uid = _currentUser.id;
+  try {
+    const [accRes, txRes, trRes, ctRes] = await Promise.all([
+      _sb.from('accounts').select('*').eq('user_id', uid),
+      _sb.from('transactions').select('*').eq('user_id', uid),
+      _sb.from('transfers').select('*').eq('user_id', uid),
+      _sb.from('contacts').select('*').eq('user_id', uid),
+    ]);
+
+    // Contas bancárias
+    S.accounts = (accRes.data || []).map(a => ({
+      id: a.id, name: a.name, balance: parseFloat(a.balance)||0,
+      type: a.type, color: a.color, balanceDate: a.created_at?.split('T')[0],
+      active: true, number: '', agency: '', pixKey: ''
+    }));
+
+    // Recebimentos
+    S.receivables = (txRes.data || [])
+      .filter(t => t.type === 'receivable')
+      .map(t => ({
+        id: t.id, value: parseFloat(t.amount)||0,
+        desc: t.description, dueDate: t.due_date,
+        done: t.status === 'paid', doneDate: t.paid_date,
+        categoryId: t.category, accountId: t.account_id,
+        clientId: t.contact_id, costCenterId: null
+      }));
+
+    // Pagamentos
+    S.payables = (txRes.data || [])
+      .filter(t => t.type === 'payable')
+      .map(t => ({
+        id: t.id, value: parseFloat(t.amount)||0,
+        desc: t.description, dueDate: t.due_date,
+        done: t.status === 'paid', doneDate: t.paid_date,
+        categoryId: t.category, accountId: t.account_id,
+        supplierId: t.contact_id, costCenterId: null
+      }));
+
+    // Transferências
+    S.transfers = (trRes.data || []).map(t => ({
+      id: t.id, value: parseFloat(t.amount)||0,
+      fromId: t.from_account_id, toId: t.to_account_id,
+      date: t.date, desc: t.notes
+    }));
+
+    // Clientes
+    S.clients = (ctRes.data || [])
+      .filter(c => c.type === 'client')
+      .map(c => ({
+        id: c.id, name: c.name, email: c.email,
+        phone: c.phone, doc: c.document, notes: c.notes,
+        pessoa: 'fisica'
+      }));
+
+    // Fornecedores
+    S.suppliers = (ctRes.data || [])
+      .filter(c => c.type === 'supplier')
+      .map(c => ({
+        id: c.id, name: c.name, email: c.email,
+        phone: c.phone, doc: c.document, notes: c.notes,
+        pessoa: 'fisica'
+      }));
+
+    refresh();
+    populateSelects();
+  } catch(e) {
+    console.error('Erro ao carregar dados:', e);
+  }
+}
+
+// ── Helpers de sync ──
+async function sbInsert(table, row) {
+  if (!_currentUser) return null;
+  const { data, error } = await _sb.from(table).insert({ ...row, user_id: _currentUser.id }).select().single();
+  if (error) { console.error('Erro ao salvar:', error); toast('Erro ao salvar no banco', 'error'); return null; }
+  return data;
+}
+async function sbUpdate(table, id, changes) {
+  if (!_currentUser) return;
+  const { error } = await _sb.from(table).update(changes).eq('id', id).eq('user_id', _currentUser.id);
+  if (error) console.error('Erro ao atualizar:', error);
+}
+async function sbDelete(table, id) {
+  if (!_currentUser) return;
+  const { error } = await _sb.from(table).delete().eq('id', id).eq('user_id', _currentUser.id);
+  if (error) console.error('Erro ao excluir:', error);
+}
+
+// ─── SHOW / HIDE APP ──────────────────────────────────────────
+
+async function showApp(user) {
+  _currentUser = user;
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
   // Atualiza nome/email no sidebar
@@ -5933,9 +6075,14 @@ function showApp(user) {
   if (nameEl) nameEl.textContent = name.charAt(0).toUpperCase() + name.slice(1);
   if (emailEl) emailEl.textContent = email;
   if (avatarEl) avatarEl.textContent = name.charAt(0).toUpperCase();
+  // Carrega os dados do banco
+  await loadData();
 }
 
 function showLogin() {
+  _currentUser = null;
+  S.accounts = []; S.receivables = []; S.payables = [];
+  S.transfers = []; S.clients = []; S.suppliers = [];
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('app').style.display = 'none';
 }
@@ -5953,7 +6100,7 @@ async function doLogin() {
   }
 
   btn.disabled = true;
-  btn.textContent = 'Entrando...';
+  btn.textContent = 'ENTRANDO...';
   errEl.style.display = 'none';
 
   const { data, error } = await _sb.auth.signInWithPassword({ email, password });
@@ -5962,11 +6109,11 @@ async function doLogin() {
     errEl.textContent = 'E-mail ou senha incorretos.';
     errEl.style.display = 'block';
     btn.disabled = false;
-    btn.textContent = 'Entrar';
+    btn.textContent = 'ACESSAR';
     return;
   }
 
-  showApp(data.user);
+  await showApp(data.user);
 }
 
 async function doLogout() {
@@ -5976,11 +6123,8 @@ async function doLogout() {
 
 // Verifica sessão ao carregar a página
 _sb.auth.getSession().then(({ data: { session } }) => {
-  if (session) {
-    showApp(session.user);
-  } else {
-    showLogin();
-  }
+  if (session) showApp(session.user);
+  else showLogin();
 });
 
 // Escuta mudanças de sessão
