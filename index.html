@@ -2119,15 +2119,21 @@ document.querySelectorAll('.nav-btn').forEach(btn=>{
 const TITLES={dashboard:'Painel',lancamentos:'Lançamentos',relatorios:'Relatórios',clientes:'Clientes',fornecedores:'Fornecedores',contas:'Contas Bancárias',config:'Configurações',orcamento:'Gerador de Orçamento',precificacao:'Precificação Inteligente'};
 
 // ─── CONTROLE DE PLANOS ───────────────────────────────────
-window._userModules = []; // módulos liberados para o usuário logado
+window._userModules  = [];
+window._userPlanName = 'Básico';
+window._userPlanPrice = 47;
 
-const PLAN_NAMES = {
-  'orcamento':     'Pro',
-  'precificacao':  'Profissional'
-};
-const PLAN_DESCRIPTIONS = {
-  'orcamento':    { title:'Gerador de Orçamento', plan:'Pro', price:'R$ 67/mês', icon:'📋' },
-  'precificacao': { title:'Precificação Inteligente', plan:'Profissional', price:'R$ 97/mês', icon:'🧠' }
+// Tabela de planos e preços
+const PLANS_TABLE = [
+  { name:'Básico',       price:47,  modules:['dashboard','lancamentos','relatorios','contas','clientes','fornecedores','config'] },
+  { name:'Pro',          price:67,  modules:['dashboard','lancamentos','relatorios','contas','clientes','fornecedores','config','orcamento'] },
+  { name:'Profissional', price:97,  modules:['dashboard','lancamentos','relatorios','contas','clientes','fornecedores','config','orcamento','precificacao'] },
+];
+
+// Qual plano mínimo libera cada módulo
+const MODULE_REQUIRES = {
+  'orcamento':    { plan:'Pro',          price:67, icon:'📋', title:'Gerador de Orçamento' },
+  'precificacao': { plan:'Profissional', price:97, icon:'🧠', title:'Precificação Inteligente' },
 };
 
 async function loadUserPlan() {
@@ -2135,38 +2141,52 @@ async function loadUserPlan() {
   try {
     const { data } = await window._sb
       .from('user_plans')
-      .select('status, expires_at, plans(modules)')
+      .select('status, expires_at, plans(name, price, modules)')
       .eq('user_id', window._currentUser.id)
       .single();
     if (data?.plans?.modules) {
-      window._userModules = data.plans.modules;
+      window._userModules   = data.plans.modules;
+      window._userPlanName  = data.plans.name  || 'Básico';
+      window._userPlanPrice = data.plans.price || 47;
     } else {
-      // Sem plano: libera só o básico
-      window._userModules = ['dashboard','lancamentos','relatorios','contas','clientes','fornecedores','config'];
+      window._userModules   = PLANS_TABLE[0].modules;
+      window._userPlanName  = 'Básico';
+      window._userPlanPrice = 47;
     }
   } catch(e) {
-    window._userModules = ['dashboard','lancamentos','relatorios','contas','clientes','fornecedores','config'];
+    window._userModules   = PLANS_TABLE[0].modules;
+    window._userPlanName  = 'Básico';
+    window._userPlanPrice = 47;
   }
 }
 
 function canAccess(page) {
-  // Páginas sem restrição
   const free = ['dashboard','lancamentos','relatorios','contas','clientes','fornecedores','config'];
   if (free.includes(page)) return true;
   return window._userModules.includes(page);
 }
 
 function showUpgradeModal(page) {
-  const info = PLAN_DESCRIPTIONS[page] || { title: TITLES[page], plan:'superior', price:'', icon:'⭐' };
-  const el = document.getElementById('modal-upgrade');
-  if (el) {
-    document.getElementById('upgrade-icon').textContent  = info.icon;
-    document.getElementById('upgrade-title').textContent = info.title;
-    document.getElementById('upgrade-plan').textContent  = info.plan;
-    document.getElementById('upgrade-plan2').textContent = info.plan;
-    document.getElementById('upgrade-price').textContent = info.price;
-    el.style.display = 'flex';
-  }
+  const req  = MODULE_REQUIRES[page];
+  if (!req) return;
+  const diff = req.price - window._userPlanPrice;
+  const diffText = diff > 0 ? `+ R$ ${diff},00/mês` : `R$ ${req.price},00/mês`;
+  const el   = document.getElementById('modal-upgrade');
+  if (!el) return;
+  document.getElementById('upgrade-icon').textContent    = req.icon;
+  document.getElementById('upgrade-title').textContent   = req.title;
+  document.getElementById('upgrade-plan').textContent    = req.plan;
+  document.getElementById('upgrade-plan2').textContent   = req.plan;
+  document.getElementById('upgrade-current').textContent = window._userPlanName;
+  document.getElementById('upgrade-diff').textContent    = diffText;
+  document.getElementById('upgrade-fullprice').textContent = `R$ ${req.price},00/mês`;
+
+  // Parcelamento anual no cartão (valor cheio do plano ÷ 12)
+  const annual      = req.price * 12;
+  const installment = (annual / 12).toFixed(0);
+  document.getElementById('upgrade-installment').textContent = `ou 12x de R$ ${installment},00 no cartão (anuidade)`;
+
+  el.style.display = 'flex';
 }
 
 function navigate(page){
@@ -6017,31 +6037,46 @@ function fabAction(name){
 </script>
 <!-- ── MODAL UPGRADE ── -->
 <div id="modal-upgrade" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(15,42,68,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px">
-  <div style="background:#fff;border-radius:20px;padding:40px 36px;max-width:400px;width:100%;text-align:center;box-shadow:0 24px 60px rgba(15,42,68,.2);position:relative">
+  <div style="background:#fff;border-radius:20px;padding:40px 36px;max-width:420px;width:100%;text-align:center;box-shadow:0 24px 60px rgba(15,42,68,.2);position:relative">
     <button onclick="document.getElementById('modal-upgrade').style.display='none'" style="position:absolute;top:14px;right:16px;background:none;border:none;cursor:pointer;color:#94a3b8;font-size:18px;line-height:1">✕</button>
+
     <!-- Ícone -->
-    <div style="width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#0F2A44,#2F80ED);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 20px;box-shadow:0 8px 24px rgba(47,128,237,.3)">
+    <div style="width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#0F2A44,#2F80ED);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 16px;box-shadow:0 8px 24px rgba(47,128,237,.3)">
       <span id="upgrade-icon">⭐</span>
     </div>
-    <!-- Texto -->
-    <div style="font-size:11px;font-weight:700;color:#2F80ED;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px">Funcionalidade Premium</div>
-    <h2 style="font-size:20px;font-weight:800;color:#0F2A44;margin-bottom:10px;letter-spacing:-.03em"><span id="upgrade-title">Módulo</span></h2>
-    <p style="font-size:13px;color:#64748B;line-height:1.6;margin-bottom:24px">
-      Este módulo é exclusivo para assinantes do plano
-      <strong style="color:#0F2A44"><span id="upgrade-plan">Pro</span></strong>.
-      Faça upgrade e desbloqueie esta e outras funcionalidades.
+
+    <!-- Badge -->
+    <div style="font-size:10px;font-weight:700;color:#2F80ED;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px">Funcionalidade Exclusiva</div>
+
+    <!-- Título do módulo -->
+    <h2 style="font-size:19px;font-weight:800;color:#0F2A44;margin-bottom:8px;letter-spacing:-.03em" id="upgrade-title">Módulo</h2>
+
+    <!-- Descrição -->
+    <p style="font-size:13px;color:#64748B;line-height:1.6;margin-bottom:22px">
+      Este módulo é exclusivo do plano <strong style="color:#0F2A44"><span id="upgrade-plan">Pro</span></strong>.<br>
+      Você está no plano <strong><span id="upgrade-current">Básico</span></strong>.
     </p>
-    <!-- Preço -->
-    <div style="background:#F0F7FF;border:1px solid #BFDBFE;border-radius:12px;padding:14px 20px;margin-bottom:24px;display:inline-block;width:100%">
-      <div style="font-size:11px;color:#64748B;margin-bottom:4px">Plano <strong><span id="upgrade-plan2"></span></strong> a partir de</div>
-      <div style="font-size:26px;font-weight:900;color:#2F80ED;letter-spacing:-.04em"><span id="upgrade-price">R$ 67/mês</span></div>
+
+    <!-- Card de preço com destaque na diferença -->
+    <div style="background:linear-gradient(135deg,#F0F7FF,#EFF6FF);border:1.5px solid #BFDBFE;border-radius:14px;padding:18px 20px;margin-bottom:22px">
+      <div style="font-size:11px;color:#64748B;margin-bottom:6px;font-weight:600">Faça upgrade por apenas</div>
+      <div style="font-size:34px;font-weight:900;color:#2F80ED;letter-spacing:-.04em;line-height:1" id="upgrade-diff">+ R$ 20,00/mês</div>
+      <div style="font-size:11px;color:#94A3B8;margin-top:5px" id="upgrade-installment"></div>
+      <div style="width:100%;height:1px;background:#DBEAFE;margin:12px 0"></div>
+      <div style="font-size:11px;color:#64748B">Valor total do plano <strong><span id="upgrade-plan2"></span></strong>: <strong style="color:#0F2A44" id="upgrade-fullprice">R$ 67,00/mês</strong></div>
     </div>
+
+    <!-- Formas de pagamento -->
+    <div style="display:flex;gap:8px;margin-bottom:22px;justify-content:center">
+      <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:7px 14px;font-size:11px;font-weight:700;color:#16A34A">💚 PIX à vista</div>
+      <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:7px 14px;font-size:11px;font-weight:700;color:#2563EB">💳 12x no cartão</div>
+    </div>
+
     <!-- Botão -->
     <button onclick="document.getElementById('modal-upgrade').style.display='none'"
       style="width:100%;padding:13px;background:linear-gradient(135deg,#0F2A44,#2F80ED);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 16px rgba(47,128,237,.35);letter-spacing:-.01em">
-      🚀 Fazer Upgrade
+      🚀 Quero fazer Upgrade
     </button>
-    <div style="margin-top:12px;font-size:11px;color:#94A3B8">Cancele quando quiser · Sem fidelidade</div>
   </div>
 </div>
 
