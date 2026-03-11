@@ -2117,8 +2117,67 @@ document.querySelectorAll('.nav-btn').forEach(btn=>{
   btn.addEventListener('click',()=>navigate(btn.dataset.page));
 });
 const TITLES={dashboard:'Painel',lancamentos:'Lançamentos',relatorios:'Relatórios',clientes:'Clientes',fornecedores:'Fornecedores',contas:'Contas Bancárias',config:'Configurações',orcamento:'Gerador de Orçamento',precificacao:'Precificação Inteligente'};
+
+// ─── CONTROLE DE PLANOS ───────────────────────────────────
+window._userModules = []; // módulos liberados para o usuário logado
+
+const PLAN_NAMES = {
+  'orcamento':     'Pro',
+  'precificacao':  'Profissional'
+};
+const PLAN_DESCRIPTIONS = {
+  'orcamento':    { title:'Gerador de Orçamento', plan:'Pro', price:'R$ 67/mês', icon:'📋' },
+  'precificacao': { title:'Precificação Inteligente', plan:'Profissional', price:'R$ 97/mês', icon:'🧠' }
+};
+
+async function loadUserPlan() {
+  if (!window._currentUser) return;
+  try {
+    const { data } = await window._sb
+      .from('user_plans')
+      .select('status, expires_at, plans(modules)')
+      .eq('user_id', window._currentUser.id)
+      .single();
+    if (data?.plans?.modules) {
+      window._userModules = data.plans.modules;
+    } else {
+      // Sem plano: libera só o básico
+      window._userModules = ['dashboard','lancamentos','relatorios','contas','clientes','fornecedores','config'];
+    }
+  } catch(e) {
+    window._userModules = ['dashboard','lancamentos','relatorios','contas','clientes','fornecedores','config'];
+  }
+}
+
+function canAccess(page) {
+  // Páginas sem restrição
+  const free = ['dashboard','lancamentos','relatorios','contas','clientes','fornecedores','config'];
+  if (free.includes(page)) return true;
+  return window._userModules.includes(page);
+}
+
+function showUpgradeModal(page) {
+  const info = PLAN_DESCRIPTIONS[page] || { title: TITLES[page], plan:'superior', price:'', icon:'⭐' };
+  const el = document.getElementById('modal-upgrade');
+  if (el) {
+    document.getElementById('upgrade-icon').textContent  = info.icon;
+    document.getElementById('upgrade-title').textContent = info.title;
+    document.getElementById('upgrade-plan').textContent  = info.plan;
+    document.getElementById('upgrade-plan2').textContent = info.plan;
+    document.getElementById('upgrade-price').textContent = info.price;
+    el.style.display = 'flex';
+  }
+}
+
 function navigate(page){
   if(page==='config'){ openSettingsModal(); return; }
+
+  // Verifica acesso ao módulo
+  if (!canAccess(page)) {
+    showUpgradeModal(page);
+    return;
+  }
+
   document.querySelectorAll('.page').forEach(p=>p.style.display='none');
   $('page-'+page).style.display='block';
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
@@ -5956,6 +6015,36 @@ function fabAction(name){
   openModal(name);
 }
 </script>
+<!-- ── MODAL UPGRADE ── -->
+<div id="modal-upgrade" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(15,42,68,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:20px;padding:40px 36px;max-width:400px;width:100%;text-align:center;box-shadow:0 24px 60px rgba(15,42,68,.2);position:relative">
+    <button onclick="document.getElementById('modal-upgrade').style.display='none'" style="position:absolute;top:14px;right:16px;background:none;border:none;cursor:pointer;color:#94a3b8;font-size:18px;line-height:1">✕</button>
+    <!-- Ícone -->
+    <div style="width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#0F2A44,#2F80ED);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 20px;box-shadow:0 8px 24px rgba(47,128,237,.3)">
+      <span id="upgrade-icon">⭐</span>
+    </div>
+    <!-- Texto -->
+    <div style="font-size:11px;font-weight:700;color:#2F80ED;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px">Funcionalidade Premium</div>
+    <h2 style="font-size:20px;font-weight:800;color:#0F2A44;margin-bottom:10px;letter-spacing:-.03em"><span id="upgrade-title">Módulo</span></h2>
+    <p style="font-size:13px;color:#64748B;line-height:1.6;margin-bottom:24px">
+      Este módulo é exclusivo para assinantes do plano
+      <strong style="color:#0F2A44"><span id="upgrade-plan">Pro</span></strong>.
+      Faça upgrade e desbloqueie esta e outras funcionalidades.
+    </p>
+    <!-- Preço -->
+    <div style="background:#F0F7FF;border:1px solid #BFDBFE;border-radius:12px;padding:14px 20px;margin-bottom:24px;display:inline-block;width:100%">
+      <div style="font-size:11px;color:#64748B;margin-bottom:4px">Plano <strong><span id="upgrade-plan2"></span></strong> a partir de</div>
+      <div style="font-size:26px;font-weight:900;color:#2F80ED;letter-spacing:-.04em"><span id="upgrade-price">R$ 67/mês</span></div>
+    </div>
+    <!-- Botão -->
+    <button onclick="document.getElementById('modal-upgrade').style.display='none'"
+      style="width:100%;padding:13px;background:linear-gradient(135deg,#0F2A44,#2F80ED);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 16px rgba(47,128,237,.35);letter-spacing:-.01em">
+      🚀 Fazer Upgrade
+    </button>
+    <div style="margin-top:12px;font-size:11px;color:#94A3B8">Cancele quando quiser · Sem fidelidade</div>
+  </div>
+</div>
+
 </div><!-- /app -->
 
 <!-- ── SUPABASE AUTH ── -->
@@ -6074,6 +6163,7 @@ async function showApp(user) {
   if (emailEl) emailEl.textContent = email;
   if (avatarEl) avatarEl.textContent = name.charAt(0).toUpperCase();
   // Carrega os dados do banco
+  await loadUserPlan();
   await loadData();
 }
 
