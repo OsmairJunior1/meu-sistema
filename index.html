@@ -628,6 +628,29 @@ textarea.inp{min-height:80px;resize:vertical}
     </div>
   </div>
 
+  <!-- PERÍODO FILTER BAR -->
+  <div id="period-bar" style="display:flex;align-items:center;gap:8px;padding:8px 24px;background:#fff;border-bottom:1px solid #e2e8f0;flex-wrap:wrap">
+    <!-- Chips de período -->
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;flex:1">
+      <button id="pf-mes" onclick="setPeriodFilter('mes')" style="padding:5px 14px;border-radius:100px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;border:1.5px solid #2F80ED;background:#2F80ED;color:#fff;transition:all .18s">Mês atual</button>
+      <button id="pf-ano" onclick="setPeriodFilter('ano')" style="padding:5px 14px;border-radius:100px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;border:1.5px solid #e2e8f0;background:#f1f5f9;color:#64748b;transition:all .18s">Ano atual</button>
+      <button id="pf-custom" onclick="setPeriodFilter('custom')" style="padding:5px 14px;border-radius:100px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;border:1.5px solid #e2e8f0;background:#f1f5f9;color:#64748b;transition:all .18s">Personalizado</button>
+      <!-- Datas personalizadas -->
+      <div id="pf-custom-dates" style="display:none;align-items:center;gap:6px">
+        <input type="date" id="pf-from" class="inp" style="padding:4px 10px;font-size:11px;width:130px" oninput="applyPeriodFilter()">
+        <span style="font-size:11px;color:#94a3b8">até</span>
+        <input type="date" id="pf-to" class="inp" style="padding:4px 10px;font-size:11px;width:130px" oninput="applyPeriodFilter()">
+      </div>
+      <!-- Label do período ativo -->
+      <span id="pf-label" style="font-size:11px;color:#94a3b8;font-weight:500"></span>
+    </div>
+    <!-- Export PDF -->
+    <button onclick="exportDashboardPDF()" style="display:flex;align-items:center;gap:6px;padding:5px 14px;border-radius:100px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;border:1.5px solid #e2e8f0;background:#fff;color:#0F2A44;transition:all .18s;white-space:nowrap" onmouseenter="this.style.background='#f1f5f9'" onmouseleave="this.style.background='#fff'">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 10h9M6.5 2v6M3.5 5.5l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Exportar PDF
+    </button>
+  </div>
+
   <!-- PAGE AREA -->
   <div id="page-area">
 
@@ -671,11 +694,13 @@ textarea.inp{min-height:80px;resize:vertical}
               <span class="card-title">Todas as Contas</span>
               <button class="btn btn-blue btn-sm" onclick="openModal('account')">+ Nova conta</button>
             </div>
+            <!-- Filtro de conta -->
+            <div id="acc-filter-wrap" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
             <div style="display:flex;justify-content:space-between;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;padding:4px 0;border-bottom:1px solid #e2e8f0;margin-bottom:4px">
               <span>Nome da conta</span><span>Saldo atual</span>
             </div>
             <div id="accountsList"><div class="empty"><div class="empty-icon">📭</div><p>Nenhuma conta</p><span>Adicione sua primeira conta bancária</span></div></div>
-            <div class="card-footer"><span>Saldo total</span><span class="mono" id="totalBal">R$ 0,00</span></div>
+            <div class="card-footer"><span id="totalBal-label">Saldo total</span><span class="mono" id="totalBal">R$ 0,00</span></div>
           </div>
           <div class="card" style="display:flex;flex-direction:column">
             <div class="card-header">
@@ -1803,22 +1828,71 @@ textarea.inp{min-height:80px;resize:vertical}
 </div>
 
 <!-- Confirm Delete Modal -->
+<!-- Modal Excluir Lançamento -->
 <div id="modal-confirm-delete" class="modal-overlay" style="display:none;z-index:600">
-  <div class="modal-box modal-narrow" style="max-width:400px;padding:0;overflow:hidden">
+  <div class="modal-box modal-narrow" style="max-width:420px;padding:0;overflow:hidden">
     <div style="background:#fff1f2;padding:24px 24px 16px;text-align:center;border-bottom:1px solid #fee2e2">
-      <div style="font-size:40px;margin-bottom:8px">🗑️</div>
+      <div style="font-size:36px;margin-bottom:8px">🗑️</div>
       <div style="font-size:16px;font-weight:800;color:#0F2A44;margin-bottom:6px">Excluir lançamento?</div>
       <div id="confirm-delete-desc" style="font-size:13px;color:#64748b;line-height:1.5"></div>
     </div>
     <div style="padding:16px 20px;background:#fff">
       <div style="background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;font-size:12px;color:#92400e;display:flex;align-items:flex-start;gap:8px;margin-bottom:16px">
-        <span style="font-size:15px;flex-shrink:0">⚠️</span>
-        <span>Esta ação <strong>não pode ser desfeita</strong>. O lançamento será removido permanentemente.</span>
+        <span style="flex-shrink:0">⚠️</span>
+        <span>Esta ação <strong>não pode ser desfeita</strong>.</span>
+      </div>
+      <!-- Opções de escopo (só visíveis quando há grupo) -->
+      <div id="delete-scope-wrap" style="display:none;flex-direction:column;gap:8px;margin-bottom:16px">
+        <div style="font-size:11px;font-weight:700;color:#475569;letter-spacing:.05em;text-transform:uppercase;margin-bottom:2px">O que deseja excluir?</div>
+        <label id="del-opt-this" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:9px;cursor:pointer;transition:border .15s">
+          <input type="radio" name="del-scope" value="this" checked style="accent-color:#ef4444;width:15px;height:15px">
+          <div><div style="font-size:13px;font-weight:700;color:#1e293b">Somente esta</div><div style="font-size:11px;color:#94a3b8">Remove apenas este lançamento</div></div>
+        </label>
+        <label id="del-opt-open" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:9px;cursor:pointer;transition:border .15s">
+          <input type="radio" name="del-scope" value="open" style="accent-color:#ef4444;width:15px;height:15px">
+          <div><div style="font-size:13px;font-weight:700;color:#1e293b">Somente em aberto</div><div style="font-size:11px;color:#94a3b8">Remove esta e as demais pendentes do grupo</div></div>
+        </label>
+        <label id="del-opt-all" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:9px;cursor:pointer;transition:border .15s">
+          <input type="radio" name="del-scope" value="all" style="accent-color:#ef4444;width:15px;height:15px">
+          <div><div style="font-size:13px;font-weight:700;color:#1e293b">Todas do grupo</div><div style="font-size:11px;color:#94a3b8">Remove todas as parcelas, pagas ou não</div></div>
+        </label>
       </div>
       <div style="display:flex;gap:10px">
         <button onclick="closeModal('confirm-delete')" style="flex:1;padding:11px;border-radius:9px;border:1.5px solid #e2e8f0;background:#fff;font-size:13px;font-weight:600;color:#64748b;cursor:pointer;font-family:inherit">Cancelar</button>
         <button id="confirm-delete-btn" style="flex:1;padding:11px;border-radius:9px;border:none;background:#ef4444;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Sim, excluir</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Efetivar Lançamento -->
+<div id="modal-efetivar" class="modal-overlay" style="display:none;z-index:600">
+  <div class="modal-box modal-narrow" style="max-width:380px;padding:0;overflow:hidden">
+    <div id="efet-header" style="padding:20px 24px 16px;border-bottom:1px solid #f0fdf4">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div id="efet-title" style="font-size:15px;font-weight:800;color:#0F2A44">Efetivar Recebimento</div>
+          <div id="efet-desc" style="font-size:12px;color:#64748b;margin-top:3px"></div>
+        </div>
+        <button onclick="closeModal('efetivar')" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:18px;line-height:1">✕</button>
+      </div>
+    </div>
+    <div style="padding:20px 24px;display:flex;flex-direction:column;gap:14px">
+      <div>
+        <label style="display:block;font-size:11px;font-weight:700;color:#475569;margin-bottom:6px;letter-spacing:.05em;text-transform:uppercase">Conta bancária <span style="color:#ef4444">*</span></label>
+        <select id="efet-acc" class="inp"><option value="">Selecione a conta...</option></select>
+      </div>
+      <div>
+        <label style="display:block;font-size:11px;font-weight:700;color:#475569;margin-bottom:6px;letter-spacing:.05em;text-transform:uppercase">Data <span style="color:#ef4444">*</span></label>
+        <input type="date" id="efet-date" class="inp">
+      </div>
+      <div id="efet-val-row" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:12px;color:#64748b;font-weight:600">Valor</span>
+        <span id="efet-val" style="font-family:monospace;font-weight:800;font-size:15px"></span>
+      </div>
+    </div>
+    <div style="padding:0 24px 20px">
+      <button id="efet-btn" onclick="confirmEfetivar()" style="width:100%;padding:13px;border-radius:10px;border:none;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s">✅ Confirmar</button>
     </div>
   </div>
 </div>
@@ -2629,8 +2703,13 @@ async function saveAccount(){
 
 async function saveReceivable(keepOpen=false){
   const value=pv($('recvVal').value);
-  if(!value){toast('Informe o valor','error');return;}
+  const desc=$('recvDesc').value.trim();
+  const catId=$('recvCat').value;
   const done=$('recvDone').checked, accId=$('recvAcc').value;
+  if(!value){toast('Informe o valor','error');return;}
+  if(!desc){toast('Informe a descrição','error');$('recvDesc').focus();return;}
+  if(!catId){toast('Selecione a categoria','error');return;}
+  if(!accId){toast('Selecione a conta','error');return;}
   const doneDate=done&&$('recvDoneDate').value ? $('recvDoneDate').value : (done?today():null);
   const saved = await sbInsert('transactions',{
     type:'receivable', amount:value, description:$('recvDesc').value,
@@ -2654,8 +2733,13 @@ async function saveReceivable(keepOpen=false){
 
 async function savePayable(keepOpen=false){
   const value=pv($('payVal').value);
-  if(!value){toast('Informe o valor','error');return;}
+  const desc=$('payDesc').value.trim();
+  const catId=$('payCat').value;
   const done=$('payDone').checked, accId=$('payAcc').value;
+  if(!value){toast('Informe o valor','error');return;}
+  if(!desc){toast('Informe a descrição','error');$('payDesc').focus();return;}
+  if(!catId){toast('Selecione a categoria','error');return;}
+  if(!accId){toast('Selecione a conta','error');return;}
   const doneDate=done&&$('payDoneDate').value ? $('payDoneDate').value : (done?today():null);
   const saved = await sbInsert('transactions',{
     type:'payable', amount:value, description:$('payDesc').value,
@@ -2849,15 +2933,25 @@ function dvPayItems(){
   return list;
 }
 function dvRow(x, peerName, color){
-  return `<div style="display:grid;grid-template-columns:34px 90px 1fr 130px 110px 60px;gap:4px;padding:10px 4px;border-bottom:1px solid #f8fafc;font-size:12px;align-items:center">
+  const isIncome = color === '#22C55E';
+  const type = isIncome ? 'income' : 'expense';
+  const isOver = !x.done && x.dueDate < today();
+  const statusDot = x.done ? '#22C55E' : isOver ? '#ef4444' : '#F97316';
+  return `<div style="display:grid;grid-template-columns:34px 90px 1fr 130px 110px 90px;gap:4px;padding:10px 4px;border-bottom:1px solid #f8fafc;font-size:12px;align-items:center">
     <div><input type="checkbox" style="width:13px;height:13px;accent-color:${color}"></div>
-    <span style="color:#64748b;font-size:11px;display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:50%;border:2px solid ${color};display:inline-block;flex-shrink:0"></span>${fmtD(x.dueDate)}</span>
+    <span style="color:#64748b;font-size:11px;display:flex;align-items:center;gap:5px">
+      <span style="width:8px;height:8px;border-radius:50%;background:${statusDot};display:inline-block;flex-shrink:0"></span>
+      ${fmtD(x.dueDate)}
+    </span>
     <span style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${x.desc||'—'}</span>
     <span style="color:#475569;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${peerName}</span>
     <span style="font-family:monospace;font-weight:700;text-align:right;color:${color}">${fmt(x.value)}</span>
-    <div style="display:flex;gap:3px;justify-content:center">
-      <button title="Efetivar" style="background:none;border:1px solid #e2e8f0;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:11px;color:#94a3b8" onclick="markDone('${x.id}','${x._type||''}')">✓</button>
-      <button title="Excluir" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:13px" onclick="deleteLanc('${x.id}','${(x._type||x.type||'')}')">🗑</button>
+    <div style="display:flex;gap:2px;justify-content:flex-end">
+      ${!x.done ? `<button title="${isIncome?'Receber':'Pagar'}" style="background:${color}15;border:1px solid ${color}40;border-radius:6px;padding:3px 7px;cursor:pointer;font-size:11px;font-weight:700;color:${color};white-space:nowrap" onclick="openEfetivar('${x.id}','${type}')">
+        ${isIncome?'✅ Receber':'💳 Pagar'}
+      </button>` : `<span style="font-size:10px;color:#22C55E;font-weight:700;padding:3px 7px">✓ Efetivado</span>`}
+      <button title="Editar" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:13px;padding:2px 4px;border-radius:5px" onclick="openEditLanc('${x.id}','${type}')">✏️</button>
+      <button title="Excluir" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:13px;padding:2px 4px;border-radius:5px" onclick="deleteLanc('${x.id}','${type}')">🗑</button>
     </div>
   </div>`;
 }
@@ -2899,15 +2993,141 @@ function renderDvVencidos(){
 }
 
 function renderDvTransfers(){
-  const recvd = S.transfers; // for now all transfers shown in sent; received = when this account is the toId
-  const sent  = S.transfers;
-  const totalRecv = recvd.reduce((s,t)=>s+t.value,0);
-  const totalSent = sent.reduce((s,t)=>s+t.value,0);
+  const nodata = `<div class="empty" style="padding:40px"><div class="empty-icon">📭</div><p>Não há dados</p></div>`;
+  const totalRecv = S.transfers.reduce((s,t)=>s+t.value,0);
+  const totalSent = S.transfers.reduce((s,t)=>s+t.value,0);
   if($('dvTransRecvTotal')) $('dvTransRecvTotal').textContent = fmt(totalRecv);
   if($('dvTransSentTotal')) $('dvTransSentTotal').textContent = fmt(totalSent);
-  const nodata = `<div class="empty" style="padding:40px"><div class="empty-icon">📭</div><p>Não há dados</p></div>`;
-  if($('dvTransRecvList')) $('dvTransRecvList').innerHTML = recvd.length ? recvd.map(t=>{ const from=S.accounts.find(a=>a.id===t.fromId); return `<div style="display:grid;grid-template-columns:90px 1fr 120px 110px;gap:4px;padding:10px 4px;border-bottom:1px solid #f8fafc;font-size:12px;align-items:center"><span style="color:#64748b;font-size:11px">${fmtD(t.date)}</span><span style="font-weight:500">${t.desc||'—'}</span><span style="color:#475569">${from?.name||'—'}</span><span style="font-family:monospace;font-weight:700;color:#22C55E;text-align:right">${fmt(t.value)}</span></div>`; }).join('') : nodata;
-  if($('dvTransSentList'))  $('dvTransSentList').innerHTML  = sent.length ? sent.map(t=>{ const from=S.accounts.find(a=>a.id===t.fromId); const to=S.accounts.find(a=>a.id===t.toId); return `<div style="display:grid;grid-template-columns:90px 1fr 120px 110px 80px;gap:4px;padding:10px 4px;border-bottom:1px solid #f8fafc;font-size:12px;align-items:center"><span style="color:#64748b;font-size:11px">${fmtD(t.date)}</span><span style="font-weight:500">${t.desc||'—'}</span><span style="color:#475569">${from?.name||'—'}</span><span style="color:#475569">${to?.name||'—'}</span><span style="font-family:monospace;font-weight:700;color:#ef4444;text-align:right">${fmt(t.value)}</span></div>`; }).join('') : nodata;
+
+  const btnStyle = (color) => `background:none;border:none;cursor:pointer;color:#94a3b8;font-size:13px;padding:2px 4px;border-radius:4px`;
+
+  if($('dvTransRecvList')) $('dvTransRecvList').innerHTML = S.transfers.length
+    ? S.transfers.map(t=>{
+        const from = S.accounts.find(a=>a.id===t.fromId);
+        return `<div style="display:grid;grid-template-columns:90px 1fr 120px 110px 56px;gap:4px;padding:10px 4px;border-bottom:1px solid #f8fafc;font-size:12px;align-items:center">
+          <span style="color:#64748b;font-size:11px">${fmtD(t.date)}</span>
+          <span style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.desc||'—'}</span>
+          <span style="color:#475569">${from?.name||'—'}</span>
+          <span style="font-family:monospace;font-weight:700;color:#22C55E;text-align:right">${fmt(t.value)}</span>
+          <div style="display:flex;gap:2px;justify-content:flex-end">
+            <button onclick="openEditTransfer('${t.id}')" title="Editar" style="${btnStyle()}" onmouseenter="this.style.color='#2F80ED'" onmouseleave="this.style.color='#94a3b8'">✏️</button>
+            <button onclick="deleteTransfer('${t.id}')" title="Excluir" style="${btnStyle()}" onmouseenter="this.style.color='#ef4444'" onmouseleave="this.style.color='#94a3b8'">🗑</button>
+          </div>
+        </div>`;
+      }).join('')
+    : nodata;
+
+  if($('dvTransSentList')) $('dvTransSentList').innerHTML = S.transfers.length
+    ? S.transfers.map(t=>{
+        const from = S.accounts.find(a=>a.id===t.fromId);
+        const to   = S.accounts.find(a=>a.id===t.toId);
+        return `<div style="display:grid;grid-template-columns:90px 1fr 120px 110px 80px 56px;gap:4px;padding:10px 4px;border-bottom:1px solid #f8fafc;font-size:12px;align-items:center">
+          <span style="color:#64748b;font-size:11px">${fmtD(t.date)}</span>
+          <span style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.desc||'—'}</span>
+          <span style="color:#475569">${from?.name||'—'}</span>
+          <span style="color:#475569">${to?.name||'—'}</span>
+          <span style="font-family:monospace;font-weight:700;color:#ef4444;text-align:right">${fmt(t.value)}</span>
+          <div style="display:flex;gap:2px;justify-content:flex-end">
+            <button onclick="openEditTransfer('${t.id}')" title="Editar" style="${btnStyle()}" onmouseenter="this.style.color='#2F80ED'" onmouseleave="this.style.color='#94a3b8'">✏️</button>
+            <button onclick="deleteTransfer('${t.id}')" title="Excluir" style="${btnStyle()}" onmouseenter="this.style.color='#ef4444'" onmouseleave="this.style.color='#94a3b8'">🗑</button>
+          </div>
+        </div>`;
+      }).join('')
+    : nodata;
+}
+
+function openEditTransfer(id){
+  const t = S.transfers.find(x=>x.id===id);
+  if(!t) return;
+  S._editTransferId = id;
+
+  // Preenche o modal
+  populateSelects();
+  $('transVal').value  = t.value.toFixed(2).replace('.',',');
+  $('transDate').value = t.date||'';
+  $('transFrom').value = t.fromId||'';
+  $('transTo').value   = t.toId||'';
+  $('transDesc').value = t.desc||'';
+
+  // Troca título e botão
+  document.querySelector('#modal-transfer .modal-title').textContent = '↔ Editar Transferência';
+  const footer = document.querySelector('#modal-transfer .modal-footer');
+  footer.innerHTML = `
+    <button class="btn btn-outline" style="flex:1;justify-content:center" onclick="cancelEditTransfer()">Cancelar</button>
+    <button class="btn btn-purple" style="flex:1;justify-content:center" onclick="saveEditTransfer()">💾 Salvar alterações</button>
+  `;
+  $('modal-transfer').style.display='flex';
+}
+
+function cancelEditTransfer(){
+  S._editTransferId = null;
+  closeModal('transfer');
+  // Restaura modal para estado novo
+  document.querySelector('#modal-transfer .modal-title').textContent = '↔ Nova Transferência';
+  document.querySelector('#modal-transfer .modal-footer').innerHTML =
+    `<button class="btn btn-purple btn-full" onclick="saveTransfer()">Realizar Transferência</button>`;
+}
+
+async function saveEditTransfer(){
+  const id = S._editTransferId;
+  if(!id) return;
+  const old = S.transfers.find(x=>x.id===id);
+  if(!old) return;
+
+  const value  = pv($('transVal').value);
+  const fromId = $('transFrom').value;
+  const toId   = $('transTo').value;
+  const date   = $('transDate').value;
+  const desc   = $('transDesc').value;
+
+  if(!value||!fromId||!toId){ toast('Preencha todos os campos','error'); return; }
+  if(fromId===toId){ toast('Contas devem ser diferentes','error'); return; }
+
+  // Reverter saldos antigos
+  S.accounts = S.accounts.map(a=>
+    a.id===old.fromId ? {...a, balance: a.balance + old.value} :
+    a.id===old.toId   ? {...a, balance: a.balance - old.value} : a
+  );
+  // Aplicar saldos novos
+  S.accounts = S.accounts.map(a=>
+    a.id===fromId ? {...a, balance: a.balance - value} :
+    a.id===toId   ? {...a, balance: a.balance + value} : a
+  );
+
+  await sbUpdate('transfers', id, {amount:value, from_account_id:fromId, to_account_id:toId, date:date||null, notes:desc});
+  await sbUpdate('accounts', fromId, {balance: S.accounts.find(a=>a.id===fromId)?.balance});
+  await sbUpdate('accounts', toId,   {balance: S.accounts.find(a=>a.id===toId)?.balance});
+  if(old.fromId!==fromId) await sbUpdate('accounts', old.fromId, {balance: S.accounts.find(a=>a.id===old.fromId)?.balance});
+  if(old.toId!==toId)     await sbUpdate('accounts', old.toId,   {balance: S.accounts.find(a=>a.id===old.toId)?.balance});
+
+  S.transfers = S.transfers.map(x=> x.id===id ? {...x, value, fromId, toId, date, desc} : x);
+
+  S._editTransferId = null;
+  cancelEditTransfer();
+  toast('Transferência atualizada! ↔️');
+  refresh();
+}
+
+function deleteTransfer(id){
+  const t = S.transfers.find(x=>x.id===id);
+  if(!t) return;
+  $('confirm-delete-desc').innerHTML = `Transferência de <strong>${fmt(t.value)}</strong> — ${S.accounts.find(a=>a.id===t.fromId)?.name||'?'} → ${S.accounts.find(a=>a.id===t.toId)?.name||'?'}`;
+  $('delete-scope-wrap').style.display = 'none';
+  $('confirm-delete-btn').onclick = async () => {
+    // Reverter saldos
+    S.accounts = S.accounts.map(a=>
+      a.id===t.fromId ? {...a, balance: a.balance + t.value} :
+      a.id===t.toId   ? {...a, balance: a.balance - t.value} : a
+    );
+    await sbUpdate('accounts', t.fromId, {balance: S.accounts.find(a=>a.id===t.fromId)?.balance});
+    await sbUpdate('accounts', t.toId,   {balance: S.accounts.find(a=>a.id===t.toId)?.balance});
+    await sbDelete('transfers', id);
+    S.transfers = S.transfers.filter(x=>x.id!==id);
+    closeModal('confirm-delete');
+    toast('Transferência removida','info');
+    refresh();
+  };
+  $('modal-confirm-delete').style.display='flex';
 }
 
 function renderSimpleBar(elId, data, color){
@@ -2936,48 +3156,246 @@ function renderDayChart(elId, items, color){
 }
 
 async function markDone(id, type){
-  if(type==='income'){
-    const r=S.receivables.find(x=>x.id===id);
-    if(r&&!r.done){
-      r.done=true; r.doneDate=today();
-      await sbUpdate('transactions',id,{status:'paid',paid_date:today()});
-      if(r.accountId){ S.accounts=S.accounts.map(a=>a.id===r.accountId?{...a,balance:a.balance+r.value}:a); await sbUpdate('accounts',r.accountId,{balance:S.accounts.find(a=>a.id===r.accountId)?.balance}); }
-    }
-  }
-  if(type==='expense'){
-    const p=S.payables.find(x=>x.id===id);
-    if(p&&!p.done){
-      p.done=true; p.doneDate=today();
-      await sbUpdate('transactions',id,{status:'paid',paid_date:today()});
-      if(p.accountId){ S.accounts=S.accounts.map(a=>a.id===p.accountId?{...a,balance:a.balance-p.value}:a); await sbUpdate('accounts',p.accountId,{balance:S.accounts.find(a=>a.id===p.accountId)?.balance}); }
-    }
-  }
-  toast('Efetuado! ✅'); refresh();
+  // Agora usa o modal de efetivar para selecionar conta e data
+  openEfetivar(id, type);
 }
 
 function renderDashboard(){
   const totalBal=S.accounts.reduce((s,a)=>s+a.balance,0);
-  const totalInc=S.receivables.filter(r=>r.done).reduce((s,r)=>s+r.value,0);
-  const totalExp=S.payables.filter(p=>p.done).reduce((s,p)=>s+p.value,0);
-  const pendInc=S.receivables.filter(r=>!r.done).reduce((s,r)=>s+r.value,0);
-  const pendExp=S.payables.filter(p=>!p.done).reduce((s,p)=>s+p.value,0);
-  const over=[...S.receivables.filter(r=>!r.done&&r.dueDate<today()),...S.payables.filter(p=>!p.done&&p.dueDate<today())].reduce((s,x)=>s+x.value,0);
-  const trans=S.transfers.reduce((s,t)=>s+t.value,0);
+  const totalInc=S.receivables.filter(r=>r.done&&inPeriod(r.doneDate||r.dueDate)).reduce((s,r)=>s+r.value,0);
+  const totalExp=S.payables.filter(p=>p.done&&inPeriod(p.doneDate||p.dueDate)).reduce((s,p)=>s+p.value,0);
+  const pendInc=S.receivables.filter(r=>!r.done&&inPeriod(r.dueDate)).reduce((s,r)=>s+r.value,0);
+  const pendExp=S.payables.filter(p=>!p.done&&inPeriod(p.dueDate)).reduce((s,p)=>s+p.value,0);
+  const over=[...S.receivables.filter(r=>!r.done&&r.dueDate<today()&&inPeriod(r.dueDate)),...S.payables.filter(p=>!p.done&&p.dueDate<today()&&inPeriod(p.dueDate))].reduce((s,x)=>s+x.value,0);
+  const trans=S.transfers.filter(t=>inPeriod(t.date)).reduce((s,t)=>s+t.value,0);
   $('kBal').textContent=fmt(totalBal); $('kBal').style.color=totalBal<0?'#ef4444':'#0F2A44';
   $('kBalSub').textContent=`Contas: ${S.accounts.length}`;
   $('kInc').textContent=fmt(totalInc); $('kIncSub').textContent=`Pendente: ${fmt(pendInc)}`;
   $('kExp').textContent=fmt(totalExp); $('kExpSub').textContent=`Pendente: ${fmt(pendExp)}`;
   $('kOver').textContent=fmt(over); $('kOver').style.color=over>0?'#ef4444':'#0F2A44';
   $('kTrans').textContent=fmt(trans);
-  // Re-render current sub-view
+  updatePeriodLabel();
   setDashView(S.dashView);
 }
 
+// ── FILTRO DE PERÍODO ────────────────────────────────────
+S.periodFilter = 'mes';
+S.periodFrom   = null;
+S.periodTo     = null;
+
+(function initPeriod(){
+  const now = new Date();
+  S.periodFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  S.periodTo   = new Date(now.getFullYear(), now.getMonth()+1, 0).toISOString().split('T')[0];
+})();
+
+function setPeriodFilter(mode){
+  S.periodFilter = mode;
+  const now = new Date();
+  if(mode==='mes'){
+    S.periodFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    S.periodTo   = new Date(now.getFullYear(), now.getMonth()+1, 0).toISOString().split('T')[0];
+    $('pf-custom-dates').style.display='none';
+  } else if(mode==='ano'){
+    S.periodFrom = `${now.getFullYear()}-01-01`;
+    S.periodTo   = `${now.getFullYear()}-12-31`;
+    $('pf-custom-dates').style.display='none';
+  } else {
+    $('pf-custom-dates').style.display='flex';
+    if(!$('pf-from').value) $('pf-from').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    if(!$('pf-to').value)   $('pf-to').value   = now.toISOString().split('T')[0];
+    S.periodFrom = $('pf-from').value;
+    S.periodTo   = $('pf-to').value;
+  }
+  ['mes','ano','custom'].forEach(k=>{
+    const btn = $('pf-'+k);
+    const active = k===mode;
+    if(btn){ btn.style.background=active?'#2F80ED':'#f1f5f9'; btn.style.color=active?'#fff':'#64748b'; btn.style.borderColor=active?'#2F80ED':'#e2e8f0'; }
+  });
+  updatePeriodLabel();
+  renderDashboard();
+}
+
+function applyPeriodFilter(){
+  if(S.periodFilter==='custom'){
+    S.periodFrom = $('pf-from').value||null;
+    S.periodTo   = $('pf-to').value||null;
+    updatePeriodLabel();
+  }
+  renderDashboard();
+}
+
+function updatePeriodLabel(){
+  const lbl = $('pf-label'); if(!lbl) return;
+  if(!S.periodFrom||!S.periodTo){ lbl.textContent=''; return; }
+  const fd = d => new Date(d+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
+  if(S.periodFilter==='mes'){
+    const m=new Date(S.periodFrom+'T12:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+    lbl.textContent=m.charAt(0).toUpperCase()+m.slice(1);
+  } else if(S.periodFilter==='ano'){
+    lbl.textContent=new Date(S.periodFrom+'T12:00:00').getFullYear();
+  } else {
+    lbl.textContent=`${fd(S.periodFrom)} → ${fd(S.periodTo)}`;
+  }
+}
+
+function inPeriod(dateStr){
+  if(!S.periodFrom||!S.periodTo||!dateStr) return true;
+  return dateStr>=S.periodFrom && dateStr<=S.periodTo;
+}
+
+// ── EXPORTAR PDF ─────────────────────────────────────────
+async function exportDashboardPDF(){
+  if(!window.html2pdf){
+    await new Promise((res,rej)=>{
+      const s=document.createElement('script');
+      s.src='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+      s.onload=res; s.onerror=rej; document.head.appendChild(s);
+    });
+  }
+  const now  = new Date();
+  const user = window._currentUser?.email||'';
+  const recv = S.receivables.filter(r=>r.done && inPeriod(r.doneDate||r.dueDate));
+  const pay  = S.payables.filter(p=>p.done   && inPeriod(p.doneDate||p.dueDate));
+  const pendR= S.receivables.filter(r=>!r.done && inPeriod(r.dueDate));
+  const pendP= S.payables.filter(p=>!p.done   && inPeriod(p.dueDate));
+  const totalRecv=recv.reduce((s,r)=>s+r.value,0);
+  const totalPay =pay.reduce((s,p)=>s+p.value,0);
+  const totalPend=(pendR.reduce((s,r)=>s+r.value,0)+pendP.reduce((s,p)=>s+p.value,0));
+  const saldo=S.accounts.reduce((s,a)=>s+a.balance,0);
+  const period=$('pf-label')?.textContent||'';
+
+  const th=(heads)=>`<thead><tr style="background:#f8fafc">${heads.map((h,i)=>`<th style="padding:6px 8px;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;text-align:${i>0?'right':'left'};border-bottom:1px solid #e2e8f0">${h}</th>`).join('')}</tr></thead>`;
+  const tr=(cols)=>`<tr style="border-bottom:1px solid #f8fafc">${cols.map((c,i)=>`<td style="padding:5px 8px;font-size:11px;text-align:${i>0?'right':'left'}">${c}</td>`).join('')}</tr>`;
+  const tbl=(heads,rows)=>`<table width="100%" cellspacing="0" style="border-collapse:collapse;margin-top:8px">${th(heads)}<tbody>${rows.join('')}</tbody></table>`;
+  const sect=(emoji,title,color,val,content)=>`
+    <div style="margin-bottom:22px;page-break-inside:avoid">
+      <div style="font-size:13px;font-weight:800;color:#0F2A44;padding-bottom:6px;border-bottom:2px solid #e2e8f0;display:flex;justify-content:space-between">
+        <span>${emoji} ${title}</span>
+        <span style="color:${color}">${val}</span>
+      </div>${content}
+    </div>`;
+
+  const listRows = (list, type) => list.length
+    ? list.map(x=>{
+        const peer = type==='income'
+          ? (S.clients.find(c=>c.id===x.clientId)?.name||'—')
+          : (S.suppliers.find(s=>s.id===x.supplierId)?.name||'—');
+        const acc = S.accounts.find(a=>a.id===x.accountId)?.name||'—';
+        const color = type==='income'?'#22C55E':'#ef4444';
+        return tr([fmtD(x.doneDate||x.dueDate), x.desc||'—', peer, acc, `<span style="color:${color};font-weight:700">${fmt(x.value)}</span>`]);
+      })
+    : [`<tr><td colspan="5" style="padding:12px 8px;font-size:11px;color:#94a3b8;text-align:center">Nenhum lançamento no período</td></tr>`];
+
+  const html=`<div style="font-family:Arial,sans-serif;padding:28px 32px;color:#1e293b;max-width:860px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:14px;border-bottom:3px solid #0F2A44;margin-bottom:22px">
+      <div>
+        <div style="font-size:24px;font-weight:900;color:#0F2A44;letter-spacing:-.03em">MonBluu</div>
+        <div style="font-size:12px;color:#64748b">Relatório Financeiro</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:14px;font-weight:800;color:#0F2A44">${period}</div>
+        <div style="font-size:10px;color:#94a3b8">Gerado em ${now.toLocaleDateString('pt-BR')} às ${now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}${user?' • '+user:''}</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px">
+      ${[['Saldo em Contas',fmt(saldo),saldo>=0?'#22C55E':'#ef4444'],['Total Recebido',fmt(totalRecv),'#22C55E'],['Total Pago',fmt(totalPay),'#ef4444'],['Em Aberto',fmt(totalPend),'#F97316']].map(([l,v,c])=>
+        `<div style="background:#f8fafc;border-radius:8px;padding:12px 14px;border:1px solid #e2e8f0">
+          <div style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin-bottom:3px">${l}</div>
+          <div style="font-size:16px;font-weight:900;color:${c}">${v}</div>
+        </div>`).join('')}
+    </div>
+    ${sect('🏦','Contas Bancárias','#0F2A44','',
+      tbl(['Conta','Saldo'],S.accounts.map(a=>tr([a.name,`<span style="color:${a.balance>=0?'#22C55E':'#ef4444'};font-weight:700">${fmt(a.balance)}</span>`])))
+    )}
+    ${sect('💚','Recebimentos Efetuados','#22C55E',fmt(totalRecv),
+      tbl(['Data','Descrição','Cliente','Conta','Valor'],listRows(recv,'income'))
+    )}
+    ${sect('❤️','Pagamentos Efetuados','#ef4444',fmt(totalPay),
+      tbl(['Data','Descrição','Fornecedor','Conta','Valor'],listRows(pay,'expense'))
+    )}
+    ${sect('🟠','Lançamentos Pendentes','#F97316',fmt(totalPend),
+      tbl(['Vencimento','Descrição','Cliente/Fornec.','Conta','Valor'],listRows([...pendR,...pendP],'income'))
+    )}
+    <div style="margin-top:28px;padding-top:10px;border-top:1px solid #e2e8f0;text-align:center;font-size:9px;color:#94a3b8">
+      Relatório gerado pelo MonBluu • monbluu.com.br
+    </div>
+  </div>`;
+
+  const el=document.createElement('div');
+  el.innerHTML=html;
+  document.body.appendChild(el);
+
+  const fn=`monbluu-${S.periodFilter==='mes'
+    ? now.toLocaleDateString('pt-BR',{month:'2-digit',year:'numeric'}).replace('/','_')
+    : S.periodFilter==='ano' ? now.getFullYear()
+    : 'personalizado'}.pdf`;
+
+  await html2pdf().set({
+    margin:[6,6,6,6], filename:fn,
+    image:{type:'jpeg',quality:.95},
+    html2canvas:{scale:2,useCORS:true},
+    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
+    pagebreak:{mode:['avoid-all']}
+  }).from(el).save();
+
+  document.body.removeChild(el);
+  toast('PDF exportado! 📄');
+}
+
+S.accFilter = null; // null = todas as contas
+
+function setAccFilter(accId){
+  S.accFilter = accId || null;
+  renderAccountsList();
+  renderRecvList();
+  renderPayList();
+}
+
+function renderAccFilterChips(){
+  const wrap = $('acc-filter-wrap');
+  if(!wrap || !S.accounts.length) return;
+  const all = S.accFilter === null;
+  wrap.innerHTML = `
+    <button onclick="setAccFilter(null)" style="
+      padding:4px 12px;border-radius:100px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .18s;
+      background:${all?'#0F2A44':'#f1f5f9'};color:${all?'#fff':'#64748b'};
+      border:1.5px solid ${all?'#0F2A44':'#e2e8f0'}">
+      Todas
+    </button>
+    ${S.accounts.map(a=>{
+      const sel = S.accFilter===a.id;
+      return `<button onclick="setAccFilter('${a.id}')" style="
+        padding:4px 12px;border-radius:100px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .18s;
+        background:${sel?'#2F80ED':'#f1f5f9'};color:${sel?'#fff':'#64748b'};
+        border:1.5px solid ${sel?'#2F80ED':'#e2e8f0'};
+        display:flex;align-items:center;gap:6px">
+        <span style="width:7px;height:7px;border-radius:50%;background:${sel?'#fff':'#22C55E'};flex-shrink:0"></span>
+        ${a.name}
+      </button>`;
+    }).join('')}
+  `;
+}
+
 function renderAccountsList(){
-  const totalBal=S.accounts.reduce((s,a)=>s+a.balance,0);
-  $('totalBal').textContent=fmt(totalBal); $('totalBal').style.color=totalBal<0?'#ef4444':'#0F2A44';
-  if(!S.accounts.length){ $('accountsList').innerHTML=emptyHTML('Nenhuma conta','Adicione sua primeira conta bancária'); return; }
-  $('accountsList').innerHTML=S.accounts.map(a=>`
+  renderAccFilterChips();
+
+  const accounts = S.accFilter
+    ? S.accounts.filter(a=>a.id===S.accFilter)
+    : S.accounts;
+
+  const totalBal = accounts.reduce((s,a)=>s+a.balance,0);
+  $('totalBal').textContent = fmt(totalBal);
+  $('totalBal').style.color = totalBal<0?'#ef4444':'#0F2A44';
+
+  const label = $('totalBal-label');
+  if(label){
+    const acc = S.accFilter ? S.accounts.find(a=>a.id===S.accFilter) : null;
+    label.textContent = acc ? `Saldo — ${acc.name}` : 'Saldo total';
+  }
+
+  if(!accounts.length){ $('accountsList').innerHTML=emptyHTML('Nenhuma conta','Adicione sua primeira conta bancária'); return; }
+  $('accountsList').innerHTML=accounts.map(a=>`
     <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f8fafc;font-size:13px">
       <div style="display:flex;align-items:center;gap:7px">
         <div style="width:8px;height:8px;border-radius:50%;background:${a.balance>=0?'#22C55E':'#ef4444'}"></div>
@@ -2987,21 +3405,71 @@ function renderAccountsList(){
     </div>`).join('');
 }
 
-function filterRecv(tab){ if(tab==='done')return S.receivables.filter(r=>r.done); if(tab==='overdue')return S.receivables.filter(r=>!r.done&&r.dueDate<today()); return S.receivables.filter(r=>!r.done&&r.dueDate>=today()); }
-function filterPay(tab){ if(tab==='done')return S.payables.filter(p=>p.done); if(tab==='overdue')return S.payables.filter(p=>!p.done&&p.dueDate<today()); return S.payables.filter(p=>!p.done&&p.dueDate>=today()); }
+function filterRecv(tab){
+  let list = S.receivables.filter(r=>inPeriod(r.dueDate));
+  if(S.accFilter) list = list.filter(r=>r.accountId===S.accFilter);
+  if(tab==='done')    return list.filter(r=>r.done);
+  if(tab==='overdue') return list.filter(r=>!r.done&&r.dueDate<today());
+  return list.filter(r=>!r.done&&r.dueDate>=today());
+}
+function filterPay(tab){
+  let list = S.payables.filter(p=>inPeriod(p.dueDate));
+  if(S.accFilter) list = list.filter(p=>p.accountId===S.accFilter);
+  if(tab==='done')    return list.filter(p=>p.done);
+  if(tab==='overdue') return list.filter(p=>!p.done&&p.dueDate<today());
+  return list.filter(p=>!p.done&&p.dueDate>=today());
+}
 
 function renderRecvList(){
   const list=filterRecv(S.recvTab);
   $('recvTotal').textContent=fmt(list.reduce((s,r)=>s+r.value,0));
   if(!list.length){ $('recvList').innerHTML=emptyHTML(); return; }
-  $('recvList').innerHTML=list.map(r=>{ const cli=S.clients.find(c=>c.id===r.clientId); return `<div class="tbl-row" style="grid-template-columns:70px 1fr 80px 75px"><span style="color:#64748b;font-size:11px">${fmtD(r.dueDate)}</span><span style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.desc||'—'}</span><span style="font-size:11px;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cli?.name||'—'}</span><span class="mono" style="color:#22C55E;text-align:right">${fmt(r.value)}</span></div>`; }).join('');
+  $('recvList').innerHTML=list.map(r=>{
+    const cli=S.clients.find(c=>c.id===r.clientId);
+    const isOver=!r.done&&r.dueDate<today();
+    const dot=r.done?'#22C55E':isOver?'#ef4444':'#F97316';
+    const acoes = r.done
+      ? `<span style="font-size:10px;color:#22C55E;font-weight:700">✓ Recebido</span>`
+      : `<button onclick="openEfetivar('${r.id}','income')" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:10px;font-weight:700;color:#16a34a;white-space:nowrap">✅ Receber</button>`;
+    return `<div class="tbl-row" style="grid-template-columns:10px 70px 1fr 80px 90px 58px;align-items:center">
+      <span style="width:8px;height:8px;border-radius:50%;background:${dot};display:inline-block;flex-shrink:0"></span>
+      <span style="color:#64748b;font-size:11px">${fmtD(r.dueDate)}</span>
+      <span style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.desc||'—'}</span>
+      <span style="font-size:11px;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cli?.name||'—'}</span>
+      <span class="mono" style="color:#22C55E;text-align:right">${fmt(r.value)}</span>
+      <div style="display:flex;align-items:center;justify-content:flex-end;gap:2px">
+        ${acoes}
+        <button onclick="openEditLanc('${r.id}','income')" title="Editar" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:12px;padding:2px 3px;border-radius:4px" onmouseenter="this.style.color='#2F80ED'" onmouseleave="this.style.color='#94a3b8'">✏️</button>
+        <button onclick="deleteLanc('${r.id}','income')" title="Excluir" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:12px;padding:2px 3px;border-radius:4px" onmouseenter="this.style.color='#ef4444'" onmouseleave="this.style.color='#94a3b8'">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function renderPayList(){
   const list=filterPay(S.payTab);
   $('payTotal').textContent=fmt(list.reduce((s,p)=>s+p.value,0));
   if(!list.length){ $('payList').innerHTML=emptyHTML(); return; }
-  $('payList').innerHTML=list.map(p=>{ const sup=S.suppliers.find(s=>s.id===p.supplierId); return `<div class="tbl-row" style="grid-template-columns:70px 1fr 80px 75px"><span style="color:#64748b;font-size:11px">${fmtD(p.dueDate)}</span><span style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.desc||'—'}</span><span style="font-size:11px;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${sup?.name||'—'}</span><span class="mono" style="color:#ef4444;text-align:right">${fmt(p.value)}</span></div>`; }).join('');
+  $('payList').innerHTML=list.map(p=>{
+    const sup=S.suppliers.find(s=>s.id===p.supplierId);
+    const isOver=!p.done&&p.dueDate<today();
+    const dot=p.done?'#22C55E':isOver?'#ef4444':'#F97316';
+    const acoes = p.done
+      ? `<span style="font-size:10px;color:#22C55E;font-weight:700">✓ Pago</span>`
+      : `<button onclick="openEfetivar('${p.id}','expense')" style="background:#fff1f2;border:1px solid #fecaca;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:10px;font-weight:700;color:#ef4444;white-space:nowrap">💳 Pagar</button>`;
+    return `<div class="tbl-row" style="grid-template-columns:10px 70px 1fr 80px 90px 58px;align-items:center">
+      <span style="width:8px;height:8px;border-radius:50%;background:${dot};display:inline-block;flex-shrink:0"></span>
+      <span style="color:#64748b;font-size:11px">${fmtD(p.dueDate)}</span>
+      <span style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.desc||'—'}</span>
+      <span style="font-size:11px;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${sup?.name||'—'}</span>
+      <span class="mono" style="color:#ef4444;text-align:right">${fmt(p.value)}</span>
+      <div style="display:flex;align-items:center;justify-content:flex-end;gap:2px">
+        ${acoes}
+        <button onclick="openEditLanc('${p.id}','expense')" title="Editar" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:12px;padding:2px 3px;border-radius:4px" onmouseenter="this.style.color='#2F80ED'" onmouseleave="this.style.color='#94a3b8'">✏️</button>
+        <button onclick="deleteLanc('${p.id}','expense')" title="Excluir" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:12px;padding:2px 3px;border-radius:4px" onmouseenter="this.style.color='#ef4444'" onmouseleave="this.style.color='#94a3b8'">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ── Cashflow chart state ──
@@ -3393,36 +3861,238 @@ function renderLancamentos(){
       <span style="display:flex;align-items:center;gap:5px">${cat?`<span style="width:8px;height:8px;border-radius:50%;background:${cat.color};flex-shrink:0"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cat.name}</span>`:'<span style="color:#94a3b8">—</span>'}</span>
       <span style="color:#94a3b8;font-size:11px">—</span>
       <span style="font-family:monospace;font-weight:700;color:${color};text-align:right">${fmt(x.value)}</span>
-      <div style="display:flex;align-items:center;justify-content:center;gap:4px">
-        <span title="${status==='done'?'Efetuado':status==='overdue'?'Vencido':'Em aberto'}" style="width:8px;height:8px;border-radius:50%;background:${status==='done'?'#22C55E':status==='overdue'?'#ef4444':'#F97316'};display:inline-block"></span>
-        <button onclick="deleteLanc('${x.id}','${x._type}')" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:13px;padding:2px 5px;border-radius:5px" title="Excluir">🗑</button>
-        <button onclick="openEditLanc('${x.id}','${x._type}')" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:13px;padding:2px 5px;border-radius:5px" title="Editar">✏️</button>
+      <div style="display:flex;align-items:center;justify-content:flex-end;gap:3px">
+        <span title="${status==='done'?'Efetuado':status==='overdue'?'Vencido':'Em aberto'}" style="width:7px;height:7px;border-radius:50%;background:${status==='done'?'#22C55E':status==='overdue'?'#ef4444':'#F97316'};display:inline-block;flex-shrink:0"></span>
+        ${status!=='done'?`<button onclick="openEfetivar('${x.id}','${x._type}')" style="background:${color}15;border:1px solid ${color}40;border-radius:6px;padding:2px 7px;cursor:pointer;font-size:10px;font-weight:700;color:${color};white-space:nowrap">${S.lancTab==='income'?'Receber':'Pagar'}</button>`:''}
+        <button onclick="openEditLanc('${x.id}','${x._type}')" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:13px;padding:2px 4px;border-radius:5px" title="Editar">✏️</button>
+        <button onclick="deleteLanc('${x.id}','${x._type}')" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:13px;padding:2px 4px;border-radius:5px" title="Excluir">🗑</button>
       </div>
     </div>`;
   }).join('');
 }
 
 function deleteLanc(id, type){
-  const item = type==='income'
-    ? S.receivables.find(r=>r.id===id)
-    : S.payables.find(p=>p.id===id);
-  const desc = item?.desc ? `"${item.desc}"` : 'este lançamento';
-  const val  = item ? ` — ${fmt(item.value)}` : '';
-  $('confirm-delete-desc').innerHTML = `Você está prestes a excluir o lançamento <strong>${desc}</strong>${val}.`;
-  const btn = $('confirm-delete-btn');
-  btn.onclick = async () => {
-    await sbDelete('transactions', id);
-    if(type==='income') S.receivables = S.receivables.filter(r=>r.id!==id);
-    else                S.payables    = S.payables.filter(p=>p.id!==id);
+  const list   = type==='income' ? S.receivables : S.payables;
+  const item   = list.find(x=>x.id===id);
+  if(!item) return;
+
+  // Achar grupo por descrição + valor (lançamentos recorrentes/parcelados)
+  const siblings = list.filter(x => x.id!==id && x.desc===item.desc && x.value===item.value);
+  const hasGroup = siblings.length > 0;
+
+  $('confirm-delete-desc').innerHTML = `Lançamento: <strong>${item.desc||'sem descrição'}</strong> — ${fmt(item.value)}`;
+
+  const scopeWrap = $('delete-scope-wrap');
+  scopeWrap.style.display = hasGroup ? 'flex' : 'none';
+  if(hasGroup){
+    // reset seleção
+    document.querySelector('input[name="del-scope"][value="this"]').checked = true;
+    // highlight selecionado
+    document.querySelectorAll('#delete-scope-wrap label').forEach(l=>{
+      l.style.borderColor='#e2e8f0';
+    });
+    document.querySelectorAll('input[name="del-scope"]').forEach(r=>{
+      r.onchange = ()=>{
+        document.querySelectorAll('#delete-scope-wrap label').forEach(l=>l.style.borderColor='#e2e8f0');
+        r.closest('label').style.borderColor='#ef4444';
+      };
+    });
+    document.querySelector('input[name="del-scope"][value="this"]').closest('label').style.borderColor='#ef4444';
+  }
+
+  $('confirm-delete-btn').onclick = async () => {
+    const scope = hasGroup
+      ? document.querySelector('input[name="del-scope"]:checked')?.value || 'this'
+      : 'this';
+
+    let idsToDelete = [id];
+
+    if(scope==='open'){
+      const openSiblings = siblings.filter(x=>!x.done);
+      idsToDelete = [id, ...openSiblings.map(x=>x.id)];
+    } else if(scope==='all'){
+      idsToDelete = [id, ...siblings.map(x=>x.id)];
+    }
+
+    for(const did of idsToDelete){
+      await sbDelete('transactions', did);
+    }
+
+    if(type==='income') S.receivables = S.receivables.filter(r=>!idsToDelete.includes(r.id));
+    else                S.payables    = S.payables.filter(p=>!idsToDelete.includes(p.id));
+
     S.selectedLancs.delete(id);
     closeModal('confirm-delete');
-    toast('Lançamento removido','info');
+    toast(`${idsToDelete.length > 1 ? idsToDelete.length+' lançamentos removidos' : 'Lançamento removido'}`,'info');
     renderLancamentos();
     if(S.currentPage==='dashboard') renderDashboard();
+    if(typeof renderDvRecv==='function'){ renderDvRecv(); renderDvPay(); }
   };
   $('modal-confirm-delete').style.display='flex';
 }
-function openEditLanc(id,type){ openModal(type==='income'?'receivable':'payable'); toast('Edição em breve','info'); }
+
+// ── EFETIVAR (modal com conta + data) ────────────────────
+let _efetId=null, _efetType=null;
+
+function openEfetivar(id, type){
+  _efetId=id; _efetType=type;
+  const item = type==='income'
+    ? S.receivables.find(x=>x.id===id)
+    : S.payables.find(x=>x.id===id);
+  if(!item) return;
+  const isIncome = type==='income';
+
+  // Header
+  $('efet-header').style.borderBottomColor = isIncome ? '#f0fdf4' : '#fff1f2';
+  $('efet-title').textContent = isIncome ? '✅ Confirmar Recebimento' : '💳 Confirmar Pagamento';
+  $('efet-desc').textContent  = item.desc || '';
+  $('efet-val').textContent   = fmt(item.value);
+  $('efet-val').style.color   = isIncome ? '#22C55E' : '#ef4444';
+
+  // Botão
+  const btn = $('efet-btn');
+  btn.style.background = isIncome ? '#22C55E' : '#ef4444';
+  btn.style.color      = '#fff';
+  btn.textContent      = isIncome ? '✅ Confirmar recebimento' : '💳 Confirmar pagamento';
+
+  // Conta: pré-seleciona a conta do lançamento se houver
+  $('efet-acc').innerHTML = '<option value="">Selecione a conta...</option>' +
+    S.accounts.map(a=>`<option value="${a.id}" ${a.id===item.accountId?'selected':''}>${a.name} (${fmt(a.balance)})</option>`).join('');
+
+  // Data: hoje
+  $('efet-date').value = today();
+
+  $('modal-efetivar').style.display='flex';
+}
+
+async function confirmEfetivar(){
+  const accId = $('efet-acc').value;
+  const date  = $('efet-date').value;
+  if(!accId){ toast('Selecione a conta','error'); return; }
+  if(!date)  { toast('Informe a data','error');   return; }
+
+  const btn = $('efet-btn');
+  btn.disabled=true; btn.textContent='Aguarde...';
+
+  if(_efetType==='income'){
+    const r=S.receivables.find(x=>x.id===_efetId);
+    if(r&&!r.done){
+      r.done=true; r.doneDate=date; r.accountId=accId;
+      await sbUpdate('transactions',_efetId,{status:'paid',paid_date:date,account_id:accId});
+      S.accounts=S.accounts.map(a=>a.id===accId?{...a,balance:a.balance+r.value}:a);
+      await sbUpdate('accounts',accId,{balance:S.accounts.find(a=>a.id===accId)?.balance});
+    }
+  } else {
+    const p=S.payables.find(x=>x.id===_efetId);
+    if(p&&!p.done){
+      p.done=true; p.doneDate=date; p.accountId=accId;
+      await sbUpdate('transactions',_efetId,{status:'paid',paid_date:date,account_id:accId});
+      S.accounts=S.accounts.map(a=>a.id===accId?{...a,balance:a.balance-p.value}:a);
+      await sbUpdate('accounts',accId,{balance:S.accounts.find(a=>a.id===accId)?.balance});
+    }
+  }
+
+  closeModal('efetivar');
+  toast(_efetType==='income'?'Recebimento confirmado! ✅':'Pagamento confirmado! 💳');
+  refresh();
+}
+
+function openEditLanc(id, type){
+  const isIncome = type==='income';
+  const item = isIncome
+    ? S.receivables.find(x=>x.id===id)
+    : S.payables.find(x=>x.id===id);
+  if(!item) return;
+
+  S._editId   = id;
+  S._editType = type;
+  openModal(isIncome?'receivable':'payable');
+
+  setTimeout(()=>{
+    populateSelects();
+    if(isIncome){
+      $('recvVal').value  = item.value.toFixed(2).replace('.',',');
+      $('recvDesc').value = item.desc||'';
+      $('recvDue').value  = item.dueDate||'';
+      $('recvCat').value  = item.categoryId||'';
+      $('recvAcc').value  = item.accountId||'';
+      $('recvClient').value = item.clientId||'';
+      if(item.done){
+        $('recvDone').checked=true;
+        $('recvDoneDateWrap').style.display='block';
+        $('recvDoneDate').value=item.doneDate||today();
+      }
+    } else {
+      $('payVal').value  = item.value.toFixed(2).replace('.',',');
+      $('payDesc').value = item.desc||'';
+      $('payDue').value  = item.dueDate||'';
+      $('payCat').value  = item.categoryId||'';
+      $('payAcc').value  = item.accountId||'';
+      $('paySupplier').value = item.supplierId||'';
+      if(item.done){
+        $('payDone').checked=true;
+        $('payDoneDateWrap').style.display='block';
+        $('payDoneDate').value=item.doneDate||today();
+      }
+    }
+    // Trocar botão salvar para "Salvar alterações"
+    const footer = document.querySelector('#modal-'+(isIncome?'receivable':'payable')+' .modal-footer');
+    if(footer) footer.innerHTML=`
+      <button class="btn btn-outline" style="flex:1;justify-content:center" onclick="cancelEditLanc()">Cancelar</button>
+      <button class="btn ${isIncome?'btn-green':'btn-red'}" style="flex:1;justify-content:center" onclick="saveEditLanc()">💾 Salvar alterações</button>
+    `;
+  },60);
+}
+
+function cancelEditLanc(){
+  S._editId=null; S._editType=null;
+  closeModal(S._editType==='income'?'receivable':'payable');
+  // Restaurar footer original
+  refresh();
+}
+
+async function saveEditLanc(){
+  const id   = S._editId;
+  const type = S._editType;
+  if(!id) return;
+
+  const isIncome = type==='income';
+  const desc  = isIncome ? $('recvDesc').value.trim() : $('payDesc').value.trim();
+  const catId = isIncome ? $('recvCat').value         : $('payCat').value;
+  const accId = isIncome ? $('recvAcc').value         : $('payAcc').value;
+  const value = pv(isIncome ? $('recvVal').value      : $('payVal').value);
+
+  if(!value){ toast('Informe o valor','error'); return; }
+  if(!desc)  { toast('Informe a descrição','error'); return; }
+  if(!catId) { toast('Selecione a categoria','error'); return; }
+  if(!accId) { toast('Selecione a conta','error'); return; }
+
+  const dueDate  = isIncome ? $('recvDue').value  : $('payDue').value;
+  const done     = isIncome ? $('recvDone').checked : $('payDone').checked;
+  const doneDate = isIncome
+    ? ($('recvDoneDate').value || (done?today():null))
+    : ($('payDoneDate').value  || (done?today():null));
+
+  const changes = {
+    description: desc, amount: value, category: catId,
+    account_id: accId, due_date: dueDate||null,
+    status: done?'paid':'pending',
+    paid_date: done?(doneDate||null):null,
+  };
+  await sbUpdate('transactions', id, changes);
+
+  const list = isIncome ? S.receivables : S.payables;
+  const idx  = list.findIndex(x=>x.id===id);
+  if(idx>=0){
+    list[idx] = {...list[idx], value, desc, categoryId:catId, accountId:accId,
+      dueDate, done, doneDate: done?doneDate:null};
+  }
+
+  S._editId=null; S._editType=null;
+  closeModal(isIncome?'receivable':'payable');
+  toast('Lançamento atualizado! ✅');
+  refresh();
+}
 function lancImport(){ toast('Importação disponível na versão Pro','info'); }
 function exportCSV(){
   const list=getLancItems();
