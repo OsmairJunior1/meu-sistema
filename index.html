@@ -713,30 +713,54 @@ textarea.inp{min-height:80px;resize:vertical}
         </div>
         <div class="grid-2">
           <div class="card">
-            <div class="card-header">
+            <div class="card-header" id="recv-card-header">
               <span class="card-title">Contas a receber</span>
-              <button class="btn btn-green btn-sm" onclick="openModal('receivable')">+ Adicionar</button>
+              <div style="display:flex;align-items:center;gap:8px">
+                <button id="recv-efetivar-btn" onclick="efetivarSelecionados('income')" style="display:none;align-items:center;gap:5px;padding:5px 14px;border-radius:8px;border:none;background:#22C55E;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">
+                  ✅ Receber selecionados
+                </button>
+                <button class="btn btn-green btn-sm" onclick="openModal('receivable')">+ Adicionar</button>
+              </div>
             </div>
             <div class="tab-bar">
               <button class="tab-btn active" style="color:#22C55E" data-tab="recv" data-val="open" onclick="switchTab(this,'recv','open')">Em aberto</button>
               <button class="tab-btn" data-tab="recv" data-val="done" onclick="switchTab(this,'recv','done')">Efetuados</button>
               <button class="tab-btn" data-tab="recv" data-val="overdue" onclick="switchTab(this,'recv','overdue')">Vencidos</button>
             </div>
-            <div class="tbl-head" style="grid-template-columns:70px 1fr 80px 75px"><span>Data</span><span>Descrição</span><span>Cliente</span><span style="text-align:right">Valor</span></div>
+            <div class="tbl-head" style="grid-template-columns:22px 70px 1fr 80px 75px 52px">
+              <span></span>
+              <span style="cursor:pointer;user-select:none" onclick="sortRecvList('date')">Data <span style="opacity:.4;font-size:10px">↕</span></span>
+              <span style="cursor:pointer;user-select:none" onclick="sortRecvList('desc')">Descrição <span style="opacity:.4;font-size:10px">↕</span></span>
+              <span style="cursor:pointer;user-select:none" onclick="sortRecvList('client')">Cliente <span style="opacity:.4;font-size:10px">↕</span></span>
+              <span style="cursor:pointer;user-select:none;text-align:right" onclick="sortRecvList('value')">Valor <span style="opacity:.4;font-size:10px">↕</span></span>
+              <span></span>
+            </div>
             <div id="recvList"></div>
             <div class="card-footer"><span>Total</span><span class="mono" style="color:#22C55E" id="recvTotal">R$ 0,00</span></div>
           </div>
           <div class="card">
-            <div class="card-header">
+            <div class="card-header" id="pay-card-header">
               <span class="card-title">Contas a pagar</span>
-              <button class="btn btn-red btn-sm" onclick="openModal('payable')">+ Adicionar</button>
+              <div style="display:flex;align-items:center;gap:8px">
+                <button id="pay-efetivar-btn" onclick="efetivarSelecionados('expense')" style="display:none;align-items:center;gap:5px;padding:5px 14px;border-radius:8px;border:none;background:#ef4444;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">
+                  💳 Pagar selecionados
+                </button>
+                <button class="btn btn-red btn-sm" onclick="openModal('payable')">+ Adicionar</button>
+              </div>
             </div>
             <div class="tab-bar">
               <button class="tab-btn active" style="color:#ef4444" data-tab="pay" data-val="open" onclick="switchTab(this,'pay','open')">Em aberto</button>
               <button class="tab-btn" data-tab="pay" data-val="done" onclick="switchTab(this,'pay','done')">Efetuados</button>
               <button class="tab-btn" data-tab="pay" data-val="overdue" onclick="switchTab(this,'pay','overdue')">Vencidos</button>
             </div>
-            <div class="tbl-head" style="grid-template-columns:70px 1fr 80px 75px"><span>Data</span><span>Descrição</span><span>Fornecedor</span><span style="text-align:right">Valor</span></div>
+            <div class="tbl-head" style="grid-template-columns:22px 70px 1fr 80px 75px 52px">
+              <span></span>
+              <span style="cursor:pointer;user-select:none" onclick="sortPayList('date')">Data <span style="opacity:.4;font-size:10px">↕</span></span>
+              <span style="cursor:pointer;user-select:none" onclick="sortPayList('desc')">Descrição <span style="opacity:.4;font-size:10px">↕</span></span>
+              <span style="cursor:pointer;user-select:none" onclick="sortPayList('supplier')">Fornecedor <span style="opacity:.4;font-size:10px">↕</span></span>
+              <span style="cursor:pointer;user-select:none;text-align:right" onclick="sortPayList('value')">Valor <span style="opacity:.4;font-size:10px">↕</span></span>
+              <span></span>
+            </div>
             <div id="payList"></div>
             <div class="card-footer"><span>Total</span><span class="mono" style="color:#ef4444" id="payTotal">R$ 0,00</span></div>
           </div>
@@ -3161,13 +3185,40 @@ async function markDone(id, type){
 }
 
 function renderDashboard(){
-  const totalBal=S.accounts.reduce((s,a)=>s+a.balance,0);
-  const totalInc=S.receivables.filter(r=>r.done&&inPeriod(r.doneDate||r.dueDate)).reduce((s,r)=>s+r.value,0);
-  const totalExp=S.payables.filter(p=>p.done&&inPeriod(p.doneDate||p.dueDate)).reduce((s,p)=>s+p.value,0);
-  const pendInc=S.receivables.filter(r=>!r.done&&inPeriod(r.dueDate)).reduce((s,r)=>s+r.value,0);
-  const pendExp=S.payables.filter(p=>!p.done&&inPeriod(p.dueDate)).reduce((s,p)=>s+p.value,0);
-  const over=[...S.receivables.filter(r=>!r.done&&r.dueDate<today()&&inPeriod(r.dueDate)),...S.payables.filter(p=>!p.done&&p.dueDate<today()&&inPeriod(p.dueDate))].reduce((s,x)=>s+x.value,0);
-  const trans=S.transfers.filter(t=>inPeriod(t.date)).reduce((s,t)=>s+t.value,0);
+  const pFrom = S.periodFrom, pTo = S.periodTo;
+
+  // Saldo: sempre o saldo real das contas (não filtra por período)
+  const totalBal = S.accounts.reduce((s,a)=>s+a.balance, 0);
+
+  // Recebidos no período: usa doneDate (ou dueDate como fallback)
+  const totalInc = S.receivables
+    .filter(r=> r.done && (()=>{ const d=r.doneDate||r.dueDate; return (!pFrom||d>=pFrom)&&(!pTo||d<=pTo); })())
+    .reduce((s,r)=>s+r.value, 0);
+
+  // Despesas pagas no período
+  const totalExp = S.payables
+    .filter(p=> p.done && (()=>{ const d=p.doneDate||p.dueDate; return (!pFrom||d>=pFrom)&&(!pTo||d<=pTo); })())
+    .reduce((s,p)=>s+p.value, 0);
+
+  // Pendentes: vencimento no período, não pagos
+  const pendInc = S.receivables
+    .filter(r=>!r.done && (!pFrom||r.dueDate>=pFrom) && (!pTo||r.dueDate<=pTo))
+    .reduce((s,r)=>s+r.value, 0);
+  const pendExp = S.payables
+    .filter(p=>!p.done && (!pFrom||p.dueDate>=pFrom) && (!pTo||p.dueDate<=pTo))
+    .reduce((s,p)=>s+p.value, 0);
+
+  // Vencidos: vencimento antes de hoje, não pagos, dentro do período
+  const over = [
+    ...S.receivables.filter(r=>!r.done && r.dueDate<today() && (!pFrom||r.dueDate>=pFrom) && (!pTo||r.dueDate<=pTo)),
+    ...S.payables.filter(p=>!p.done && p.dueDate<today() && (!pFrom||p.dueDate>=pFrom) && (!pTo||p.dueDate<=pTo))
+  ].reduce((s,x)=>s+x.value, 0);
+
+  // Transferências no período
+  const trans = S.transfers
+    .filter(t=>(!pFrom||t.date>=pFrom)&&(!pTo||t.date<=pTo))
+    .reduce((s,t)=>s+t.value, 0);
+
   $('kBal').textContent=fmt(totalBal); $('kBal').style.color=totalBal<0?'#ef4444':'#0F2A44';
   $('kBalSub').textContent=`Contas: ${S.accounts.length}`;
   $('kInc').textContent=fmt(totalInc); $('kIncSub').textContent=`Pendente: ${fmt(pendInc)}`;
@@ -3406,39 +3457,177 @@ function renderAccountsList(){
 }
 
 function filterRecv(tab){
-  let list = S.receivables.filter(r=>inPeriod(r.dueDate));
+  let list = S.receivables;
   if(S.accFilter) list = list.filter(r=>r.accountId===S.accFilter);
-  if(tab==='done')    return list.filter(r=>r.done);
-  if(tab==='overdue') return list.filter(r=>!r.done&&r.dueDate<today());
-  return list.filter(r=>!r.done&&r.dueDate>=today());
+
+  if(tab==='done'){
+    // Efetuados: filtra pela data de pagamento dentro do período
+    list = list.filter(r=>r.done);
+    if(S.periodFrom && S.periodTo)
+      list = list.filter(r=>{
+        const d = r.doneDate || r.dueDate;
+        return d >= S.periodFrom && d <= S.periodTo;
+      });
+    return list;
+  }
+  if(tab==='overdue'){
+    // Vencidos: vencimento antes de hoje, não pagos, vencimento dentro do período
+    list = list.filter(r=>!r.done && r.dueDate < today());
+    if(S.periodFrom && S.periodTo)
+      list = list.filter(r=>r.dueDate >= S.periodFrom && r.dueDate <= S.periodTo);
+    return list;
+  }
+  // Em aberto: pendentes com vencimento até o fim do período (inclui atrasados de meses anteriores)
+  list = list.filter(r=>!r.done);
+  if(S.periodTo) list = list.filter(r=>r.dueDate <= S.periodTo);
+  if(S.periodFrom) list = list.filter(r=>r.dueDate >= S.periodFrom);
+  return list;
 }
+
 function filterPay(tab){
-  let list = S.payables.filter(p=>inPeriod(p.dueDate));
+  let list = S.payables;
   if(S.accFilter) list = list.filter(p=>p.accountId===S.accFilter);
-  if(tab==='done')    return list.filter(p=>p.done);
-  if(tab==='overdue') return list.filter(p=>!p.done&&p.dueDate<today());
-  return list.filter(p=>!p.done&&p.dueDate>=today());
+
+  if(tab==='done'){
+    list = list.filter(p=>p.done);
+    if(S.periodFrom && S.periodTo)
+      list = list.filter(p=>{
+        const d = p.doneDate || p.dueDate;
+        return d >= S.periodFrom && d <= S.periodTo;
+      });
+    return list;
+  }
+  if(tab==='overdue'){
+    list = list.filter(p=>!p.done && p.dueDate < today());
+    if(S.periodFrom && S.periodTo)
+      list = list.filter(p=>p.dueDate >= S.periodFrom && p.dueDate <= S.periodTo);
+    return list;
+  }
+  // Em aberto: pendentes dentro do período
+  list = list.filter(p=>!p.done);
+  if(S.periodTo) list = list.filter(p=>p.dueDate <= S.periodTo);
+  if(S.periodFrom) list = list.filter(p=>p.dueDate >= S.periodFrom);
+  return list;
+}
+
+// Ordenação das listas do dashboard
+S.recvSort = { key:'date', asc:true };
+S.paySort  = { key:'date', asc:true };
+
+function sortRecvList(key){
+  if(S.recvSort.key===key) S.recvSort.asc=!S.recvSort.asc;
+  else { S.recvSort.key=key; S.recvSort.asc=true; }
+  renderRecvList();
+}
+function sortPayList(key){
+  if(S.paySort.key===key) S.paySort.asc=!S.paySort.asc;
+  else { S.paySort.key=key; S.paySort.asc=true; }
+  renderPayList();
+}
+function applySortRecv(list){
+  const {key,asc}=S.recvSort;
+  return [...list].sort((a,b)=>{
+    let va='',vb='';
+    if(key==='date')   { va=a.dueDate||''; vb=b.dueDate||''; }
+    if(key==='desc')   { va=(a.desc||'').toLowerCase(); vb=(b.desc||'').toLowerCase(); }
+    if(key==='value')  { return asc?a.value-b.value:b.value-a.value; }
+    if(key==='client') { va=S.clients.find(c=>c.id===a.clientId)?.name?.toLowerCase()||''; vb=S.clients.find(c=>c.id===b.clientId)?.name?.toLowerCase()||''; }
+    return asc?va.localeCompare(vb):vb.localeCompare(va);
+  });
+}
+function applySortPay(list){
+  const {key,asc}=S.paySort;
+  return [...list].sort((a,b)=>{
+    let va='',vb='';
+    if(key==='date')     { va=a.dueDate||''; vb=b.dueDate||''; }
+    if(key==='desc')     { va=(a.desc||'').toLowerCase(); vb=(b.desc||'').toLowerCase(); }
+    if(key==='value')    { return asc?a.value-b.value:b.value-a.value; }
+    if(key==='supplier') { va=S.suppliers.find(s=>s.id===a.supplierId)?.name?.toLowerCase()||''; vb=S.suppliers.find(s=>s.id===b.supplierId)?.name?.toLowerCase()||''; }
+    return asc?va.localeCompare(vb):vb.localeCompare(va);
+  });
+}
+
+S.recvSelected = new Set();
+S.paySelected  = new Set();
+
+function toggleRecvCheck(id, done){
+  if(done) return; // não seleciona já efetuados
+  if(S.recvSelected.has(id)) S.recvSelected.delete(id);
+  else S.recvSelected.add(id);
+  updateEfetivarBtn('income');
+}
+function togglePayCheck(id, done){
+  if(done) return;
+  if(S.paySelected.has(id)) S.paySelected.delete(id);
+  else S.paySelected.add(id);
+  updateEfetivarBtn('expense');
+}
+function updateEfetivarBtn(type){
+  const btn = $(type==='income'?'recv-efetivar-btn':'pay-efetivar-btn');
+  const set = type==='income' ? S.recvSelected : S.paySelected;
+  if(!btn) return;
+  if(set.size > 0){
+    btn.style.display='flex';
+    btn.textContent = type==='income'
+      ? `✅ Receber (${set.size})`
+      : `💳 Pagar (${set.size})`;
+  } else {
+    btn.style.display='none';
+  }
+}
+
+async function efetivarSelecionados(type){
+  const set = type==='income' ? S.recvSelected : S.paySelected;
+  if(!set.size) return;
+  // Se só um item, abre modal normal
+  if(set.size===1){
+    openEfetivar([...set][0], type);
+    return;
+  }
+  // Múltiplos: abre modal pedindo conta e data para todos
+  _efetId   = [...set].join(',');
+  _efetType = type;
+  const isIncome = type==='income';
+  $('efet-header').style.borderBottomColor = isIncome?'#f0fdf4':'#fff1f2';
+  $('efet-title').textContent = isIncome?`✅ Receber ${set.size} lançamentos`:`💳 Pagar ${set.size} lançamentos`;
+  $('efet-desc').textContent  = 'Selecione conta e data para todos';
+  $('efet-val').textContent   = '';
+  $('efet-val-row').style.display='none';
+  const btn=$('efet-btn');
+  btn.style.background=isIncome?'#22C55E':'#ef4444'; btn.style.color='#fff';
+  btn.textContent=isIncome?'✅ Confirmar recebimentos':'💳 Confirmar pagamentos';
+  $('efet-acc').innerHTML='<option value="">Selecione a conta...</option>'+
+    S.accounts.map(a=>`<option value="${a.id}">${a.name} (${fmt(a.balance)})</option>`).join('');
+  $('efet-date').value=today();
+  $('modal-efetivar').style.display='flex';
 }
 
 function renderRecvList(){
-  const list=filterRecv(S.recvTab);
+  let list=filterRecv(S.recvTab);
+  list=applySortRecv(list);
   $('recvTotal').textContent=fmt(list.reduce((s,r)=>s+r.value,0));
+  // Limpa seleção ao re-renderizar
+  S.recvSelected.clear();
+  updateEfetivarBtn('income');
   if(!list.length){ $('recvList').innerHTML=emptyHTML(); return; }
   $('recvList').innerHTML=list.map(r=>{
     const cli=S.clients.find(c=>c.id===r.clientId);
     const isOver=!r.done&&r.dueDate<today();
-    const dot=r.done?'#22C55E':isOver?'#ef4444':'#F97316';
-    const acoes = r.done
-      ? `<span style="font-size:10px;color:#22C55E;font-weight:700">✓ Recebido</span>`
-      : `<button onclick="openEfetivar('${r.id}','income')" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:10px;font-weight:700;color:#16a34a;white-space:nowrap">✅ Receber</button>`;
-    return `<div class="tbl-row" style="grid-template-columns:10px 70px 1fr 80px 90px 58px;align-items:center">
-      <span style="width:8px;height:8px;border-radius:50%;background:${dot};display:inline-block;flex-shrink:0"></span>
-      <span style="color:#64748b;font-size:11px">${fmtD(r.dueDate)}</span>
+    const dotColor=r.done?'#22C55E':isOver?'#ef4444':'#F97316';
+    const canCheck=!r.done;
+    return `<div class="tbl-row" style="grid-template-columns:22px 70px 1fr 80px 75px 52px;align-items:center">
+      <div style="display:flex;align-items:center;justify-content:center">
+        ${canCheck
+          ? `<input type="checkbox" onchange="toggleRecvCheck('${r.id}',${r.done})" style="width:14px;height:14px;accent-color:#22C55E;cursor:pointer">`
+          : `<span style="width:8px;height:8px;border-radius:50%;background:${dotColor};display:inline-block"></span>`
+        }
+      </div>
+      <span style="color:${isOver&&!r.done?'#ef4444':'#64748b'};font-size:11px;font-weight:${isOver&&!r.done?'700':'400'}">${fmtD(r.dueDate)}</span>
       <span style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.desc||'—'}</span>
       <span style="font-size:11px;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cli?.name||'—'}</span>
-      <span class="mono" style="color:#22C55E;text-align:right">${fmt(r.value)}</span>
+      <span class="mono" style="color:${r.done?'#22C55E':isOver?'#ef4444':'#22C55E'};text-align:right">${fmt(r.value)}</span>
       <div style="display:flex;align-items:center;justify-content:flex-end;gap:2px">
-        ${acoes}
+        ${r.done?`<span style="font-size:9px;color:#22C55E;font-weight:700">✓</span>`:''}
         <button onclick="openEditLanc('${r.id}','income')" title="Editar" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:12px;padding:2px 3px;border-radius:4px" onmouseenter="this.style.color='#2F80ED'" onmouseleave="this.style.color='#94a3b8'">✏️</button>
         <button onclick="deleteLanc('${r.id}','income')" title="Excluir" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:12px;padding:2px 3px;border-radius:4px" onmouseenter="this.style.color='#ef4444'" onmouseleave="this.style.color='#94a3b8'">🗑</button>
       </div>
@@ -3447,24 +3636,30 @@ function renderRecvList(){
 }
 
 function renderPayList(){
-  const list=filterPay(S.payTab);
+  let list=filterPay(S.payTab);
+  list=applySortPay(list);
   $('payTotal').textContent=fmt(list.reduce((s,p)=>s+p.value,0));
+  S.paySelected.clear();
+  updateEfetivarBtn('expense');
   if(!list.length){ $('payList').innerHTML=emptyHTML(); return; }
   $('payList').innerHTML=list.map(p=>{
     const sup=S.suppliers.find(s=>s.id===p.supplierId);
     const isOver=!p.done&&p.dueDate<today();
-    const dot=p.done?'#22C55E':isOver?'#ef4444':'#F97316';
-    const acoes = p.done
-      ? `<span style="font-size:10px;color:#22C55E;font-weight:700">✓ Pago</span>`
-      : `<button onclick="openEfetivar('${p.id}','expense')" style="background:#fff1f2;border:1px solid #fecaca;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:10px;font-weight:700;color:#ef4444;white-space:nowrap">💳 Pagar</button>`;
-    return `<div class="tbl-row" style="grid-template-columns:10px 70px 1fr 80px 90px 58px;align-items:center">
-      <span style="width:8px;height:8px;border-radius:50%;background:${dot};display:inline-block;flex-shrink:0"></span>
-      <span style="color:#64748b;font-size:11px">${fmtD(p.dueDate)}</span>
+    const dotColor=p.done?'#22C55E':isOver?'#ef4444':'#F97316';
+    const canCheck=!p.done;
+    return `<div class="tbl-row" style="grid-template-columns:22px 70px 1fr 80px 75px 52px;align-items:center">
+      <div style="display:flex;align-items:center;justify-content:center">
+        ${canCheck
+          ? `<input type="checkbox" onchange="togglePayCheck('${p.id}',${p.done})" style="width:14px;height:14px;accent-color:#ef4444;cursor:pointer">`
+          : `<span style="width:8px;height:8px;border-radius:50%;background:${dotColor};display:inline-block"></span>`
+        }
+      </div>
+      <span style="color:${isOver&&!p.done?'#ef4444':'#64748b'};font-size:11px;font-weight:${isOver&&!p.done?'700':'400'}">${fmtD(p.dueDate)}</span>
       <span style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.desc||'—'}</span>
       <span style="font-size:11px;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${sup?.name||'—'}</span>
-      <span class="mono" style="color:#ef4444;text-align:right">${fmt(p.value)}</span>
+      <span class="mono" style="color:${p.done?'#22C55E':isOver?'#ef4444':'#ef4444'};text-align:right">${fmt(p.value)}</span>
       <div style="display:flex;align-items:center;justify-content:flex-end;gap:2px">
-        ${acoes}
+        ${p.done?`<span style="font-size:9px;color:#22C55E;font-weight:700">✓</span>`:''}
         <button onclick="openEditLanc('${p.id}','expense')" title="Editar" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:12px;padding:2px 3px;border-radius:4px" onmouseenter="this.style.color='#2F80ED'" onmouseleave="this.style.color='#94a3b8'">✏️</button>
         <button onclick="deleteLanc('${p.id}','expense')" title="Excluir" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:12px;padding:2px 3px;border-radius:4px" onmouseenter="this.style.color='#ef4444'" onmouseleave="this.style.color='#94a3b8'">🗑</button>
       </div>
@@ -3974,26 +4169,39 @@ async function confirmEfetivar(){
   const btn = $('efet-btn');
   btn.disabled=true; btn.textContent='Aguarde...';
 
-  if(_efetType==='income'){
-    const r=S.receivables.find(x=>x.id===_efetId);
-    if(r&&!r.done){
-      r.done=true; r.doneDate=date; r.accountId=accId;
-      await sbUpdate('transactions',_efetId,{status:'paid',paid_date:date,account_id:accId});
-      S.accounts=S.accounts.map(a=>a.id===accId?{...a,balance:a.balance+r.value}:a);
-      await sbUpdate('accounts',accId,{balance:S.accounts.find(a=>a.id===accId)?.balance});
-    }
-  } else {
-    const p=S.payables.find(x=>x.id===_efetId);
-    if(p&&!p.done){
-      p.done=true; p.doneDate=date; p.accountId=accId;
-      await sbUpdate('transactions',_efetId,{status:'paid',paid_date:date,account_id:accId});
-      S.accounts=S.accounts.map(a=>a.id===accId?{...a,balance:a.balance-p.value}:a);
-      await sbUpdate('accounts',accId,{balance:S.accounts.find(a=>a.id===accId)?.balance});
+  // Suporta ID único ou múltiplos separados por vírgula
+  const ids = _efetId ? _efetId.split(',') : [];
+
+  for(const id of ids){
+    if(_efetType==='income'){
+      const r=S.receivables.find(x=>x.id===id);
+      if(r&&!r.done){
+        r.done=true; r.doneDate=date; r.accountId=accId;
+        await sbUpdate('transactions',id,{status:'paid',paid_date:date,account_id:accId});
+        S.accounts=S.accounts.map(a=>a.id===accId?{...a,balance:a.balance+r.value}:a);
+        await sbUpdate('accounts',accId,{balance:S.accounts.find(a=>a.id===accId)?.balance});
+      }
+    } else {
+      const p=S.payables.find(x=>x.id===id);
+      if(p&&!p.done){
+        p.done=true; p.doneDate=date; p.accountId=accId;
+        await sbUpdate('transactions',id,{status:'paid',paid_date:date,account_id:accId});
+        S.accounts=S.accounts.map(a=>a.id===accId?{...a,balance:a.balance-p.value}:a);
+        await sbUpdate('accounts',accId,{balance:S.accounts.find(a=>a.id===accId)?.balance});
+      }
     }
   }
 
+  // Limpa seleção
+  S.recvSelected.clear(); S.paySelected.clear();
+  $('efet-val-row').style.display='flex'; // restaura
+
   closeModal('efetivar');
-  toast(_efetType==='income'?'Recebimento confirmado! ✅':'Pagamento confirmado! 💳');
+  const n = ids.length;
+  toast(_efetType==='income'
+    ? (n>1?`${n} recebimentos confirmados! ✅`:'Recebimento confirmado! ✅')
+    : (n>1?`${n} pagamentos confirmados! 💳`:'Pagamento confirmado! 💳'));
+  btn.disabled=false;
   refresh();
 }
 
@@ -4242,34 +4450,104 @@ function populateCfAccounts(){
   sel.innerHTML='<option value="">Todas as contas</option>'+S.accounts.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
 }
 
-function cfGetVal(rowId, monthIdx, year){
-  // Returns value for a given row and month from actual data
+function cfGetVal(rowId, monthIdx, year, modeOverride){
   const mo=monthIdx, yr=year;
-  const inMonth=(items)=>items.filter(x=>{
-    const d=new Date((x.dueDate||today())+'T12:00:00');
-    return d.getFullYear()===yr && d.getMonth()===mo && x.done;
+  const visao = modeOverride || (document.querySelector('input[name="cfVisao"]:checked')?.value || 'realizado');
+  const cfAccId = $('cfAccount')?.value || '';
+
+  // Filtro de conta
+  const recvBase = cfAccId ? S.receivables.filter(r=>r.accountId===cfAccId) : S.receivables;
+  const payBase  = cfAccId ? S.payables.filter(p=>p.accountId===cfAccId)   : S.payables;
+
+  // inMonth: lançamentos do mês/ano, baseado no modo
+  const inMonthR = (items) => items.filter(x=>{
+    const dateStr = visao==='realizado'
+      ? (x.done ? (x.doneDate||x.dueDate) : null)   // só realizados
+      : (x.doneDate||x.dueDate);                     // realizados + agendados
+    if(!dateStr) return false;
+    const d = new Date(dateStr+'T12:00:00');
+    return d.getFullYear()===yr && d.getMonth()===mo;
   }).reduce((s,x)=>s+x.value, 0);
 
-  // Map row ids to categories or custom logic
-  const incCat=(catName)=>{
-    const cat=S.cats.income.find(c=>c.name.toLowerCase().includes(catName.toLowerCase()));
-    return cat ? inMonth(S.receivables.filter(r=>r.categoryId===cat.id)) : 0;
-  };
-  const expCat=(catName)=>{
-    const cat=S.cats.expense.find(c=>c.name.toLowerCase().includes(catName.toLowerCase()));
-    return cat ? inMonth(S.payables.filter(p=>p.categoryId===cat.id)) : 0;
+  const inMonthP = (items) => items.filter(x=>{
+    const dateStr = visao==='realizado'
+      ? (x.done ? (x.doneDate||x.dueDate) : null)
+      : (x.doneDate||x.dueDate);
+    if(!dateStr) return false;
+    const d = new Date(dateStr+'T12:00:00');
+    return d.getFullYear()===yr && d.getMonth()===mo;
+  }).reduce((s,x)=>s+x.value, 0);
+
+  // Mapeamento exato: rowId → nome da categoria (case-insensitive partial match)
+  const CF_CAT_MAP = {
+    // Receita Operacional
+    'rec_vendas':     { side:'income',  match:'venda' },
+    'rec_servicos':   { side:'income',  match:'serviço' },
+    'rec_comissoes':  { side:'income',  match:'comiss' },
+    // Custo Operacional
+    'custo_mercad':   { side:'expense', match:'mercadoria' },
+    'custo_materia':  { side:'expense', match:'matéria' },
+    'custo_insumos':  { side:'expense', match:'insumo' },
+    'custo_comissao': { side:'expense', match:'comissão de venda' },
+    'custo_frete':    { side:'expense', match:'frete' },
+    'custo_prod':     { side:'expense', match:'custo de produção' },
+    // Despesas Operacionais
+    'desp_sal':       { side:'expense', match:'salário' },
+    'desp_pro':       { side:'expense', match:'pró-labore' },
+    'desp_enc':       { side:'expense', match:'encargo' },
+    'desp_alug':      { side:'expense', match:'aluguel' },
+    'desp_cond':      { side:'expense', match:'condomínio' },
+    'desp_energia':   { side:'expense', match:'energia' },
+    'desp_agua':      { side:'expense', match:'água' },
+    'desp_internet':  { side:'expense', match:'internet' },
+    'desp_tel':       { side:'expense', match:'telefone' },
+    'desp_mkt':       { side:'expense', match:'marketing' },
+    'desp_sw':        { side:'expense', match:'software' },
+    'desp_cont':      { side:'expense', match:'honorário' },
+    'desp_mat':       { side:'expense', match:'material' },
+    'desp_manut':     { side:'expense', match:'manutenção' },
+    'desp_seg':       { side:'expense', match:'seguro' },
+    'desp_banco':     { side:'expense', match:'bancária' },
+    'desp_cartao':    { side:'expense', match:'cartão' },
+    'desp_imp':       { side:'expense', match:'imposto' },
+    'desp_transp':    { side:'expense', match:'transporte' },
+    'desp_viagem':    { side:'expense', match:'viagem' },
+    'desp_trein':     { side:'expense', match:'treinamento' },
+    'desp_ferramentas':{ side:'expense',match:'ferramenta' },
+    'desp_jur':       { side:'expense', match:'jurídica' },
+    'desp_div':       { side:'expense', match:'diversa' },
+    // Outras Receitas
+    'rec_aplic':      { side:'income',  match:'aplicação' },
+    'rec_juros':      { side:'income',  match:'juro' },
+    'rec_multas':     { side:'income',  match:'multa' },
+    'rec_div':        { side:'income',  match:'diversa' },
+    // Financiamentos
+    'fin_emp_rec':    { side:'income',  match:'empréstimo receb' },
+    'fin_finan':      { side:'income',  match:'financiamento bancário' },
+    'fin_aporte':     { side:'income',  match:'aporte' },
+    'fin_pag_emp':    { side:'expense', match:'pagamento de empréstimo' },
+    'fin_pag_fin':    { side:'expense', match:'pagamento de financiamento' },
+    'fin_distrib':    { side:'expense', match:'distribuição' },
+    // Investimentos
+    'inv_moveis':     { side:'expense', match:'móvel' },
+    'inv_comp':       { side:'expense', match:'computador' },
+    'inv_maq':        { side:'expense', match:'máquina' },
+    'inv_reform':     { side:'expense', match:'reforma' },
+    'inv_venda':      { side:'income',  match:'venda de equipamento' },
   };
 
-  if(rowId==='rec_servicos')  return incCat('serviço');
-  if(rowId==='rec_servicos2') return incCat('comiss');
-  if(rowId==='rec_vendas')    return incCat('venda');
-  if(rowId==='custo_servicos')return expCat('fornec');
-  if(rowId==='desp_admin')    return expCat('aluguel');
-  if(rowId==='desp_pessoal')  return expCat('salário');
-  if(rowId==='desp_fixas')    return expCat('imposto');
-  if(rowId==='prolabore')     return expCat('pró-labore');
-  if(rowId==='aporte')        return incCat('aporte');
-  return 0;
+  const map = CF_CAT_MAP[rowId];
+  if(!map) return 0;
+
+  if(map.side==='income'){
+    const cats = S.cats.income.filter(c=>c.name.toLowerCase().includes(map.match));
+    const items = recvBase.filter(r=>cats.some(c=>c.id===r.categoryId));
+    return inMonthR(items);
+  } else {
+    const cats = S.cats.expense.filter(c=>c.name.toLowerCase().includes(map.match));
+    const items = payBase.filter(p=>cats.some(c=>c.id===p.categoryId));
+    return inMonthP(items);
+  }
 }
 
 function cfGroupTotal(group, monthIdx, year){
@@ -4281,99 +4559,104 @@ function cfRowYearTotal(row, year){
   return MONTHS_PT.reduce((s,_,i)=>s+cfGetVal(row.id,i,year),0);
 }
 
+// Grupos colapsados por padrão — todos fechados
+S.cfCollapsed = new Set(CF_STRUCTURE.filter(r=>r.type==='group').map(r=>r.id));
+
+function toggleCfGroup(id){
+  if(S.cfCollapsed.has(id)) S.cfCollapsed.delete(id);
+  else S.cfCollapsed.add(id);
+  renderCashflow();
+}
+
 function renderCashflow(){
-  if(!$('cfYearLabel'))return;
-  $('cfYearLabel').textContent=S.cfYear;
+  if(!$('cfYearLabel')) return;
+  $('cfYearLabel').textContent = S.cfYear;
   populateCfAccounts();
 
-  const yr=S.cfYear;
-  const tdStyle=(bold,bg,color)=>`style="padding:9px 10px;text-align:right;font-size:12px;font-weight:${bold?700:400};background:${bg};color:${color||'#1e293b'};white-space:nowrap;border-bottom:1px solid #f1f5f9"`;
-  const tdLabelStyle=(indent,bold,bg)=>`style="padding:9px 10px 9px ${12+indent*16}px;font-size:12px;font-weight:${bold?700:400};background:${bg};color:#1e293b;white-space:nowrap;min-width:220px;border-bottom:1px solid #f1f5f9;position:sticky;left:0;z-index:1"`;
+  const yr = S.cfYear;
 
-  // Header
-  let html=`<thead><tr>
-    <th style="padding:9px 10px;text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;border-bottom:2px solid #e2e8f0;background:#fff;position:sticky;left:0;z-index:2">Resultado</th>
-    ${MONTHS_PT.map(m=>`<th style="padding:9px 8px;text-align:right;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;border-bottom:2px solid #e2e8f0;white-space:nowrap">${m} <span style="color:#cbd5e1;font-size:9px">⇅</span></th>`).join('')}
+  const cell = (v, bold, bg) => {
+    const color = v>0 ? '#22C55E' : v<0 ? '#ef4444' : '#94a3b8';
+    const disp  = v===0 ? '<span style="color:#d1d5db">0</span>' : fmt(v);
+    return `<td style="padding:8px 10px;text-align:right;font-size:12px;font-weight:${bold?700:400};background:${bg};color:${color};white-space:nowrap;border-bottom:1px solid #f1f5f9">${disp}</td>`;
+  };
+  const label = (text, indent, bold, bg, prefix='') =>
+    `<td style="padding:8px 10px 8px ${10+indent*20}px;font-size:12px;font-weight:${bold?700:400};background:${bg};color:#1e293b;white-space:nowrap;min-width:240px;border-bottom:1px solid #f1f5f9;position:sticky;left:0;z-index:1">${prefix}${text}</td>`;
+
+  let html = `<thead><tr style="background:#f8fafc">
+    <th style="padding:9px 10px;text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;border-bottom:2px solid #e2e8f0;background:#f8fafc;position:sticky;left:0;z-index:2;min-width:240px">Resultado</th>
+    ${MONTHS_PT.map(m=>`<th style="padding:9px 8px;text-align:right;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;border-bottom:2px solid #e2e8f0;white-space:nowrap">${m}</th>`).join('')}
     <th style="padding:9px 8px;text-align:right;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;border-bottom:2px solid #e2e8f0">${yr}</th>
-  </tr></thead>`;
-
-  html+='<tbody>';
+  </tr></thead><tbody>`;
 
   for(const row of CF_STRUCTURE){
-    const isGroup = row.type==='group';
-    const isResult = row.type==='result';
-    const isPct = row.type==='percent';
-    const bg = isGroup ? '#e8f0fe' : isResult ? '#f8fafc' : '#fff';
-    const labelIndent = isGroup ? 0 : 1;
-
-    if(isGroup){
-      // Group header row
-      const monthVals = MONTHS_PT.map((_,i)=>cfGroupTotal(row,i,yr));
-      const yearTotal = monthVals.reduce((s,v)=>s+v,0);
-      html+=`<tr>
-        <td ${tdLabelStyle(0,true,bg)}><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:14px;height:14px;background:#3b82f6;border-radius:3px;display:inline-block;flex-shrink:0"></span><span style="width:10px;text-align:center;color:#94a3b8;font-size:11px">::</span>${row.label}</span></td>
-        ${monthVals.map(v=>`<td ${tdStyle(true,bg,v>0?'#22C55E':v<0?'#ef4444':'#1e293b')}>${v===0?'0':fmt(v)}</td>`).join('')}
-        <td ${tdStyle(true,bg,yearTotal>0?'#22C55E':yearTotal<0?'#ef4444':'#1e293b')}>${yearTotal===0?'0':fmt(yearTotal)}</td>
+    if(row.type==='group'){
+      const isCollapsed = S.cfCollapsed.has(row.id);
+      const mv = MONTHS_PT.map((_,i)=>cfGroupTotal(row,i,yr));
+      const yt = mv.reduce((s,v)=>s+v,0);
+      const icon = isCollapsed ? '▶' : '▼';
+      const bg = '#eef2ff';
+      const toggleBtn = `<button onclick="event.stopPropagation();toggleCfGroup('${row.id}')" style="width:18px;height:18px;border-radius:4px;border:1px solid #c7d2fe;background:#fff;cursor:pointer;font-size:9px;color:#6366f1;display:inline-flex;align-items:center;justify-content:center;margin-right:8px;flex-shrink:0;font-family:inherit">${icon}</button>`;
+      html+=`<tr style="cursor:pointer" onclick="toggleCfGroup('${row.id}')">
+        ${label(row.label, 0, true, bg, toggleBtn)}
+        ${mv.map(v=>cell(v,true,bg)).join('')}
+        ${cell(yt,true,bg)}
       </tr>`;
-
-      // Children
-      for(const child of (row.children||[])){
-        const cv = MONTHS_PT.map((_,i)=>cfGetVal(child.id,i,yr));
-        const ct = cv.reduce((s,v)=>s+v,0);
-        html+=`<tr>
-          <td ${tdLabelStyle(1,false,'#fff')}><span style="color:${child.icon==='↑'?'#22C55E':'#ef4444'};margin-right:6px;font-size:11px">${child.icon||''}</span>${child.label}</td>
-          ${cv.map(v=>`<td ${tdStyle(false,'#fff',v>0?'#1e293b':'#1e293b')}>${v===0?'0':fmt(v)}</td>`).join('')}
-          <td ${tdStyle(false,'#fff','')}>${ct===0?'0':fmt(ct)}</td>
-        </tr>`;
+      if(!isCollapsed){
+        for(const ch of (row.children||[])){
+          const cv = MONTHS_PT.map((_,i)=>cfGetVal(ch.id,i,yr));
+          const ct = cv.reduce((s,v)=>s+v,0);
+          const ico = `<span style="color:${ch.icon==='↑'?'#22C55E':'#ef4444'};font-size:10px;font-weight:700;margin-right:6px">${ch.icon}</span>`;
+          html+=`<tr onmouseenter="this.style.background='#f8fafc'" onmouseleave="this.style.background=''">
+            ${label(ch.label, 1, false, '#fff', ico)}
+            ${cv.map(v=>cell(v,false,'#fff')).join('')}
+            ${cell(ct,false,'#fff')}
+          </tr>`;
+        }
       }
-    } else if(isPct){
-      // Percent row
-      const totInc = MONTHS_PT.map((_,i)=>cfGroupTotal(CF_STRUCTURE[0],i,yr));
+    } else if(row.type==='percent'){
+      const totInc  = MONTHS_PT.map((_,i)=>cfGroupTotal(CF_STRUCTURE[0],i,yr));
       const totCost = MONTHS_PT.map((_,i)=>cfGroupTotal(CF_STRUCTURE[1],i,yr));
-      const pcts = totInc.map((inc,i)=>{ const m=inc-totCost[i]; return inc>0?(m/inc*100).toFixed(2)+'%':'0.00%'; });
-      const totIncY=totInc.reduce((s,v)=>s+v,0), totCostY=totCost.reduce((s,v)=>s+v,0);
-      const pctY=totIncY>0?((totIncY-totCostY)/totIncY*100).toFixed(2)+'%':'0.00%';
+      const pcts = totInc.map((inc,i)=>{ const m=inc-totCost[i]; return inc>0?(m/inc*100).toFixed(1)+'%':'—'; });
+      const tiy=totInc.reduce((s,v)=>s+v,0), tcy=totCost.reduce((s,v)=>s+v,0);
+      const pctY = tiy>0?((tiy-tcy)/tiy*100).toFixed(1)+'%':'—';
       html+=`<tr>
-        <td ${tdLabelStyle(0,false,'#f8fafc')}>${row.label}</td>
-        ${pcts.map(p=>`<td ${tdStyle(false,'#f8fafc','')}>${p}</td>`).join('')}
-        <td ${tdStyle(false,'#f8fafc','')}>${pctY}</td>
+        ${label(row.label,0,false,'#f8fafc')}
+        ${pcts.map(p=>`<td style="padding:8px 10px;text-align:right;font-size:12px;color:#64748b;background:#f8fafc;border-bottom:1px solid #f1f5f9">${p}</td>`).join('')}
+        <td style="padding:8px 10px;text-align:right;font-size:12px;color:#64748b;background:#f8fafc;border-bottom:1px solid #f1f5f9">${pctY}</td>
       </tr>`;
     } else {
-      // Result row
       let vals;
+      const g = (idx) => CF_STRUCTURE[idx] || {children:[]};
       if(row.id==='margem_rs'){
-        const inc=MONTHS_PT.map((_,i)=>cfGroupTotal(CF_STRUCTURE[0],i,yr));
-        const cst=MONTHS_PT.map((_,i)=>cfGroupTotal(CF_STRUCTURE[1],i,yr));
+        const inc=MONTHS_PT.map((_,i)=>cfGroupTotal(g(0),i,yr));
+        const cst=MONTHS_PT.map((_,i)=>cfGroupTotal(g(1),i,yr));
         vals=inc.map((v,i)=>v-cst[i]);
       } else if(row.id==='res_op'){
-        const inc=MONTHS_PT.map((_,i)=>cfGroupTotal(CF_STRUCTURE[0],i,yr));
-        const cst=MONTHS_PT.map((_,i)=>cfGroupTotal(CF_STRUCTURE[1],i,yr));
-        const dop=MONTHS_PT.map((_,i)=>cfGroupTotal(CF_STRUCTURE[4],i,yr));
-        const orc=MONTHS_PT.map((_,i)=>cfGroupTotal(CF_STRUCTURE[5],i,yr));
+        const inc=MONTHS_PT.map((_,i)=>cfGroupTotal(g(0),i,yr));
+        const cst=MONTHS_PT.map((_,i)=>cfGroupTotal(g(1),i,yr));
+        const dop=MONTHS_PT.map((_,i)=>cfGroupTotal(g(4),i,yr));
+        const orc=MONTHS_PT.map((_,i)=>cfGroupTotal(g(5),i,yr));
         vals=inc.map((v,i)=>v-cst[i]-dop[i]+orc[i]);
       } else if(row.id==='var_caixa'){
-        const totals=CF_STRUCTURE.filter(r=>r.type==='group').map(g=>MONTHS_PT.map((_,i)=>cfGroupTotal(g,i,yr)));
         vals=MONTHS_PT.map((_,i)=>{
-          let inc=cfGroupTotal(CF_STRUCTURE[0],i,yr)+cfGroupTotal(CF_STRUCTURE[5],i,yr)+cfGroupTotal(CF_STRUCTURE[7],i,yr);
-          let exp=cfGroupTotal(CF_STRUCTURE[1],i,yr)+cfGroupTotal(CF_STRUCTURE[4],i,yr)+cfGroupTotal(CF_STRUCTURE[6],i,yr);
-          const fin=CF_STRUCTURE[7]; // financ
-          const finVal=cfGroupTotal(fin,i,yr);
+          const inc=cfGroupTotal(g(0),i,yr)+cfGroupTotal(g(5),i,yr)+cfGroupTotal(g(7),i,yr);
+          const exp=cfGroupTotal(g(1),i,yr)+cfGroupTotal(g(4),i,yr)+cfGroupTotal(g(6),i,yr);
           return inc-exp;
         });
-      } else {
-        vals=MONTHS_PT.map(()=>0);
-      }
+      } else { vals=MONTHS_PT.map(()=>0); }
       const yt=vals.reduce((s,v)=>s+v,0);
-      html+=`<tr>
-        <td ${tdLabelStyle(0,false,'#f8fafc')}>${row.label}</td>
-        ${vals.map(v=>`<td ${tdStyle(false,'#f8fafc',v>0?'#22C55E':v<0?'#ef4444':'')}>${v===0?'0':fmt(v)}</td>`).join('')}
-        <td ${tdStyle(false,'#f8fafc',yt>0?'#22C55E':yt<0?'#ef4444':'')}>${yt===0?'0':fmt(yt)}</td>
+      html+=`<tr style="border-top:2px solid #e2e8f0">
+        ${label(row.label,0,true,'#f8fafc')}
+        ${vals.map(v=>cell(v,true,'#f8fafc')).join('')}
+        ${cell(yt,true,'#f8fafc')}
       </tr>`;
     }
   }
 
   html+='</tbody>';
-  $('cfTable').innerHTML=html;
+  const tbl=$('cfTable');
+  if(tbl) tbl.innerHTML=html;
 }
 
 function exportCashflow(){ toast('Exportação do fluxo disponível na versão Pro','info'); }
