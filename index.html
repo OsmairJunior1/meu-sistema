@@ -1666,6 +1666,11 @@ textarea.inp{min-height:80px;resize:vertical}
             <label class="fl">Valor do recebimento <span class="req">*</span></label>
             <div class="big-value"><span>R$</span><input id="recvVal" placeholder="0,00"></div>
           </div>
+          <!-- Data do lançamento sempre visível -->
+          <div class="form-group">
+            <label class="fl">Data do lançamento</label>
+            <input type="date" id="recvDue" class="inp">
+          </div>
           <!-- Done + date -->
           <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:10px 12px">
             <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;font-weight:600">
@@ -1703,10 +1708,7 @@ textarea.inp{min-height:80px;resize:vertical}
             <button class="modal-tab" onclick="switchMTab(this,'recv',2)">Adicionais</button>
           </div>
           <div id="recv-tab-0" class="modal-tab-content active" style="display:flex">
-            <div class="form-row">
-              <div class="form-group"><label class="fl">Data competência</label><input type="date" id="recvComp" class="inp"></div>
-              <div class="form-group"><label class="fl">Data vencimento</label><input type="date" id="recvDue" class="inp"></div>
-            </div>
+            <div class="form-group"><label class="fl">Data competência</label><input type="date" id="recvComp" class="inp"></div>
             <!-- Client with + new -->
             <div class="form-group">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
@@ -1767,6 +1769,11 @@ textarea.inp{min-height:80px;resize:vertical}
             <label class="fl">Valor do pagamento <span class="req">*</span></label>
             <div class="big-value"><span>R$</span><input id="payVal" placeholder="0,00"></div>
           </div>
+          <!-- Data do lançamento sempre visível -->
+          <div class="form-group">
+            <label class="fl">Data do lançamento</label>
+            <input type="date" id="payDue" class="inp">
+          </div>
           <!-- Done + date -->
           <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:10px 12px">
             <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;font-weight:600">
@@ -1803,10 +1810,7 @@ textarea.inp{min-height:80px;resize:vertical}
             <button class="modal-tab" onclick="switchMTab(this,'pay',2)">Adicionais</button>
           </div>
           <div id="pay-tab-0" class="modal-tab-content active" style="display:flex">
-            <div class="form-row">
-              <div class="form-group"><label class="fl">Data competência</label><input type="date" id="payComp" class="inp"></div>
-              <div class="form-group"><label class="fl">Data vencimento</label><input type="date" id="payDue" class="inp"></div>
-            </div>
+            <div class="form-group"><label class="fl">Data competência</label><input type="date" id="payComp" class="inp"></div>
             <!-- Supplier with + new -->
             <div class="form-group">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
@@ -4161,55 +4165,90 @@ function renderLancamentos(){
 }
 
 function deleteLanc(id, type){
-  const list   = type==='income' ? S.receivables : S.payables;
-  const item   = list.find(x=>x.id===id);
+  const list  = type==='income' ? S.receivables : S.payables;
+  const item  = list.find(x=>x.id===id);
   if(!item) return;
 
-  const siblings = list.filter(x => x.id!==id && x.desc===item.desc && x.value===item.value);
-  const hasGroup = siblings.length > 0;
+  // Detecta grupo: itens com mesma descrição-base (remove sufixo " (N/T)")
+  const baseDesc = item.desc.replace(/\s*\(\d+\/\d+\)$/, '');
+  const isRecurring = /\(\d+\/\d+\)$/.test(item.desc);
+  const siblings = list.filter(x => x.id !== id && x.desc.replace(/\s*\(\d+\/\d+\)$/,'') === baseDesc);
+  const hasGroup = isRecurring && siblings.length > 0;
 
   if(hasGroup){
-    // Para parcelados, mostra as opções de escopo dentro do modal
-    $('confirm-delete-icon').textContent  = '🗑️';
-    $('confirm-delete-title').textContent = 'Excluir lançamento?';
-    $('confirm-delete-desc').innerHTML    = `Lançamento: <strong>${item.desc||'sem descrição'}</strong> — ${fmt(item.value)}`;
-    $('delete-scope-wrap').style.display  = 'flex';
-    document.querySelector('input[name="del-scope"][value="this"]').checked = true;
-    document.querySelectorAll('#delete-scope-wrap label').forEach(l=>l.style.borderColor='#e2e8f0');
-    document.querySelector('input[name="del-scope"][value="this"]').closest('label').style.borderColor='#ef4444';
-    document.querySelectorAll('input[name="del-scope"]').forEach(r=>{
-      r.onchange=()=>{
-        document.querySelectorAll('#delete-scope-wrap label').forEach(l=>l.style.borderColor='#e2e8f0');
-        r.closest('label').style.borderColor='#ef4444';
+    const openSiblings = siblings.filter(x=>!x.done);
+    const tipoLabel = type==='income' ? 'receita' : 'despesa';
+
+    // Modal dedicado para recorrentes — sem duplo clique, direto ao ponto
+    const existing = document.getElementById('modal-del-rec');
+    if(existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'modal-del-rec';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,42,68,.45);backdrop-filter:blur(2px);z-index:700;display:flex;align-items:center;justify-content:center;padding:20px';
+    overlay.innerHTML = `
+      <div style="background:#fff;border-radius:14px;width:100%;max-width:400px;box-shadow:0 24px 64px rgba(15,42,68,.2);overflow:hidden">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px 12px">
+          <div style="font-size:15px;font-weight:800;color:#0F2A44">Excluir ${tipoLabel} recorrente</div>
+          <button onclick="document.getElementById('modal-del-rec').remove()" style="background:none;border:none;font-size:18px;color:#94a3b8;cursor:pointer;line-height:1">✕</button>
+        </div>
+        <div style="padding:0 20px 4px;font-size:12px;color:#64748b">
+          <strong style="color:#1e293b">${baseDesc}</strong> — ${fmt(item.value)} por parcela
+        </div>
+        <div style="display:flex;flex-direction:column;gap:0;padding:12px 20px">
+          <label id="delrec-opt-this" style="display:flex;align-items:flex-start;gap:12px;padding:12px;border-radius:8px;cursor:pointer;border:1.5px solid #ef4444;background:#fff5f5;margin-bottom:8px">
+            <input type="radio" name="delrec-scope" value="this" checked style="accent-color:#ef4444;margin-top:2px;width:15px;height:15px;flex-shrink:0">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:#1e293b">Excluir apenas essa</div>
+              <div style="font-size:11px;color:#94a3b8;margin-top:2px">Remove somente a parcela selecionada</div>
+            </div>
+          </label>
+          <label id="delrec-opt-open" style="display:flex;align-items:flex-start;gap:12px;padding:12px;border-radius:8px;cursor:pointer;border:1.5px solid #e2e8f0;margin-bottom:8px">
+            <input type="radio" name="delrec-scope" value="open" style="accent-color:#ef4444;margin-top:2px;width:15px;height:15px;flex-shrink:0">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:#1e293b">Excluir todas em aberto</div>
+              <div style="font-size:11px;color:#94a3b8;margin-top:2px">Remove esta e as ${openSiblings.length} parcela(s) ainda pendentes</div>
+            </div>
+          </label>
+          <label id="delrec-opt-all" style="display:flex;align-items:flex-start;gap:12px;padding:12px;border-radius:8px;cursor:pointer;border:1.5px solid #e2e8f0">
+            <input type="radio" name="delrec-scope" value="all" style="accent-color:#ef4444;margin-top:2px;width:15px;height:15px;flex-shrink:0">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:#1e293b">Excluir todas</div>
+              <div style="font-size:11px;color:#94a3b8;margin-top:2px">Remove todas as ${siblings.length + 1} parcelas, incluindo já efetivadas</div>
+            </div>
+          </label>
+        </div>
+        <div style="display:flex;gap:10px;padding:12px 20px 18px;border-top:1px solid #f1f5f9;margin-top:4px">
+          <button onclick="document.getElementById('modal-del-rec').remove()" style="flex:1;padding:10px;border-radius:9px;border:1.5px solid #e2e8f0;background:#fff;font-size:13px;font-weight:600;color:#64748b;cursor:pointer;font-family:inherit">Cancelar</button>
+          <button id="delrec-confirm-btn" style="flex:1;padding:10px;border-radius:9px;border:none;background:#ef4444;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Excluir</button>
+        </div>
+      </div>`;
+
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
+
+    // Realçar opção selecionada ao trocar
+    overlay.querySelectorAll('input[name="delrec-scope"]').forEach(r=>{
+      r.onchange = ()=>{
+        overlay.querySelectorAll('label[id^="delrec-opt"]').forEach(l=>{ l.style.borderColor='#e2e8f0'; l.style.background=''; });
+        r.closest('label').style.borderColor='#ef4444'; r.closest('label').style.background='#fff5f5';
       };
     });
 
-    let clicks = 0;
-    $('confirm-delete-btn').textContent   = 'Sim, excluir';
-    $('confirm-delete-btn').style.background = '#ef4444';
-    $('confirm-delete-btn').onclick = async () => {
-      clicks++;
-      if(clicks===1){
-        $('confirm-delete-btn').textContent='⚠️ Confirmar exclusão';
-        $('confirm-delete-btn').style.background='#b91c1c';
-        return;
-      }
-      const scope = document.querySelector('input[name="del-scope"]:checked')?.value || 'this';
+    document.getElementById('delrec-confirm-btn').onclick = async () => {
+      const scope = overlay.querySelector('input[name="delrec-scope"]:checked')?.value || 'this';
       let idsToDelete = [id];
-      if(scope==='open')  idsToDelete = [id, ...siblings.filter(x=>!x.done).map(x=>x.id)];
-      if(scope==='all')   idsToDelete = [id, ...siblings.map(x=>x.id)];
+      if(scope==='open') idsToDelete = [id, ...openSiblings.map(x=>x.id)];
+      if(scope==='all')  idsToDelete = [id, ...siblings.map(x=>x.id)];
+      overlay.remove();
       for(const did of idsToDelete) await sbDelete('transactions', did);
       if(type==='income') S.receivables = S.receivables.filter(r=>!idsToDelete.includes(r.id));
       else                S.payables    = S.payables.filter(p=>!idsToDelete.includes(p.id));
-      S.selectedLancs?.delete(id);
-      closeModal('confirm-delete');
-      clicks=0; $('confirm-delete-btn').textContent='Sim, excluir'; $('confirm-delete-btn').style.background='#ef4444';
       toast(`${idsToDelete.length>1?idsToDelete.length+' lançamentos removidos':'Lançamento removido'}`,'info');
       renderLancamentos();
       if(S.currentPage==='dashboard') renderDashboard();
       if(typeof renderDvRecv==='function'){ renderDvRecv(); renderDvPay(); }
     };
-    $('modal-confirm-delete').style.display='flex';
   } else {
     confirmDelete({
       icon: '🗑️',
