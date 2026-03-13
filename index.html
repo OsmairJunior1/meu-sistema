@@ -1725,14 +1725,14 @@ textarea.inp{min-height:80px;resize:vertical}
             </div>
           </div>
           <div id="recv-tab-1" class="modal-tab-content">
-            <div class="toggle-wrap">
-              <p>Recorrência/Parcelamento?</p>
-              <div style="display:flex;align-items:center;gap:8px">
-                <span id="recvRecLabel" style="font-size:11px;font-weight:700;color:#94a3b8">Inativa</span>
-                <div id="recvRecTgl" class="toggle" style="background:#cbd5e1" onclick="toggleRec('recvRecTgl','recvRecLabel','recvRecFields')"><div class="toggle-knob" style="left:3px"></div></div>
+            <div style="padding:10px 0;border-bottom:1px solid var(--border)">
+              <p style="font-size:13px;font-weight:500;margin-bottom:10px">Recorrência/Parcelamento?</p>
+              <div style="display:flex;gap:8px">
+                <button id="recvRecNo"  onclick="setRec('recv','no')"  style="flex:1;padding:8px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:13px;font-weight:600;color:#64748b;cursor:pointer;font-family:inherit;transition:all .15s">✕ Não</button>
+                <button id="recvRecYes" onclick="setRec('recv','yes')" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:13px;font-weight:600;color:#64748b;cursor:pointer;font-family:inherit;transition:all .15s">✓ Sim</button>
               </div>
             </div>
-            <div id="recvRecFields" style="display:none;flex-direction:column;gap:13px">
+            <div id="recvRecFields" style="display:none;flex-direction:column;gap:13px;margin-top:4px">
               <div class="form-row">
                 <div class="form-group"><label class="fl">Período</label><select id="recvPeriod" class="inp"><option value="monthly">Mensal</option><option value="weekly">Semanal</option><option value="biweekly">Quinzenal</option><option value="yearly">Anual</option></select></div>
                 <div class="form-group"><label class="fl">Parcelas</label><input id="recvParcelas" type="number" class="inp" placeholder="Qtd..." min="1" max="120"></div>
@@ -1825,14 +1825,14 @@ textarea.inp{min-height:80px;resize:vertical}
             </div>
           </div>
           <div id="pay-tab-1" class="modal-tab-content">
-            <div class="toggle-wrap">
-              <p>Pagamento recorrente?</p>
-              <div style="display:flex;align-items:center;gap:8px">
-                <span id="payRecLabel" style="font-size:11px;font-weight:700;color:#94a3b8">Inativa</span>
-                <div id="payRecTgl" class="toggle" style="background:#cbd5e1" onclick="toggleRec('payRecTgl','payRecLabel','payRecFields')"><div class="toggle-knob" style="left:3px"></div></div>
+            <div style="padding:10px 0;border-bottom:1px solid var(--border)">
+              <p style="font-size:13px;font-weight:500;margin-bottom:10px">Pagamento recorrente?</p>
+              <div style="display:flex;gap:8px">
+                <button id="payRecNo"  onclick="setRec('pay','no')"  style="flex:1;padding:8px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:13px;font-weight:600;color:#64748b;cursor:pointer;font-family:inherit;transition:all .15s">✕ Não</button>
+                <button id="payRecYes" onclick="setRec('pay','yes')" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:13px;font-weight:600;color:#64748b;cursor:pointer;font-family:inherit;transition:all .15s">✓ Sim</button>
               </div>
             </div>
-            <div id="payRecFields" style="display:none;flex-direction:column;gap:13px">
+            <div id="payRecFields" style="display:none;flex-direction:column;gap:13px;margin-top:4px">
               <div class="form-row">
                 <div class="form-group"><label class="fl">Período</label><select id="payPeriod" class="inp"><option value="monthly">Mensal</option><option value="weekly">Semanal</option><option value="biweekly">Quinzenal</option><option value="yearly">Anual</option></select></div>
                 <div class="form-group"><label class="fl">Parcelas</label><input id="payParcelas" type="number" class="inp" placeholder="Qtd..." min="1" max="120"></div>
@@ -2352,18 +2352,14 @@ function openModal(name){
 }
 function closeModal(name){
   $('modal-'+name).style.display='none';
-  // Reset toggles de recorrência ao fechar
+  // Reset botões de recorrência ao fechar
   if(name==='receivable'){
-    const tgl=$('recvRecTgl'), lbl=$('recvRecLabel'), fields=$('recvRecFields');
-    if(tgl){ tgl.style.background='#cbd5e1'; tgl.querySelector('.toggle-knob').style.left='3px'; }
-    if(lbl){ lbl.textContent='Inativa'; lbl.style.color='#94a3b8'; }
-    if(fields) fields.style.display='none';
+    setRec('recv','no');
+    const no=$('recvRecNo'); if(no){ no.style.background='#f8fafc'; no.style.borderColor='#e2e8f0'; no.style.color='#64748b'; }
   }
   if(name==='payable'){
-    const tgl=$('payRecTgl'), lbl=$('payRecLabel'), fields=$('payRecFields');
-    if(tgl){ tgl.style.background='#cbd5e1'; tgl.querySelector('.toggle-knob').style.left='3px'; }
-    if(lbl){ lbl.textContent='Inativa'; lbl.style.color='#94a3b8'; }
-    if(fields) fields.style.display='none';
+    setRec('pay','no');
+    const no=$('payRecNo'); if(no){ no.style.background='#f8fafc'; no.style.borderColor='#e2e8f0'; no.style.color='#64748b'; }
   }
   if(!document.querySelector('.modal-overlay[style*="flex"]')) document.body.classList.remove('modal-open');
 }
@@ -2402,19 +2398,17 @@ function toggleEl(toggleId,hiddenId){
 }
 function toggleDiv(id){ const el=$(id); el.style.display=el.style.display==='none'?'flex':'none'; }
 
-function toggleRec(tglId, lblId, fieldsId){
-  const tgl=$(tglId), lbl=$(lblId), fields=$(fieldsId);
-  const isOn = tgl.style.background === '#22C55E';
-  if(isOn){
-    tgl.style.background='#cbd5e1';
-    tgl.querySelector('.toggle-knob').style.left='3px';
-    if(lbl){ lbl.textContent='Inativa'; lbl.style.color='#94a3b8'; }
-    if(fields) fields.style.display='none';
-  } else {
-    tgl.style.background='#22C55E';
-    tgl.querySelector('.toggle-knob').style.left='21px';
-    if(lbl){ lbl.textContent='Ativa'; lbl.style.color='#22C55E'; }
+function setRec(prefix, val){
+  const yesBtn=$(prefix+'RecYes'), noBtn=$(prefix+'RecNo'), fields=$(prefix+'RecFields');
+  const isYes = val==='yes';
+  if(isYes){
+    yesBtn.style.background='#22C55E'; yesBtn.style.borderColor='#22C55E'; yesBtn.style.color='#fff';
+    noBtn.style.background='#f8fafc';  noBtn.style.borderColor='#e2e8f0';  noBtn.style.color='#64748b';
     if(fields) fields.style.display='flex';
+  } else {
+    noBtn.style.background='#ef4444'; noBtn.style.borderColor='#ef4444'; noBtn.style.color='#fff';
+    yesBtn.style.background='#f8fafc'; yesBtn.style.borderColor='#e2e8f0'; yesBtn.style.color='#64748b';
+    if(fields) fields.style.display='none';
   }
 }
 
@@ -2784,8 +2778,8 @@ async function saveReceivable(keepOpen=false){
   const clientId  = $('recvClient').value;
   const ccId      = $('recvCC').value;
 
-  // Verifica se recorrência está ativa (toggle verde = #22C55E)
-  const recAtivo  = $('recvRecTgl').style.background === '#22C55E';
+  // Verifica se recorrência está ativa (botão Sim selecionado = fundo verde)
+  const recAtivo  = $('recvRecYes')?.style.background === '#22C55E' || $('recvRecYes')?.style.background === 'rgb(34, 197, 94)';
   const nParcelas = recAtivo ? (parseInt($('recvParcelas').value)||1) : 1;
   const period    = recAtivo ? ($('recvPeriod').value||'monthly') : 'monthly';
   const total     = nParcelas;
@@ -2842,8 +2836,8 @@ async function savePayable(keepOpen=false){
   const supplierId = $('paySupplier').value;
   const ccId       = $('payCC').value;
 
-  // Verifica se recorrência está ativa (toggle verde = #22C55E)
-  const recAtivo  = $('payRecTgl').style.background === '#22C55E';
+  // Verifica se recorrência está ativa (botão Sim selecionado = fundo verde)
+  const recAtivo  = $('payRecYes')?.style.background === '#22C55E' || $('payRecYes')?.style.background === 'rgb(34, 197, 94)';
   const nParcelas = recAtivo ? (parseInt($('payParcelas').value)||1) : 1;
   const period    = recAtivo ? ($('payPeriod').value||'monthly') : 'monthly';
   const total     = nParcelas;
