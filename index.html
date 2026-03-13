@@ -4759,6 +4759,8 @@ function exportRelPDF(){
   </body></html>`);
   win.document.close();
 }
+
+function renderDonut(elId,segments){
   const el=$(elId);
   if(!segments.length){ el.innerHTML='<div style="color:#94a3b8;font-size:12px;text-align:center;padding:20px">Sem dados</div>'; return; }
   const total=segments.reduce((s,x)=>s+x.value,0);
