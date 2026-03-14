@@ -5714,7 +5714,11 @@ async function deleteItem(key, id){
       if(table){
         const result = await sbDelete(table, id);
         if(!result.success){
-          toast('Erro ao excluir no banco de dados. Tente novamente.','error');
+          if(key==='accounts'){
+            showDeleteBlockedModal(nomeItem);
+          } else {
+            toast('Não foi possível excluir. Verifique se há registros vinculados.','error');
+          }
           return;
         }
       }
@@ -5732,6 +5736,50 @@ async function deleteItem(key, id){
       }
     }
   });
+}
+
+// ── MODAL: CONTA COM TRANSAÇÕES VINCULADAS ─────────────
+function showDeleteBlockedModal(nomeConta){
+  const existing = document.getElementById('modal-delete-blocked');
+  if(existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'modal-delete-blocked';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:1100;padding:20px';
+  modal.innerHTML = `
+    <div style="background:#1e293b;border-radius:16px;padding:32px 28px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.4);text-align:center">
+      <div style="font-size:40px;margin-bottom:12px">⚠️</div>
+      <div style="font-size:17px;font-weight:700;color:#f1f5f9;margin-bottom:10px">
+        Não foi possível excluir a conta
+      </div>
+      <div style="font-size:13px;color:#94a3b8;margin-bottom:8px">
+        A conta <strong style="color:#e2e8f0">${nomeConta || 'selecionada'}</strong> possui transações vinculadas e não pode ser removida.
+      </div>
+      <div style="background:#0f172a;border-radius:10px;padding:14px 16px;margin:16px 0;text-align:left">
+        <div style="font-size:12px;color:#64748b;font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Antes de excluir, verifique:</div>
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#94a3b8">
+            <span style="color:#22c55e;font-size:15px">↑</span> Lançamentos de <strong style="color:#e2e8f0">Recebimentos</strong> vinculados a esta conta
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#94a3b8">
+            <span style="color:#ef4444;font-size:15px">↓</span> Lançamentos de <strong style="color:#e2e8f0">Pagamentos</strong> vinculados a esta conta
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#94a3b8">
+            <span style="color:#3b82f6;font-size:15px">↔</span> <strong style="color:#e2e8f0">Transferências</strong> de ou para esta conta
+          </div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:#64748b;margin-bottom:20px">
+        Remova ou reatribua esses lançamentos a outra conta antes de excluir.
+      </div>
+      <button onclick="document.getElementById('modal-delete-blocked').remove()"
+        style="background:#2F80ED;color:#fff;border:none;border-radius:10px;padding:11px 32px;font-size:14px;font-weight:600;cursor:pointer;width:100%">
+        Entendi
+      </button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
 }
 
 // ── CONFIRMAÇÃO DUPLA CENTRALIZADA ─────────────────────
