@@ -5898,13 +5898,7 @@ function cfgEmpresaHTML(){
           <div class="form-group"><label class="fl">Telefone</label><input id="cfgUserTel" class="inp" placeholder="(00) 00000-0000" value="${S.user?.tel||''}"></div>
           <div class="form-group"><label class="fl">Cargo</label><input id="cfgUserCargo" class="inp" placeholder="Ex: Gestor Financeiro" value="${S.user?.cargo||''}"></div>
         </div>
-        <div class="form-group"><label class="fl">Idioma</label>
-          <select id="cfgUserIdioma" class="inp" style="max-width:200px">
-            <option value="pt-BR" selected>Português (Brasil)</option>
-            <option value="en">English</option>
-            <option value="es">Español</option>
-          </select>
-        </div>
+
       </div>
     </div>
     <!-- Save + Danger -->
@@ -5981,18 +5975,30 @@ function applyUserPhoto(dataUrl){
   av.innerHTML = `<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
 }
 
-function saveCfgEmpresa(){
+async function saveCfgEmpresa(){
   const prevEmpPhoto = S.empresa?.photo||'';
-  const prevEmail    = S.user?.email||'admin@empresa.com';
+  const prevEmail    = S.user?.email || _currentUser?.email || 'admin@empresa.com';
   S.empresa = { ...(S.empresa||{}), nome:$('cfgEmpNome').value, doc:$('cfgEmpDoc').value, tel:$('cfgEmpTel').value, nicho:$('cfgEmpNicho').value, email:$('cfgEmpEmail').value, photo: prevEmpPhoto };
   S.user    = { ...(S.user||{}), nome:$('cfgUserNome').value, email: prevEmail, tel:$('cfgUserTel').value, cargo:$('cfgUserCargo').value };
-  // Update sidebar text
+  // Update sidebar
   const un = document.querySelector('.user-name'); if(un) un.textContent = S.user.nome||'Admin';
   const ue = document.querySelector('.user-email'); if(ue) ue.textContent = prevEmail;
-  // Apply empresa photo to sidebar avatar if set
   if(S.empresa.photo) applyEmpPhoto(S.empresa.photo);
   else { const av=$('sidebarAvatar'); if(av) av.textContent=(S.user.nome||'A')[0].toUpperCase(); }
+  // Persist to Supabase
+  await sbSaveProfile({
+    emp_nome:   S.empresa.nome,
+    emp_doc:    S.empresa.doc,
+    emp_tel:    S.empresa.tel,
+    emp_nicho:  S.empresa.nicho,
+    emp_email:  S.empresa.email,
+    emp_photo:  S.empresa.photo,
+    user_nome:  S.user.nome,
+    user_tel:   S.user.tel,
+    user_cargo: S.user.cargo,
+  });
   toast('Configurações salvas ✅');
+  closeSettingsModal();
 }
 
 function cfgCategoriasHTML(){
@@ -7571,11 +7577,12 @@ async function loadData() {
   if (!_currentUser) return;
   const uid = _currentUser.id;
   try {
-    const [accRes, txRes, trRes, ctRes] = await Promise.all([
+    const [accRes, txRes, trRes, ctRes, profileRes] = await Promise.all([
       _sb.from('accounts').select('*').eq('user_id', uid),
       _sb.from('transactions').select('*').eq('user_id', uid),
       _sb.from('transfers').select('*').eq('user_id', uid),
       _sb.from('contacts').select('*').eq('user_id', uid),
+      _sb.from('profiles').select('*').eq('user_id', uid).single(),
     ]);
 
     // Contas bancárias
@@ -7632,6 +7639,16 @@ async function loadData() {
         pessoa: 'fisica'
       }));
 
+    // Perfil / Empresa
+    const p = profileRes.data;
+    if (p) {
+      S.empresa = { nome: p.emp_nome||'', doc: p.emp_doc||'', tel: p.emp_tel||'', nicho: p.emp_nicho||'', email: p.emp_email||'', photo: p.emp_photo||'' };
+      S.user    = { nome: p.user_nome||'', tel: p.user_tel||'', cargo: p.user_cargo||'', email: _currentUser.email||'' };
+      // Apply sidebar name/avatar
+      const un = document.querySelector('.user-name'); if(un) un.textContent = S.user.nome || _currentUser.email?.split('@')[0] || 'Admin';
+      if(S.empresa.photo) applyEmpPhoto(S.empresa.photo);
+    }
+
     refresh();
     populateSelects();
   } catch(e) {
@@ -7640,6 +7657,19 @@ async function loadData() {
 }
 
 // ── Helpers de sync ──
+async function sbSaveProfile(data) {
+  if (!_currentUser) return;
+  const { error } = await _sb.from('profiles')
+    .upsert({ user_id: _currentUser.id, ...data }, { onConflict: 'user_id' });
+  if (error) console.error('Erro ao salvar perfil:', error);
+}
+async function sbLoadProfile() {
+  if (!_currentUser) return null;
+  const { data, error } = await _sb.from('profiles')
+    .select('*').eq('user_id', _currentUser.id).single();
+  if (error && error.code !== 'PGRST116') console.error('Erro ao carregar perfil:', error);
+  return data || null;
+}
 async function sbInsert(table, row) {
   if (!_currentUser) return null;
   const { data, error } = await _sb.from(table).insert({ ...row, user_id: _currentUser.id }).select().single();
