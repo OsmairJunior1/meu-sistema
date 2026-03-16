@@ -724,7 +724,7 @@ textarea.inp{min-height:80px;resize:vertical}
               <button class="tab-btn" data-tab="recv" data-val="done" onclick="switchTab(this,'recv','done')">Efetuados</button>
               <button class="tab-btn" data-tab="recv" data-val="overdue" onclick="switchTab(this,'recv','overdue')">Vencidos</button>
             </div>
-            <div class="tbl-head" style="grid-template-columns:22px 70px 1fr 80px 75px 52px">
+            <div class="tbl-head" style="grid-template-columns:22px 70px 1fr 80px 95px 74px">
               <span></span>
               <span style="cursor:pointer;user-select:none" onclick="sortRecvList('date')">Data <span style="opacity:.4;font-size:10px">↕</span></span>
               <span style="cursor:pointer;user-select:none" onclick="sortRecvList('desc')">Descrição <span style="opacity:.4;font-size:10px">↕</span></span>
@@ -750,7 +750,7 @@ textarea.inp{min-height:80px;resize:vertical}
               <button class="tab-btn" data-tab="pay" data-val="done" onclick="switchTab(this,'pay','done')">Efetuados</button>
               <button class="tab-btn" data-tab="pay" data-val="overdue" onclick="switchTab(this,'pay','overdue')">Vencidos</button>
             </div>
-            <div class="tbl-head" style="grid-template-columns:22px 70px 1fr 80px 75px 52px">
+            <div class="tbl-head" style="grid-template-columns:22px 70px 1fr 80px 95px 74px">
               <span></span>
               <span style="cursor:pointer;user-select:none" onclick="sortPayList('date')">Data <span style="opacity:.4;font-size:10px">↕</span></span>
               <span style="cursor:pointer;user-select:none" onclick="sortPayList('desc')">Descrição <span style="opacity:.4;font-size:10px">↕</span></span>
@@ -3813,7 +3813,7 @@ function renderRecvList(){
     const isOver=!r.done&&r.dueDate<today();
     const dotColor=r.done?'#22C55E':isOver?'#ef4444':'#F97316';
     const canCheck=!r.done;
-    return `<div class="tbl-row" style="grid-template-columns:22px 70px 1fr 80px 75px 52px;align-items:center">
+    return `<div class="tbl-row" style="grid-template-columns:22px 70px 1fr 80px 95px 74px;align-items:center">
       <div style="display:flex;align-items:center;justify-content:center">
         ${canCheck
           ? `<input type="checkbox" onchange="toggleRecvCheck('${r.id}',${r.done})" style="width:14px;height:14px;accent-color:#22C55E;cursor:pointer">`
@@ -3846,7 +3846,7 @@ function renderPayList(){
     const isOver=!p.done&&p.dueDate<today();
     const dotColor=p.done?'#22C55E':isOver?'#ef4444':'#F97316';
     const canCheck=!p.done;
-    return `<div class="tbl-row" style="grid-template-columns:22px 70px 1fr 80px 75px 52px;align-items:center">
+    return `<div class="tbl-row" style="grid-template-columns:22px 70px 1fr 80px 95px 74px;align-items:center">
       <div style="display:flex;align-items:center;justify-content:center">
         ${canCheck
           ? `<input type="checkbox" onchange="togglePayCheck('${p.id}',${p.done})" style="width:14px;height:14px;accent-color:#ef4444;cursor:pointer">`
