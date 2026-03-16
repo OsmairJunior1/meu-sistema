@@ -71,15 +71,11 @@ a{text-decoration:none;color:inherit}
 .nav-icon{font-size:15px;flex-shrink:0;width:20px;text-align:center;opacity:.85}
 .nav-btn.active .nav-icon{opacity:1}
 .sidebar-bottom{padding:10px 10px 18px;border-top:1px solid rgba(255,255,255,.06)}
-.trial-box{background:rgba(47,128,237,.15);border:1px solid rgba(47,128,237,.25);border-radius:8px;padding:10px 11px;margin-bottom:8px;display:flex;align-items:center;gap:8px}
-.trial-box .t{font-size:11px;font-weight:700;color:#fff}
-.trial-box .s{font-size:10px;color:rgba(255,255,255,.4)}
-.trial-btn{background:var(--primary);color:#fff;border:none;border-radius:6px;padding:3px 9px;font-size:10px;font-weight:700;cursor:pointer;flex-shrink:0}
 .user-row{display:flex;align-items:center;gap:9px;padding:8px 2px}
 .avatar{width:30px;height:30px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:12px;flex-shrink:0}
 .user-name{font-size:12px;font-weight:600;color:#fff;white-space:nowrap}
 .user-email{font-size:10px;color:rgba(255,255,255,.35);white-space:nowrap}
-.collapsed .logo-text,.collapsed .nav-label,.collapsed .trial-box,.collapsed .user-name,.collapsed .user-email{display:none}
+.collapsed .logo-text,.collapsed .nav-label,.collapsed .user-name,.collapsed .user-email{display:none}
 .nav-section{font-size:9px;font-weight:700;color:rgba(255,255,255,.2);text-transform:uppercase;letter-spacing:.08em;padding:12px 10px 4px;white-space:nowrap}
 .collapsed .nav-section{display:none}
 
@@ -1904,8 +1900,8 @@ textarea.inp{min-height:80px;resize:vertical}
             </div>
           </div>
           <div id="pay-tab-2" class="modal-tab-content">
-            <div class="form-group"><label class="fl">Referência</label><input class="inp" placeholder="Referência do pagamento..."></div>
-            <div class="form-group"><label class="fl">Anotações</label><textarea class="inp" placeholder="Anotações adicionais..."></textarea></div>
+            <div class="form-group"><label class="fl">Referência</label><input id="payRef" class="inp" placeholder="Referência do pagamento..."></div>
+            <div class="form-group"><label class="fl">Anotações</label><textarea id="payNotes" class="inp" placeholder="Anotações adicionais..."></textarea></div>
           </div>
         </div>
       </div>
@@ -2414,7 +2410,7 @@ window.addEventListener('resize',()=>{
 function openModal(name){
   const t=today();
   if(name==='receivable'){ populateSelects(); $('recvDue').value=t; $('recvComp').value=t; $('recvVal').value=''; $('recvDesc').value=''; $('recvDone').checked=false; $('recvRef').value=''; $('recvNotes').value=''; }
-  if(name==='payable'){ populateSelects(); $('payDue').value=t; $('payComp').value=t; $('payVal').value=''; $('payDesc').value=''; $('payDone').checked=false; }
+  if(name==='payable'){ populateSelects(); $('payDue').value=t; $('payComp').value=t; $('payVal').value=''; $('payDesc').value=''; $('payDone').checked=false; if($('payRef')) $('payRef').value=''; if($('payNotes')) $('payNotes').value=''; }
   if(name==='transfer'){ populateSelects(); $('transDate').value=t; $('transVal').value=''; $('transDesc').value=''; }
   if(name==='account'){ $('accName').value=''; $('accBal').value=''; $('accBalDate').value=t; $('accNum').value=''; $('accAgency').value=''; $('accPixKey').value=''; }
   $('modal-'+name).style.display='flex';
@@ -2861,6 +2857,8 @@ async function saveReceivable(keepOpen=false){
   const doneDate  = done && $('recvDoneDate').value ? $('recvDoneDate').value : (done ? today() : null);
   const clientId  = $('recvClient').value;
   const ccId      = $('recvCC').value;
+  const ref       = $('recvRef')?.value?.trim() || '';
+  const notes     = $('recvNotes')?.value?.trim() || '';
 
   // Verifica se recorrência está ativa (botão Sim selecionado = fundo verde)
   const recAtivo  = $('recvRecYes')?.style.background === '#22C55E' || $('recvRecYes')?.style.background === 'rgb(34, 197, 94)';
@@ -2879,12 +2877,14 @@ async function saveReceivable(keepOpen=false){
       type:'receivable', amount:value, description:parcelDesc,
       due_date:dueDate||null, paid_date:pDoneDate||null,
       status:isDone?'paid':'pending', category:catId||null,
-      account_id:accId||null, contact_id:clientId||null
+      account_id:accId||null, contact_id:clientId||null,
+      reference:ref||null, notes:notes||null
     });
     if(!saved) continue;
 
     const r = {id:saved.id, value, done:isDone, dueDate, compDate, doneDate:pDoneDate,
-               desc:parcelDesc, categoryId:catId, accountId:accId, clientId, costCenterId:ccId};
+               desc:parcelDesc, categoryId:catId, accountId:accId, clientId, costCenterId:ccId,
+               ref, notes};
     if(isDone && accId){
       S.accounts = S.accounts.map(a=>a.id===accId?{...a,balance:a.balance+value}:a);
       await sbUpdate('accounts', accId, {balance: S.accounts.find(a=>a.id===accId)?.balance});
@@ -2919,6 +2919,8 @@ async function savePayable(keepOpen=false){
   const doneDate   = done && $('payDoneDate').value ? $('payDoneDate').value : (done ? today() : null);
   const supplierId = $('paySupplier').value;
   const ccId       = $('payCC').value;
+  const ref        = $('payRef')?.value?.trim() || '';
+  const notes      = $('payNotes')?.value?.trim() || '';
 
   // Verifica se recorrência está ativa (botão Sim selecionado = fundo verde)
   const recAtivo  = $('payRecYes')?.style.background === '#22C55E' || $('payRecYes')?.style.background === 'rgb(34, 197, 94)';
@@ -2937,12 +2939,14 @@ async function savePayable(keepOpen=false){
       type:'payable', amount:value, description:parcelDesc,
       due_date:dueDate||null, paid_date:pDoneDate||null,
       status:isDone?'paid':'pending', category:catId||null,
-      account_id:accId||null, contact_id:supplierId||null
+      account_id:accId||null, contact_id:supplierId||null,
+      reference:ref||null, notes:notes||null
     });
     if(!saved) continue;
 
     const p = {id:saved.id, value, done:isDone, dueDate, compDate, doneDate:pDoneDate,
-               desc:parcelDesc, categoryId:catId, accountId:accId, supplierId, costCenterId:ccId};
+               desc:parcelDesc, categoryId:catId, accountId:accId, supplierId, costCenterId:ccId,
+               ref, notes};
     if(isDone && accId){
       S.accounts = S.accounts.map(a=>a.id===accId?{...a,balance:a.balance-value}:a);
       await sbUpdate('accounts', accId, {balance: S.accounts.find(a=>a.id===accId)?.balance});
@@ -2957,7 +2961,7 @@ async function savePayable(keepOpen=false){
     $('payVal').value=''; $('payDesc').value=''; $('payDone').checked=false;
     $('payDoneDateWrap').style.display='none'; $('payCat').value=''; $('payAcc').value='';
     $('paySupplier').value=''; $('payCC').value=''; $('payCatInfo').style.display='none';
-    $('payParcelas').value='';
+    $('payParcelas').value=''; if($('payRef')) $('payRef').value=''; if($('payNotes')) $('payNotes').value='';
   }
   refresh();
 }
@@ -4740,6 +4744,8 @@ function openEditLanc(id, type){
       $('recvCat').value  = item.categoryId||'';
       $('recvAcc').value  = item.accountId||'';
       $('recvClient').value = item.clientId||'';
+      if($('recvRef'))   $('recvRef').value   = item.ref||'';
+      if($('recvNotes')) $('recvNotes').value = item.notes||'';
       if(item.done){
         $('recvDone').checked=true;
         $('recvDoneDateWrap').style.display='block';
@@ -4752,6 +4758,8 @@ function openEditLanc(id, type){
       $('payCat').value  = item.categoryId||'';
       $('payAcc').value  = item.accountId||'';
       $('paySupplier').value = item.supplierId||'';
+      if($('payRef'))   $('payRef').value   = item.ref||'';
+      if($('payNotes')) $('payNotes').value = item.notes||'';
       if(item.done){
         $('payDone').checked=true;
         $('payDoneDateWrap').style.display='block';
@@ -4795,12 +4803,15 @@ async function saveEditLanc(){
   const doneDate = isIncome
     ? ($('recvDoneDate').value || (done?today():null))
     : ($('payDoneDate').value  || (done?today():null));
+  const ref   = isIncome ? ($('recvRef')?.value?.trim()||'')   : ($('payRef')?.value?.trim()||'');
+  const notes = isIncome ? ($('recvNotes')?.value?.trim()||'') : ($('payNotes')?.value?.trim()||'');
 
   const changes = {
     description: desc, amount: value, category: catId,
     account_id: accId, due_date: dueDate||null,
     status: done?'paid':'pending',
     paid_date: done?(doneDate||null):null,
+    reference: ref||null, notes: notes||null,
   };
   await sbUpdate('transactions', id, changes);
 
@@ -4808,7 +4819,7 @@ async function saveEditLanc(){
   const idx  = list.findIndex(x=>x.id===id);
   if(idx>=0){
     list[idx] = {...list[idx], value, desc, categoryId:catId, accountId:accId,
-      dueDate, done, doneDate: done?doneDate:null};
+      dueDate, done, doneDate: done?doneDate:null, ref, notes};
   }
 
   S._editId=null; S._editType=null;
@@ -4978,9 +4989,9 @@ function renderRelatorios(){
   const catSel=$('relFilterCat'), accSel=$('relFilterAcc');
   if(catSel){
     const curCat=catSel.value;
-    const allCats=[...S.cats.income,...S.cats.expense];
+    const allCatsList=[...S.cats.income,...S.cats.expense];
     catSel.innerHTML='<option value="">Todas as categorias</option>'+
-      allCats.map(c=>`<option value="${c.id}"${curCat===c.id?' selected':''}>${c.name}</option>`).join('');
+      allCatsList.map(c=>`<option value="${c.id}"${curCat===c.id?' selected':''}>${c.name}</option>`).join('');
     catSel.value=curCat;
   }
   if(accSel){
@@ -5254,13 +5265,15 @@ function exportRelPDF(){
   win.document.close();
 }
 
+const DONUT_PALETTE=['#2F80ED','#22C55E','#F97316','#A855F7','#EF4444','#06B6D4','#EAB308','#EC4899','#14B8A6','#8B5CF6'];
 function renderDonut(elId,segments){
   const el=$(elId);
   if(!segments.length){ el.innerHTML='<div style="color:#94a3b8;font-size:12px;text-align:center;padding:20px">Sem dados</div>'; return; }
   const total=segments.reduce((s,x)=>s+x.value,0);
   const r=40,circ=2*Math.PI*r; let cum=0;
-  const arcs=segments.map(seg=>{ const pct=seg.value/total; const rot=cum*360-90; cum+=pct; return `<circle cx="50" cy="50" r="${r}" fill="none" stroke="${seg.color}" stroke-width="18" stroke-dasharray="${circ*pct} ${circ-circ*pct}" stroke-dashoffset="0" style="transform:rotate(${rot}deg);transform-origin:50px 50px"></circle>`; }).join('');
-  const legend=segments.map(s=>`<div class="donut-legend-item"><div class="donut-dot" style="background:${s.color}"></div><span class="donut-name">${s.label}</span><span class="donut-val">${fmt(s.value)}</span></div>`).join('');
+  const segs=segments.map((seg,i)=>({...seg,color:DONUT_PALETTE[i%DONUT_PALETTE.length]}));
+  const arcs=segs.map(seg=>{ const pct=seg.value/total; const rot=cum*360-90; cum+=pct; return `<circle cx="50" cy="50" r="${r}" fill="none" stroke="${seg.color}" stroke-width="18" stroke-dasharray="${circ*pct} ${circ-circ*pct}" stroke-dashoffset="0" style="transform:rotate(${rot}deg);transform-origin:50px 50px"></circle>`; }).join('');
+  const legend=segs.map(s=>`<div class="donut-legend-item"><div class="donut-dot" style="background:${s.color}"></div><span class="donut-name">${s.label}</span><span class="donut-val">${fmt(s.value)}</span></div>`).join('');
   el.innerHTML=`<div class="donut-wrap"><svg width="100" height="100" viewBox="0 0 100 100" style="flex-shrink:0">${arcs}<text x="50" y="46" text-anchor="middle" font-size="9" fill="#64748b">Total</text><text x="50" y="57" text-anchor="middle" font-size="8" fill="#0F2A44" font-weight="700">${fmt(total)}</text></svg><div class="donut-legend">${legend}</div></div>`;
 }
 
@@ -8303,7 +8316,8 @@ async function loadData() {
         desc: t.description, dueDate: t.due_date,
         done: t.status === 'paid', doneDate: t.paid_date,
         categoryId: t.category, accountId: t.account_id,
-        clientId: t.contact_id, costCenterId: null
+        clientId: t.contact_id, costCenterId: null,
+        ref: t.reference||'', notes: t.notes||''
       }));
 
     // Pagamentos
@@ -8314,7 +8328,8 @@ async function loadData() {
         desc: t.description, dueDate: t.due_date,
         done: t.status === 'paid', doneDate: t.paid_date,
         categoryId: t.category, accountId: t.account_id,
-        supplierId: t.contact_id, costCenterId: null
+        supplierId: t.contact_id, costCenterId: null,
+        ref: t.reference||'', notes: t.notes||''
       }));
 
     // Transferências
