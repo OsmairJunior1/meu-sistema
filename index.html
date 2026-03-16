@@ -131,6 +131,12 @@ a{text-decoration:none;color:inherit}
 .kpi-label{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
 .kpi-value{font-size:20px;font-weight:800;font-family:'SF Mono',monospace;letter-spacing:-.03em;color:var(--text);line-height:1}
 .kpi-sub{font-size:11px;color:#94a3b8;margin-top:5px}
+.kpi-hint{position:absolute;top:8px;right:10px;width:16px;height:16px;border-radius:50%;background:#e2e8f0;color:#94a3b8;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:default;transition:background .15s,color .15s}
+.kpi-hint:hover{background:#3b82f6;color:#fff}
+.kpi-hint::after{content:attr(data-tip);position:absolute;top:22px;right:0;background:#1e293b;color:#fff;font-size:11px;font-weight:500;white-space:nowrap;padding:5px 9px;border-radius:7px;pointer-events:none;opacity:0;transition:opacity .15s;z-index:10}
+.kpi-hint:hover::after{opacity:1}
+.kpi-hint-inline{position:relative;top:0;right:0;margin-left:2px;flex-shrink:0}
+.kpi-hint-inline::after{right:auto;left:50%;transform:translateX(-50%);white-space:normal;width:max-content;max-width:220px;text-align:center}
 
 /* ── GRID LAYOUTS ── */
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
@@ -264,6 +270,12 @@ textarea.inp{min-height:80px;resize:vertical}
 
 .prc-tip-btn{display:inline-flex;align-items:center;cursor:pointer;opacity:.7;transition:.15s;flex-shrink:0}
 .prc-tip-btn:hover{opacity:1}
+/* ── Tabelas — scroll horizontal em qualquer tamanho ── */
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+/* ── Lançamentos — grid dinâmico (template definido via JS) ── */
+.lanc-row{display:grid;gap:4px}
+
 /* ── RESPONSIVE ── */
 
 /* Tablet (≤900px) */
@@ -563,11 +575,7 @@ textarea.inp{min-height:80px;resize:vertical}
     </button>
   </nav>
   <div class="sidebar-bottom">
-    <div class="trial-box">
-      <span style="font-size:13px">⚡</span>
-      <div style="flex:1"><div class="t">7 dias grátis</div><div class="s">Upgrade para Pro</div></div>
-      <button class="trial-btn">Assinar</button>
-    </div>
+
     <div class="user-row" style="cursor:pointer;border-radius:8px;padding:8px 6px;transition:.15s;display:flex;align-items:center;gap:9px" onmouseenter="this.style.background='rgba(255,255,255,.07)'" onmouseleave="this.style.background='transparent'">
       <div class="avatar" id="sidebarAvatar" onclick="openSettingsModal()">A</div>
       <div style="flex:1" onclick="openSettingsModal()"><div class="user-name">Usuário</div><div class="user-email">carregando...</div></div>
@@ -643,26 +651,31 @@ textarea.inp{min-height:80px;resize:vertical}
       <!-- KPI Cards -->
       <div class="kpi-grid" style="margin-bottom:18px">
         <div class="kpi kpi-saldo" id="kpi-saldo" style="cursor:pointer" onclick="setDashView('saldo')">
+          <span class="kpi-hint" data-tip="Clique para ver detalhes" onclick="event.stopPropagation()">?</span>
           <div class="kpi-label">Saldo Atual</div>
           <div class="kpi-value" id="kBal">R$ 0,00</div>
           <div class="kpi-sub" id="kBalSub">Previsto: R$ 0,00</div>
         </div>
         <div class="kpi kpi-recebidos" id="kpi-recebidos" style="cursor:pointer" onclick="setDashView('recebidos')">
+          <span class="kpi-hint" data-tip="Clique para ver detalhes" onclick="event.stopPropagation()">?</span>
           <div class="kpi-label">Recebidos</div>
           <div class="kpi-value" style="color:#22C55E" id="kInc">R$ 0,00</div>
           <div class="kpi-sub" id="kIncSub">Pendente: R$ 0,00</div>
         </div>
         <div class="kpi kpi-despesas" id="kpi-despesas" style="cursor:pointer" onclick="setDashView('despesas')">
+          <span class="kpi-hint" data-tip="Clique para ver detalhes" onclick="event.stopPropagation()">?</span>
           <div class="kpi-label">Despesas</div>
           <div class="kpi-value" style="color:#EF4444" id="kExp">R$ 0,00</div>
           <div class="kpi-sub" id="kExpSub">Pendente: R$ 0,00</div>
         </div>
         <div class="kpi kpi-vencidos" id="kpi-vencidos" style="cursor:pointer" onclick="setDashView('vencidos')">
+          <span class="kpi-hint" data-tip="Clique para ver detalhes" onclick="event.stopPropagation()">?</span>
           <div class="kpi-label">Vencidos</div>
           <div class="kpi-value" style="color:#F97316" id="kOver">R$ 0,00</div>
           <div class="kpi-sub">A receber + a pagar</div>
         </div>
         <div class="kpi kpi-transferencias" id="kpi-transferencias" style="cursor:pointer" onclick="setDashView('transferencias')">
+          <span class="kpi-hint" data-tip="Clique para ver detalhes" onclick="event.stopPropagation()">?</span>
           <div class="kpi-label">Transferências</div>
           <div class="kpi-value" style="color:#2F80ED" id="kTrans">R$ 0,00</div>
           <div class="kpi-sub">No período</div>
@@ -675,6 +688,7 @@ textarea.inp{min-height:80px;resize:vertical}
           <div class="card">
             <div class="card-header">
               <span class="card-title">Todas as Contas</span>
+              <span class="kpi-hint kpi-hint-inline" data-tip="Clique no nome da conta para ver o extrato e fazer conciliação" onclick="event.stopPropagation()">?</span>
               <button class="btn btn-blue btn-sm" onclick="openModal('account')">+ Nova conta</button>
             </div>
             <!-- Filtro de conta -->
@@ -943,11 +957,17 @@ textarea.inp{min-height:80px;resize:vertical}
             ▼ <span id="lancFilterBadge" style="display:none;position:absolute;top:-4px;right:-4px;width:14px;height:14px;background:#ef4444;color:#fff;font-size:8px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800"></span>
           </button>
           <!-- Columns icon -->
-          <button style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:7px 11px;cursor:pointer;font-size:13px" title="Colunas">|||</button>
+          <button onclick="openLancColEditor()" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:7px 11px;cursor:pointer;font-size:13px" title="Editor de colunas">|||</button>
           <!-- Filtrar button -->
           <button onclick="renderLancamentos()" style="background:#22C55E;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Filtrar</button>
-          <!-- Export -->
-          <button onclick="exportCSV()" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:#475569">Exportar</button>
+          <!-- Export dropdown -->
+          <div style="position:relative;display:inline-block" id="lancExportWrap">
+            <button onclick="toggleLancExportMenu(event)" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:#475569;display:flex;align-items:center;gap:5px">Exportar <span style="font-size:10px">▾</span></button>
+            <div id="lancExportMenu" style="display:none;position:absolute;top:calc(100% + 4px);left:0;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:200;min-width:140px;overflow:hidden">
+              <button onclick="exportLancXLS();document.getElementById('lancExportMenu').style.display='none'" style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 16px;border:none;background:none;font-size:12px;font-weight:600;color:#475569;cursor:pointer;font-family:inherit;text-align:left" onmouseenter="this.style.background='#f8fafc'" onmouseleave="this.style.background='none'">📊 Excel (.xls)</button>
+              <button onclick="exportLancPDF();document.getElementById('lancExportMenu').style.display='none'" style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 16px;border:none;background:none;font-size:12px;font-weight:600;color:#475569;cursor:pointer;font-family:inherit;text-align:left" onmouseenter="this.style.background='#f8fafc'" onmouseleave="this.style.background='none'">📄 PDF</button>
+            </div>
+          </div>
           <!-- Spacer -->
           <div style="flex:1"></div>
           <!-- Search -->
@@ -961,20 +981,10 @@ textarea.inp{min-height:80px;resize:vertical}
 
         <!-- Table header -->
         <div class="tbl-wrap">
-        <div class="lanc-tbl-header" style="display:grid;grid-template-columns:36px 90px 1fr 150px 160px 140px 130px 110px 80px;gap:4px;padding:8px 6px;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;border-bottom:1.5px solid #e2e8f0;user-select:none;min-width:820px">
-          <div><input type="checkbox" id="lancCheckAll" onchange="toggleAllLanc(this)" style="cursor:pointer;width:14px;height:14px"></div>
-          <div style="cursor:pointer;display:flex;align-items:center;gap:3px" onclick="lancSort('rec')">Rec. <span style="font-size:9px;color:#cbd5e1">⇅</span></div>
-          <div style="cursor:pointer;display:flex;align-items:center;gap:3px" onclick="lancSort('desc')">Descrição <span style="font-size:9px;color:#cbd5e1">⇅</span></div>
-          <div style="cursor:pointer;display:flex;align-items:center;gap:3px" onclick="lancSort('client')">Cliente / Fornecedor <span style="font-size:9px;color:#cbd5e1">⇅</span></div>
-          <div style="cursor:pointer;display:flex;align-items:center;gap:3px" onclick="lancSort('account')">Conta <span style="font-size:9px;color:#cbd5e1">⇅</span></div>
-          <div style="cursor:pointer;display:flex;align-items:center;gap:3px" onclick="lancSort('cat')">Categoria <span style="font-size:9px;color:#cbd5e1">⇅</span></div>
-          <div style="cursor:pointer;display:flex;align-items:center;gap:3px" onclick="lancSort('cc')">Centro de Custo <span style="font-size:9px;color:#cbd5e1">⇅</span></div>
-          <div style="cursor:pointer;display:flex;align-items:center;gap:3px;justify-content:flex-end" onclick="lancSort('value')">Valor <span style="font-size:9px;color:#cbd5e1">⇅</span></div>
-          <div style="text-align:center">Ações</div>
-        </div>
+        <div id="lancTblHeader" class="lanc-tbl-header lanc-row" style="padding:8px 6px;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;border-bottom:1.5px solid #e2e8f0;user-select:none"></div>
 
         <!-- Table body -->
-        <div id="lancList" style="min-width:820px"></div>
+        <div id="lancList"></div>
         </div><!-- /tbl-wrap -->
 
         <!-- Footer total -->
@@ -1132,14 +1142,11 @@ textarea.inp{min-height:80px;resize:vertical}
       </div>
       <!-- Toolbar -->
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
-        <button onclick="toggleCliFilter()" style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;background:#3b82f6;border:none;cursor:pointer;position:relative" title="Filtrar">
-          <span style="color:#fff;font-size:14px">⚙</span>
-          <span id="cliFilterBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;font-size:9px;font-weight:800;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center">0</span>
-        </button>
-        <button style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;background:#fff;border:1.5px solid #e2e8f0;cursor:pointer" title="Colunas">
-          <span style="color:#3b82f6;font-size:14px;font-weight:700">≡</span>
-        </button>
-        <button style="background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:0 18px;height:36px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Filtrar</button>
+        <select id="cliStatusFilter" onchange="renderClientes()" style="height:36px;border:1.5px solid #e2e8f0;border-radius:8px;padding:0 10px;font-size:13px;font-weight:600;color:#475569;background:#fff;cursor:pointer;font-family:inherit">
+          <option value="active">Ativos</option>
+          <option value="inactive">Inativos</option>
+          <option value="all">Todos</option>
+        </select>
         <button onclick="exportContacts('clients')" style="background:#fff;color:#475569;border:1.5px solid #e2e8f0;border-radius:8px;padding:0 18px;height:36px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Exportar</button>
         <div style="flex:1"></div>
         <div style="display:flex;align-items:center;gap:6px;background:#fff;border:1.5px solid #e2e8f0;border-radius:8px;padding:0 12px;height:36px;min-width:200px">
@@ -1151,7 +1158,7 @@ textarea.inp{min-height:80px;resize:vertical}
       <!-- Table -->
       <div style="background:#fff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.04)">
         <div class="tbl-wrap">
-        <div class="contact-tbl-header" style="display:grid;grid-template-columns:1fr 220px 160px 160px 120px 40px;padding:10px 16px;background:#f8fafc;border-bottom:1px solid #e2e8f0;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;align-items:center;min-width:680px">
+        <div class="contact-tbl-header" style="display:grid;grid-template-columns:1fr 220px 160px 160px 120px 76px;padding:10px 16px;background:#f8fafc;border-bottom:1px solid #e2e8f0;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;align-items:center;min-width:680px">
           <span style="display:flex;align-items:center;gap:4px">Nome <span style="color:#cbd5e1">⇅</span></span>
           <span style="display:flex;align-items:center;gap:4px">E-mail <span style="color:#cbd5e1">⇅</span></span>
           <span style="display:flex;align-items:center;gap:4px">Telefone <span style="color:#cbd5e1">⇅</span></span>
@@ -1175,13 +1182,11 @@ textarea.inp{min-height:80px;resize:vertical}
       </div>
       <!-- Toolbar -->
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
-        <button style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;background:#3b82f6;border:none;cursor:pointer" title="Filtrar">
-          <span style="color:#fff;font-size:14px">⚙</span>
-        </button>
-        <button style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;background:#fff;border:1.5px solid #e2e8f0;cursor:pointer" title="Colunas">
-          <span style="color:#3b82f6;font-size:14px;font-weight:700">≡</span>
-        </button>
-        <button style="background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:0 18px;height:36px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Filtrar</button>
+        <select id="supStatusFilter" onchange="renderFornecedores()" style="height:36px;border:1.5px solid #e2e8f0;border-radius:8px;padding:0 10px;font-size:13px;font-weight:600;color:#475569;background:#fff;cursor:pointer;font-family:inherit">
+          <option value="active">Ativos</option>
+          <option value="inactive">Inativos</option>
+          <option value="all">Todos</option>
+        </select>
         <button onclick="exportContacts('suppliers')" style="background:#fff;color:#475569;border:1.5px solid #e2e8f0;border-radius:8px;padding:0 18px;height:36px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Exportar</button>
         <div style="flex:1"></div>
         <div style="display:flex;align-items:center;gap:6px;background:#fff;border:1.5px solid #e2e8f0;border-radius:8px;padding:0 12px;height:36px;min-width:200px">
@@ -1193,7 +1198,7 @@ textarea.inp{min-height:80px;resize:vertical}
       <!-- Table -->
       <div style="background:#fff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.04)">
         <div class="tbl-wrap">
-        <div class="contact-tbl-header" style="display:grid;grid-template-columns:1fr 220px 160px 160px 120px 40px;padding:10px 16px;background:#f8fafc;border-bottom:1px solid #e2e8f0;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;align-items:center;min-width:680px">
+        <div class="contact-tbl-header" style="display:grid;grid-template-columns:1fr 220px 160px 160px 120px 76px;padding:10px 16px;background:#f8fafc;border-bottom:1px solid #e2e8f0;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;align-items:center;min-width:680px">
           <span style="display:flex;align-items:center;gap:4px">Nome <span style="color:#cbd5e1">⇅</span></span>
           <span style="display:flex;align-items:center;gap:4px">E-mail <span style="color:#cbd5e1">⇅</span></span>
           <span style="display:flex;align-items:center;gap:4px">Telefone <span style="color:#cbd5e1">⇅</span></span>
@@ -1327,7 +1332,13 @@ textarea.inp{min-height:80px;resize:vertical}
             <!-- Sub-toolbar -->
             <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid #f1f5f9">
               <span style="font-size:13px;font-weight:700;color:#1e293b">Extrato</span>
-              <button onclick="exportExtrato()" style="background:#fff;border:1.5px solid #e2e8f0;border-radius:7px;padding:4px 14px;font-size:12px;font-weight:600;cursor:pointer;color:#475569;font-family:inherit">Exportar</button>
+              <div style="position:relative;display:inline-block" id="extratoExportWrap">
+                <button onclick="toggleExtratoExportMenu(event)" style="background:#fff;border:1.5px solid #e2e8f0;border-radius:7px;padding:4px 14px;font-size:12px;font-weight:600;cursor:pointer;color:#475569;font-family:inherit;display:flex;align-items:center;gap:5px">Exportar <span style="font-size:10px">▾</span></button>
+                <div id="extratoExportMenu" style="display:none;position:absolute;top:calc(100% + 4px);left:0;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:200;min-width:140px;overflow:hidden">
+                  <button onclick="exportExtratoXLS();document.getElementById('extratoExportMenu').style.display='none'" style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 16px;border:none;background:none;font-size:12px;font-weight:600;color:#475569;cursor:pointer;font-family:inherit;text-align:left" onmouseenter="this.style.background='#f8fafc'" onmouseleave="this.style.background='none'">📊 Excel (.xls)</button>
+                  <button onclick="exportExtratoPDF();document.getElementById('extratoExportMenu').style.display='none'" style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 16px;border:none;background:none;font-size:12px;font-weight:600;color:#475569;cursor:pointer;font-family:inherit;text-align:left" onmouseenter="this.style.background='#f8fafc'" onmouseleave="this.style.background='none'">📄 PDF</button>
+                </div>
+              </div>
               <div style="flex:1"></div>
               <button onclick="openModal('transfer')" style="display:flex;align-items:center;gap:6px;background:#fff;border:1.5px solid #e2e8f0;border-radius:8px;padding:0 14px;height:34px;font-size:12px;font-weight:600;cursor:pointer;color:#475569;font-family:inherit">↔ Nova Transferência</button>
               <button onclick="openModal('receivable')" style="background:#22C55E;color:#fff;border:none;border-radius:8px;padding:0 14px;height:34px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Novo recebimento</button>
@@ -1744,7 +1755,7 @@ textarea.inp{min-height:80px;resize:vertical}
           <!-- Account with + new -->
           <div class="form-group">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-              <label class="fl">Conta <span class="req">*</span></label>
+              <label class="fl">Conta Bancária <span class="req">*</span></label>
               <button onclick="quickNewAccount('receivable')" style="font-size:10px;color:#3b82f6;background:none;border:none;cursor:pointer;font-weight:700;padding:0">+ Conta Bancária</button>
             </div>
             <select id="recvAcc" class="inp"><option value="">Selecione a conta...</option></select>
@@ -1846,7 +1857,7 @@ textarea.inp{min-height:80px;resize:vertical}
           <!-- Account with + new -->
           <div class="form-group">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-              <label class="fl">Conta <span class="req">*</span></label>
+              <label class="fl">Conta Bancária <span class="req">*</span></label>
               <button onclick="quickNewAccount('payable')" style="font-size:10px;color:#3b82f6;background:none;border:none;cursor:pointer;font-weight:700;padding:0">+ Conta Bancária</button>
             </div>
             <select id="payAcc" class="inp"><option value="">Selecione a conta...</option></select>
@@ -2207,26 +2218,26 @@ const S = {
     {id:'e06',name:'Custo de Produção',             color:'#10B981',group:'Custo Operacional'},
     {id:'e07',name:'Salários',                      color:'#3B82F6',group:'Despesas Operacionais'},
     {id:'e08',name:'Pró-labore',                    color:'#6366F1',group:'Despesas Operacionais'},
-    {id:'e09',name:'Encargos Trabalhistas',         color:'#8B5CF6',group:'Despesas Operacionais'},
+    {id:'e09',name:'Encargos Trabalhistas',         color:'#A855F7',group:'Despesas Operacionais'},
     {id:'e10',name:'Aluguel',                       color:'#EC4899',group:'Despesas Operacionais'},
     {id:'e11',name:'Condomínio',                    color:'#F43F5E',group:'Despesas Operacionais'},
-    {id:'e12',name:'Energia Elétrica',              color:'#EAB308',group:'Despesas Operacionais'},
+    {id:'e12',name:'Energia Elétrica',              color:'#FBBF24',group:'Despesas Operacionais'},
     {id:'e13',name:'Água',                          color:'#06B6D4',group:'Despesas Operacionais'},
-    {id:'e14',name:'Internet',                      color:'#0EA5E9',group:'Despesas Operacionais'},
+    {id:'e14',name:'Internet',                      color:'#0284C7',group:'Despesas Operacionais'},
     {id:'e15',name:'Telefone',                      color:'#64748B',group:'Despesas Operacionais'},
-    {id:'e16',name:'Marketing e Publicidade',       color:'#F97316',group:'Despesas Operacionais'},
-    {id:'e17',name:'Softwares e Sistemas',          color:'#2F80ED',group:'Despesas Operacionais'},
+    {id:'e16',name:'Marketing e Publicidade',       color:'#FB7185',group:'Despesas Operacionais'},
+    {id:'e17',name:'Softwares e Sistemas',          color:'#14B8A6',group:'Despesas Operacionais'},
     {id:'e18',name:'Honorários Contábeis',          color:'#7C3AED',group:'Despesas Operacionais'},
-    {id:'e19',name:'Material de Escritório',        color:'#84CC16',group:'Despesas Operacionais'},
+    {id:'e19',name:'Material de Escritório',        color:'#92400E',group:'Despesas Operacionais'},
     {id:'e20',name:'Manutenção',                    color:'#78716C',group:'Despesas Operacionais'},
     {id:'e21',name:'Seguros',                       color:'#0F2A44',group:'Despesas Operacionais'},
-    {id:'e22',name:'Despesas Bancárias',            color:'#EF4444',group:'Despesas Operacionais'},
-    {id:'e23',name:'Taxas de Cartão',               color:'#F97316',group:'Despesas Operacionais'},
+    {id:'e22',name:'Despesas Bancárias',            color:'#BE123C',group:'Despesas Operacionais'},
+    {id:'e23',name:'Taxas de Cartão',               color:'#C2410C',group:'Despesas Operacionais'},
     {id:'e24',name:'Impostos e Tributos',           color:'#DC2626',group:'Despesas Operacionais'},
     {id:'e25',name:'Transporte e Combustível',      color:'#D97706',group:'Despesas Operacionais'},
     {id:'e26',name:'Viagens e Hospedagens',         color:'#059669',group:'Despesas Operacionais'},
-    {id:'e27',name:'Treinamentos e Cursos',         color:'#7C3AED',group:'Despesas Operacionais'},
-    {id:'e28',name:'Ferramentas e Assinaturas',     color:'#2F80ED',group:'Despesas Operacionais'},
+    {id:'e27',name:'Treinamentos e Cursos',         color:'#0891B2',group:'Despesas Operacionais'},
+    {id:'e28',name:'Ferramentas e Assinaturas',     color:'#65A30D',group:'Despesas Operacionais'},
     {id:'e29',name:'Despesas Jurídicas',            color:'#6B7280',group:'Despesas Operacionais'},
     {id:'e30',name:'Despesas Diversas',             color:'#94A3B8',group:'Despesas Operacionais'},
     {id:'e31',name:'Empréstimos Recebidos',         color:'#8B5CF6',group:'Atividades de Financiamentos'},
@@ -3005,12 +3016,12 @@ function exportContacts(type){
 async function saveClient(){
   const name=$('cliName').value.trim();
   if(!name){toast('Informe o nome','error');return;}
-  const saved = await sbInsert('contacts',{type:'client',name,email:$('cliEmail').value||null,phone:$('cliPhone').value||null,document:$('cliDoc').value||null,notes:$('cliNotes')?.value||null});
+  const saved = await sbInsert('contacts',{type:'client',name,email:$('cliEmail').value||null,phone:$('cliPhone').value||null,document:$('cliDoc').value||null,notes:$('cliNotes')?.value||null,active:true});
   if(!saved) return;
   const cli={id:saved.id,name,email:$('cliEmail').value,phone:$('cliPhone').value,doc:$('cliDoc').value,
     pessoa:$('cliPessoa').value,addr:$('cliAddr')?.value,addrNum:$('cliAddrNum')?.value,
     bairro:$('cliBairro')?.value,cep:$('cliCep')?.value,city:$('cliCity')?.value,state:$('cliState')?.value,
-    notes:$('cliNotes')?.value};
+    notes:$('cliNotes')?.value, active:true};
   S.clients.push(cli);
   toast('Cliente adicionado! 👤'); closeModal('client');
   if(S._returnModal==='receivable'){
@@ -3037,12 +3048,12 @@ async function saveClient(){
 async function saveSupplier(){
   const name=$('supName').value.trim();
   if(!name){toast('Informe o nome','error');return;}
-  const saved = await sbInsert('contacts',{type:'supplier',name,email:$('supEmail').value||null,phone:$('supPhone').value||null,document:$('supDoc').value||null,notes:$('supNotes')?.value||null});
+  const saved = await sbInsert('contacts',{type:'supplier',name,email:$('supEmail').value||null,phone:$('supPhone').value||null,document:$('supDoc').value||null,notes:$('supNotes')?.value||null,active:true});
   if(!saved) return;
   const sup={id:saved.id,name,email:$('supEmail').value,phone:$('supPhone').value,doc:$('supDoc').value,
     pessoa:$('supPessoa').value,addr:$('supAddr')?.value,addrNum:$('supAddrNum')?.value,
     bairro:$('supBairro')?.value,cep:$('supCep')?.value,city:$('supCity')?.value,state:$('supState')?.value,
-    notes:$('supNotes')?.value};
+    notes:$('supNotes')?.value, active:true};
   S.suppliers.push(sup);
   toast('Fornecedor adicionado! 📦'); closeModal('supplier');
   if(S._returnModal==='payable'){
@@ -4259,6 +4270,60 @@ S.lancTab='income';
 S.lancSortKey='dueDate';
 S.lancSortDir=1;
 S.selectedLancs=new Set();
+S.lancCols = S.lancCols || {
+  visible: ['date','desc','client','account','cat','cc','value'],
+  hidden:  ['compDate','dueDate2','ref','notes']
+};
+
+const LANC_COL_DEF = {
+  date:     { label:'Data',                 width:'82px',  sort:'rec'    },
+  desc:     { label:'Descrição',            width:'1fr',   sort:'desc'   },
+  client:   { label:'Cliente/Fornecedor',   width:'140px', sort:'client' },
+  account:  { label:'Conta',               width:'100px', sort:'account'},
+  cat:      { label:'Categoria',           width:'130px', sort:'cat'    },
+  cc:       { label:'Centro de Custo',     width:'110px', sort:'cc'     },
+  value:    { label:'Valor',               width:'105px', sort:'value', alignRight:true },
+  compDate: { label:'Data de Competência', width:'100px', sort:''       },
+  dueDate2: { label:'Data de Vencimento',  width:'100px', sort:''       },
+  ref:      { label:'Ref.',               width:'90px',  sort:''       },
+  notes:    { label:'Anotações',          width:'150px', sort:''       },
+};
+
+function getLancGridTemplate(){
+  const widths = S.lancCols.visible.map(c => LANC_COL_DEF[c]?.width || '100px');
+  return `36px ${widths.join(' ')} 126px`;
+}
+
+function renderLancHeader(){
+  const el = document.getElementById('lancTblHeader');
+  if(!el) return;
+  el.style.gridTemplateColumns = getLancGridTemplate();
+  const cells = S.lancCols.visible.map(c => {
+    const def = LANC_COL_DEF[c] || {};
+    const align = def.alignRight ? ';justify-content:flex-end' : '';
+    return def.sort
+      ? `<div style="cursor:pointer;display:flex;align-items:center;gap:3px${align}" onclick="lancSort('${def.sort}')">${def.label} <span style="font-size:9px;color:#cbd5e1">⇅</span></div>`
+      : `<div>${def.label}</div>`;
+  }).join('');
+  el.innerHTML = `<div><input type="checkbox" id="lancCheckAll" onchange="toggleAllLanc(this)" style="cursor:pointer;width:14px;height:14px"></div>${cells}<div style="text-align:center">Ações</div>`;
+}
+
+function getLancCellHtml(colId, x, cat, acc, peer, color){
+  switch(colId){
+    case 'date':     return `<span style="color:#64748b;font-size:11px">${fmtD(x.dueDate)}</span>`;
+    case 'desc':     return `<span style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${x.desc||''}">${x.desc||'—'}</span>`;
+    case 'client':   return `<span style="color:#475569;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${peer?.name||'—'}</span>`;
+    case 'account':  return `<span style="color:#475569;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${acc?.name||'—'}</span>`;
+    case 'cat':      return cat ? `<span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:${cat.color};flex-shrink:0"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cat.name}</span></span>` : '<span style="color:#94a3b8">—</span>';
+    case 'cc':       return `<span style="color:#94a3b8;font-size:11px">—</span>`;
+    case 'value':    return `<span style="font-family:monospace;font-weight:700;color:${color};display:block;text-align:right">${fmt(x.value)}</span>`;
+    case 'compDate': return `<span style="color:#64748b;font-size:11px">${x.doneDate ? fmtD(x.doneDate) : '—'}</span>`;
+    case 'dueDate2': return `<span style="color:#64748b;font-size:11px">${fmtD(x.dueDate)}</span>`;
+    case 'ref':      return `<span style="color:#64748b;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${x.ref||'—'}</span>`;
+    case 'notes':    return `<span style="color:#64748b;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${x.notes||'—'}</span>`;
+    default: return '<span style="color:#94a3b8">—</span>';
+  }
+}
 
 function setLancTab(tab){
   S.lancTab=tab;
@@ -4317,6 +4382,8 @@ function renderLancamentos(){
     return;
   }
 
+  renderLancHeader();
+  const tpl = getLancGridTemplate();
   $('lancList').innerHTML=list.map(x=>{
     const cat=allCats().find(c=>c.id===x.categoryId);
     const isOver=!x.done&&x.dueDate<today();
@@ -4324,15 +4391,10 @@ function renderLancamentos(){
     const peer=S.lancTab==='income'?S.clients.find(c=>c.id===x.clientId):S.suppliers.find(s=>s.id===x.supplierId);
     const acc=S.accounts.find(a=>a.id===x.accountId);
     const chk=S.selectedLancs.has(x.id);
-    return `<div style="display:grid;grid-template-columns:36px 90px 1fr 150px 160px 140px 130px 110px 80px;gap:4px;padding:11px 6px;border-bottom:1px solid #f8fafc;font-size:12px;align-items:center;background:${chk?'#f0f9ff':'transparent'};transition:background .1s" onmouseenter="this.style.background=this.style.background||'#fafafa'" onmouseleave="this.style.background='${chk?'#f0f9ff':'transparent'}'">
+    const cells=S.lancCols.visible.map(c=>getLancCellHtml(c,x,cat,acc,peer,color)).join('');
+    return `<div class="lanc-row" style="grid-template-columns:${tpl};padding:11px 6px;border-bottom:1px solid #f8fafc;font-size:12px;align-items:center;background:${chk?'#f0f9ff':'transparent'};transition:background .1s" onmouseenter="this.style.background=this.style.background||'#fafafa'" onmouseleave="this.style.background='${chk?'#f0f9ff':'transparent'}'">
       <div><input type="checkbox" ${chk?'checked':''} onchange="toggleLancCheck('${x.id}')" style="cursor:pointer;width:14px;height:14px;accent-color:${color}"></div>
-      <span style="color:#64748b;font-size:11px">${fmtD(x.dueDate)}</span>
-      <span style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${x.desc||''}">${x.desc||'—'}</span>
-      <span style="color:#475569;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${peer?.name||'—'}</span>
-      <span style="color:#475569;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${acc?.name||'—'}</span>
-      <span style="display:flex;align-items:center;gap:5px">${cat?`<span style="width:8px;height:8px;border-radius:50%;background:${cat.color};flex-shrink:0"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cat.name}</span>`:'<span style="color:#94a3b8">—</span>'}</span>
-      <span style="color:#94a3b8;font-size:11px">—</span>
-      <span style="font-family:monospace;font-weight:700;color:${color};text-align:right">${fmt(x.value)}</span>
+      ${cells}
       <div style="display:flex;align-items:center;justify-content:flex-end;gap:3px">
         <span title="${status==='done'?'Efetuado':status==='overdue'?'Vencido':'Em aberto'}" style="width:7px;height:7px;border-radius:50%;background:${status==='done'?'#22C55E':status==='overdue'?'#ef4444':'#F97316'};display:inline-block;flex-shrink:0"></span>
         ${status!=='done'?`<button onclick="openEfetivar('${x.id}','${x._type}')" style="background:${color}15;border:1px solid ${color}40;border-radius:6px;padding:2px 7px;cursor:pointer;font-size:10px;font-weight:700;color:${color};white-space:nowrap">${S.lancTab==='income'?'Receber':'Pagar'}</button>`:''}
@@ -4341,6 +4403,104 @@ function renderLancamentos(){
       </div>
     </div>`;
   }).join('');
+}
+
+function openLancColEditor(){
+  const existing = document.getElementById('modal-lanc-col-editor');
+  if(existing) existing.remove();
+
+  const visible = [...S.lancCols.visible];
+  const hidden  = [...S.lancCols.hidden];
+
+  const modal = document.createElement('div');
+  modal.id = 'modal-lanc-col-editor';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px';
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:16px;width:100%;max-width:700px;box-shadow:0 20px 60px rgba(0,0,0,.2);overflow:hidden;font-family:inherit">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid #e2e8f0">
+        <div style="font-size:16px;font-weight:800;color:#0F2A44">Editor de colunas</div>
+        <button onclick="document.getElementById('modal-lanc-col-editor').remove()" style="background:none;border:none;font-size:22px;color:#94a3b8;cursor:pointer;line-height:1">×</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr auto 1fr">
+        <!-- Disponíveis -->
+        <div style="border-right:1px solid #e2e8f0">
+          <div style="padding:10px 16px;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:8px">
+            <input type="checkbox" id="lcol-chk-all-hid" onclick="lcolCheckAll('hidden',this.checked)" style="width:15px;height:15px;cursor:pointer;accent-color:#0ca5a5">
+            <span id="lcol-hid-count" style="font-size:12px;color:#64748b;font-weight:600"></span>
+            <span style="font-size:13px;font-weight:700;color:#1e293b">Colunas disponíveis</span>
+          </div>
+          <div id="lcol-hidden" style="max-height:340px;overflow-y:auto"></div>
+        </div>
+        <!-- Botões -->
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:20px 16px">
+          <button onclick="lcolMove('toVisible')" style="background:#0ca5a5;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">▶ Mostrar</button>
+          <button onclick="lcolMove('toHidden')" style="background:#0ca5a5;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">◀ Ocultar</button>
+        </div>
+        <!-- Visíveis -->
+        <div style="border-left:1px solid #e2e8f0">
+          <div style="padding:10px 16px;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:8px">
+            <input type="checkbox" id="lcol-chk-all-vis" onclick="lcolCheckAll('visible',this.checked)" style="width:15px;height:15px;cursor:pointer;accent-color:#0ca5a5">
+            <span id="lcol-vis-count" style="font-size:12px;color:#64748b;font-weight:600"></span>
+            <span style="font-size:13px;font-weight:700;color:#1e293b">Colunas visíveis</span>
+          </div>
+          <div id="lcol-visible" style="max-height:340px;overflow-y:auto"></div>
+        </div>
+      </div>
+      <div style="padding:16px 24px;border-top:1px solid #e2e8f0">
+        <button onclick="saveLancCols()" style="background:#0ca5a5;color:#fff;border:none;border-radius:10px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;width:100%;font-family:inherit">Salvar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
+  modal._visible = visible;
+  modal._hidden  = hidden;
+  lcolRenderLists();
+}
+
+function lcolRenderLists(){
+  const modal = document.getElementById('modal-lanc-col-editor');
+  if(!modal) return;
+  const visible = modal._visible, hidden = modal._hidden;
+  const row = (c, list) =>
+    `<label style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #f8fafc;cursor:pointer" onmouseenter="this.style.background='#f8fafc'" onmouseleave="this.style.background=''">
+      <input type="checkbox" data-col="${c}" data-list="${list}" style="width:15px;height:15px;cursor:pointer;accent-color:#0ca5a5">
+      <span style="font-size:13px;color:#1e293b">${LANC_COL_DEF[c]?.label || c}</span>
+    </label>`;
+  document.getElementById('lcol-hidden').innerHTML  = hidden.map(c=>row(c,'hidden')).join('');
+  document.getElementById('lcol-visible').innerHTML = visible.map(c=>row(c,'visible')).join('');
+  document.getElementById('lcol-hid-count').textContent = `${hidden.length} itens`;
+  document.getElementById('lcol-vis-count').textContent = `${visible.length} itens`;
+}
+
+function lcolCheckAll(list, checked){
+  document.querySelectorAll(`#lcol-${list==='visible'?'visible':'hidden'} input[type=checkbox]`).forEach(i=>i.checked=checked);
+}
+
+function lcolMove(direction){
+  const modal = document.getElementById('modal-lanc-col-editor');
+  if(!modal) return;
+  const visible = modal._visible, hidden = modal._hidden;
+  if(direction === 'toVisible'){
+    const checked = [...document.querySelectorAll('#lcol-hidden input[type=checkbox]:checked')].map(i=>i.dataset.col);
+    checked.forEach(c => { const i=hidden.indexOf(c); if(i>-1){ hidden.splice(i,1); visible.push(c); } });
+  } else {
+    const checked = [...document.querySelectorAll('#lcol-visible input[type=checkbox]:checked')].map(i=>i.dataset.col);
+    if(visible.filter(c=>!checked.includes(c)).length===0){ toast('Mantenha pelo menos uma coluna visível','error'); return; }
+    checked.forEach(c => { const i=visible.indexOf(c); if(i>-1){ visible.splice(i,1); hidden.push(c); } });
+  }
+  document.getElementById('lcol-chk-all-vis').checked = false;
+  document.getElementById('lcol-chk-all-hid').checked = false;
+  lcolRenderLists();
+}
+
+function saveLancCols(){
+  const modal = document.getElementById('modal-lanc-col-editor');
+  if(!modal) return;
+  S.lancCols.visible = [...modal._visible];
+  S.lancCols.hidden  = [...modal._hidden];
+  modal.remove();
+  renderLancamentos();
+  toast('Colunas atualizadas! ✓','info');
 }
 
 function deleteLanc(id, type){
@@ -4666,6 +4826,127 @@ function exportCSV(){
   toast('CSV exportado! 📥');
 }
 
+function toggleLancExportMenu(e){
+  e.stopPropagation();
+  const menu=document.getElementById('lancExportMenu');
+  const open=menu.style.display!=='none';
+  menu.style.display=open?'none':'block';
+  if(!open){ const close=()=>{menu.style.display='none';document.removeEventListener('click',close);}; setTimeout(()=>document.addEventListener('click',close),0); }
+}
+
+function exportLancXLS(){
+  const list=getLancItems();
+  if(!list.length){toast('Nenhum dado para exportar','info');return;}
+  const isInc=S.lancTab==='income';
+  const colDefs={
+    date:    x=>fmtD(x.dueDate),
+    desc:    x=>x.desc||'',
+    client:  x=>isInc?(S.clients.find(c=>c.id===x.clientId)?.name||''):(S.suppliers.find(s=>s.id===x.supplierId)?.name||''),
+    account: x=>S.accounts.find(a=>a.id===x.accountId)?.name||'',
+    cat:     x=>allCats().find(c=>c.id===x.categoryId)?.name||'',
+    cc:      x=>'',
+    value:   x=>x.value,
+    compDate:x=>x.doneDate?fmtD(x.doneDate):'',
+    dueDate2:x=>fmtD(x.dueDate),
+    ref:     x=>x.ref||'',
+    notes:   x=>x.notes||'',
+  };
+  const LANC_COL_DEF_LABELS={date:'Data',desc:'Descrição',client:'Cliente/Fornecedor',account:'Conta',cat:'Categoria',cc:'Centro de Custo',value:'Valor',compDate:'Data de Competência',dueDate2:'Data de Vencimento',ref:'Ref.',notes:'Anotações'};
+  const cols=S.lancCols.visible;
+  const statusCol=['Situação'];
+  const headers=[...cols.map(c=>LANC_COL_DEF_LABELS[c]||c),'Situação'];
+  const rows=list.map(x=>{
+    const status=x.done?'Efetuado':x.dueDate<today()?'Vencido':'Em aberto';
+    return [...cols.map(c=>{const v=(colDefs[c]||(_=>''  ))(x); return typeof v==='number'?v:`"${String(v).replace(/"/g,'""')}"`;}),...[`"${status}"`]];
+  });
+  const csv=[headers.map(h=>`"${h}"`).join(';'),...rows.map(r=>r.join(';'))].join('\n');
+  const a=document.createElement('a'); a.href='data:application/vnd.ms-excel;charset=utf-8,\uFEFF'+encodeURIComponent(csv); a.download='lancamentos.xls'; a.click();
+  toast('Excel exportado! 📊');
+}
+
+function exportLancPDF(){
+  const list=getLancItems();
+  if(!list.length){toast('Nenhum dado para exportar','info');return;}
+  const emp=S.empresa?.nome||'MonBluu';
+  const cnpj=S.empresa?.doc||'';
+  const isInc=S.lancTab==='income';
+  const tabLabel=isInc?'Contas a Receber':'Contas a Pagar';
+  const df=$('lancDateFrom')?.value||'', dt=$('lancDateTo')?.value||'';
+  const periodoLabel=df&&dt?`${fmtDate(df)} a ${fmtDate(dt)}`:df?`A partir de ${fmtDate(df)}`:dt?`Até ${fmtDate(dt)}`:'Todo o período';
+  const color=isInc?'#22C55E':'#ef4444';
+  const total=list.reduce((s,x)=>s+x.value,0);
+  const totalDone=list.filter(x=>x.done).reduce((s,x)=>s+x.value,0);
+  const totalPend=list.filter(x=>!x.done).reduce((s,x)=>s+x.value,0);
+
+  const rows=list.map(x=>{
+    const cat=allCats().find(c=>c.id===x.categoryId);
+    const acc=S.accounts.find(a=>a.id===x.accountId);
+    const peer=isInc?S.clients.find(c=>c.id===x.clientId):S.suppliers.find(s=>s.id===x.supplierId);
+    const status=x.done?'Efetuado':x.dueDate<today()?'Vencido':'Em aberto';
+    const sColor=x.done?'#16a34a':x.dueDate<today()?'#ef4444':'#3b82f6';
+    const sBg=x.done?'#f0fdf4':x.dueDate<today()?'#fff1f2':'#eff6ff';
+    return `<tr>
+      <td>${fmtD(x.dueDate)}</td>
+      <td style="font-weight:500;color:#1e293b">${x.desc||'—'}</td>
+      <td style="color:#64748b">${peer?.name||'—'}</td>
+      <td>${cat?`<span style="background:${cat.color}22;color:${cat.color};padding:2px 7px;border-radius:8px;font-size:10px;font-weight:600">${cat.name}</span>`:'—'}</td>
+      <td style="color:#64748b">${acc?.name||'—'}</td>
+      <td style="text-align:center"><span style="background:${sBg};color:${sColor};padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700">${status}</span></td>
+      <td style="text-align:right;font-weight:700;color:${color};font-family:monospace">${fmt(x.value)}</td>
+    </tr>`;
+  }).join('');
+
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
+  <title>${tabLabel} — ${emp}</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Segoe UI',sans-serif;background:#f8fafc;color:#1e293b;padding:32px}
+    .header{background:linear-gradient(135deg,${isInc?'#14532d,#22C55E':'#7f1d1d,#ef4444'});color:#fff;border-radius:16px;padding:28px 32px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-start}
+    .header-left h1{font-size:20px;font-weight:800;letter-spacing:-.02em;margin-bottom:8px}
+    .header-left .emp-name{font-size:15px;font-weight:700;margin-bottom:2px}
+    .header-left .emp-cnpj{font-size:12px;opacity:.75}
+    .header-right{text-align:right;font-size:12px;opacity:.85}
+    .header-right .gen-date{margin-bottom:6px}
+    .header-right .periodo-box{background:rgba(255,255,255,.18);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700}
+    .header-right .periodo-label{font-size:10px;opacity:.75;margin-bottom:2px;text-transform:uppercase;letter-spacing:.06em}
+    .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px}
+    .kpi{border-radius:12px;padding:16px;border:1px solid #e2e8f0;background:#fff}
+    .kpi .lbl{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+    .kpi .val{font-size:18px;font-weight:800;font-family:monospace}
+    table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0}
+    th{background:#f8fafc;padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;border-bottom:2px solid #e2e8f0}
+    td{padding:9px 12px;font-size:12px;border-bottom:1px solid #f1f5f9;color:#475569}
+    tr:last-child td{border-bottom:none}
+    .section-title{font-size:15px;font-weight:800;color:#0F2A44;margin:20px 0 10px}
+    @media print{body{padding:16px}.header{break-inside:avoid}}
+  </style></head><body>
+  <div class="header">
+    <div class="header-left">
+      <h1>${isInc?'💚':'❤️'} ${tabLabel}</h1>
+      <div class="emp-name">${emp}</div>
+      ${cnpj?`<div class="emp-cnpj">CNPJ: ${cnpj}</div>`:''}
+    </div>
+    <div class="header-right">
+      <div class="gen-date">Gerado em ${new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})}</div>
+      <div class="periodo-label">Período filtrado</div>
+      <div class="periodo-box">${periodoLabel}</div>
+    </div>
+  </div>
+  <div class="kpis">
+    <div class="kpi" style="border-color:${color}44"><div class="lbl">Total</div><div class="val" style="color:${color}">${fmt(total)}</div></div>
+    <div class="kpi" style="background:#f0fdf4;border-color:#22C55E44"><div class="lbl">${isInc?'Recebido':'Pago'}</div><div class="val" style="color:#16a34a">${fmt(totalDone)}</div></div>
+    <div class="kpi" style="background:#fff7ed;border-color:#f9731644"><div class="lbl">Em aberto</div><div class="val" style="color:#f97316">${fmt(totalPend)}</div></div>
+  </div>
+  <div class="section-title">${tabLabel} &nbsp;<span style="font-size:12px;font-weight:500;color:#94a3b8">(${list.length} lançamento${list.length!==1?'s':''})</span></div>
+  <table><thead><tr>
+    <th>Data</th><th>Descrição</th><th>${isInc?'Cliente':'Fornecedor'}</th><th>Categoria</th><th>Conta</th><th style="text-align:center">Situação</th><th style="text-align:right">Valor</th>
+  </tr></thead><tbody>${rows}</tbody></table>
+  <script>window.onload=()=>{window.print();}<\/script>
+  </body></html>`);
+  win.document.close();
+}
+
 // ── RELATÓRIOS SUB-TABS ──
 S.relTab=0;
 S.cfYear=new Date().getFullYear();
@@ -4847,20 +5128,77 @@ function renderCashflowChartMonthlyFiltered(recv, pay){
 }
 
 function exportRelPDF(){
-  const emp = S.empresa?.nome || 'MonBluu';
+  const emp  = S.empresa?.nome || 'MonBluu';
+  const cnpj = S.empresa?.doc  || '';
   const fFrom = $('relFilterFrom')?.value || '';
   const fTo   = $('relFilterTo')?.value   || '';
-  const periodoLabel = fFrom&&fTo ? `${fmtDate(fFrom)} a ${fmtDate(fTo)}` : 'Todo o período';
+  const fType   = $('relFilterType')?.value   || '';
+  const fStatus = $('relFilterStatus')?.value || '';
+  const fCat    = $('relFilterCat')?.value    || '';
+  const fAcc    = $('relFilterAcc')?.value    || '';
+  const periodoLabel = fFrom&&fTo ? `${fmtDate(fFrom)} a ${fmtDate(fTo)}` : fFrom ? `A partir de ${fmtDate(fFrom)}` : fTo ? `Até ${fmtDate(fTo)}` : 'Todo o período';
 
-  // Coletar dados exibidos
-  const kpis = $('relKpiCards')?.innerHTML || '';
-  const tableHtml = $('relTable')?.innerHTML || '';
-  const donutI = document.getElementById('donutIncome');
-  const donutE = document.getElementById('donutExpense');
+  // Aplicar os mesmos filtros da tela para os KPIs
+  const inRange = (dateStr) => {
+    if(!dateStr) return true;
+    const d=dateStr.slice(0,10);
+    if(fFrom && d < fFrom) return false;
+    if(fTo   && d > fTo)   return false;
+    return true;
+  };
+  let recvF = fType==='expense' ? [] : S.receivables;
+  recvF = recvF.filter(r=>{
+    if(!inRange(r.dueDate||r.doneDate)) return false;
+    if(fCat && r.categoryId!==fCat) return false;
+    if(fAcc && r.accountId!==fAcc) return false;
+    if(fStatus==='done'    && !r.done) return false;
+    if(fStatus==='pending' && (r.done||isOverdue(r))) return false;
+    if(fStatus==='overdue' && !isOverdue(r)) return false;
+    return true;
+  });
+  let payF = fType==='income' ? [] : S.payables;
+  payF = payF.filter(p=>{
+    if(!inRange(p.dueDate||p.doneDate)) return false;
+    if(fCat && p.categoryId!==fCat) return false;
+    if(fAcc && p.accountId!==fAcc) return false;
+    if(fStatus==='done'    && !p.done) return false;
+    if(fStatus==='pending' && (p.done||isOverdue(p))) return false;
+    if(fStatus==='overdue' && !isOverdue(p)) return false;
+    return true;
+  });
+  const totalInc  = recvF.reduce((s,r)=>s+r.value,0);
+  const totalExp  = payF.reduce((s,p)=>s+p.value,0);
+  const totalDone = recvF.filter(r=>r.done).reduce((s,r)=>s+r.value,0);
+  const totalPaid = payF.filter(p=>p.done).reduce((s,p)=>s+p.value,0);
 
-  // Coletar valores KPI dos cards
-  const totalInc = S.receivables.reduce((s,r)=>s+r.value,0);
-  const totalExp = S.payables.reduce((s,p)=>s+p.value,0);
+  // Tabela de lançamentos filtrados
+  const allItems = [
+    ...recvF.map(r=>({...r,_type:'income'})),
+    ...payF.map(p=>({...p,_type:'expense'}))
+  ].sort((a,b)=>(a.dueDate||'')>(b.dueDate||'')?-1:1);
+
+  const tableRows = allItems.map(x=>{
+    const isInc = x._type==='income';
+    const cat = isInc ? S.cats.income.find(c=>c.id===x.categoryId) : S.cats.expense.find(c=>c.id===x.categoryId);
+    const acc = S.accounts.find(a=>a.id===x.accountId);
+    const statusLabel = x.done ? 'Efetivado' : isOverdue(x) ? 'Vencido' : 'Em aberto';
+    const statusColor = x.done ? '#16a34a' : isOverdue(x) ? '#ef4444' : '#3b82f6';
+    const statusBg    = x.done ? '#f0fdf4'  : isOverdue(x) ? '#fff1f2' : '#eff6ff';
+    return `<tr>
+      <td>${fmtDate(x.dueDate||x.doneDate)}</td>
+      <td style="font-weight:500;color:#1e293b">${x.desc||'—'}</td>
+      <td>${cat?`<span style="background:${cat.color}22;color:${cat.color};padding:2px 7px;border-radius:8px;font-size:10px;font-weight:600">${cat.name}</span>`:'—'}</td>
+      <td style="color:#64748b">${acc?.name||'—'}</td>
+      <td style="text-align:center"><span style="background:${statusBg};color:${statusColor};padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700">${statusLabel}</span></td>
+      <td style="text-align:right;font-weight:700;color:${isInc?'#22C55E':'#ef4444'};font-family:monospace">${isInc?'+':'-'} ${fmt(x.value)}</td>
+    </tr>`;
+  }).join('');
+
+  const tableHtml = allItems.length
+    ? `<table><thead><tr>
+        <th>Data</th><th>Descrição</th><th>Categoria</th><th>Conta</th><th style="text-align:center">Situação</th><th style="text-align:right">Valor</th>
+      </tr></thead><tbody>${tableRows}</tbody></table>`
+    : `<div style="text-align:center;padding:32px;color:#94a3b8;font-size:13px">Nenhum lançamento encontrado com os filtros aplicados.</div>`;
 
   const win = window.open('','_blank');
   win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
@@ -4868,9 +5206,14 @@ function exportRelPDF(){
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:'Segoe UI',sans-serif;background:#f8fafc;color:#1e293b;padding:32px}
-    .header{background:linear-gradient(135deg,#1e40af,#3b82f6);color:#fff;border-radius:16px;padding:28px 32px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:center}
-    .header h1{font-size:22px;font-weight:800;letter-spacing:-.02em}
-    .header p{font-size:13px;opacity:.8;margin-top:4px}
+    .header{background:linear-gradient(135deg,#1e40af,#3b82f6);color:#fff;border-radius:16px;padding:28px 32px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-start}
+    .header-left h1{font-size:22px;font-weight:800;letter-spacing:-.02em;margin-bottom:8px}
+    .header-left .emp-name{font-size:16px;font-weight:700;margin-bottom:2px}
+    .header-left .emp-cnpj{font-size:12px;opacity:.75}
+    .header-right{text-align:right;font-size:12px;opacity:.85}
+    .header-right .gen-date{margin-bottom:6px}
+    .header-right .periodo-box{background:rgba(255,255,255,.18);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700}
+    .header-right .periodo-label{font-size:10px;opacity:.75;margin-bottom:2px;text-transform:uppercase;letter-spacing:.06em}
     .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px}
     .kpi{border-radius:12px;padding:16px;border:1px solid #e2e8f0;background:#fff}
     .kpi .ico{font-size:20px;margin-bottom:6px}
@@ -4878,28 +5221,32 @@ function exportRelPDF(){
     .kpi .val{font-size:16px;font-weight:800;font-family:monospace}
     table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0}
     th{background:#f8fafc;padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;border-bottom:2px solid #e2e8f0}
-    td{padding:9px 12px;font-size:12px;border-bottom:1px solid #f1f5f9}
+    td{padding:9px 12px;font-size:12px;border-bottom:1px solid #f1f5f9;color:#475569}
     tr:last-child td{border-bottom:none}
     .section-title{font-size:15px;font-weight:800;color:#0F2A44;margin:20px 0 10px}
-    .badge{padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
     .inc{color:#22C55E}.exp{color:#ef4444}
     @media print{body{padding:16px}.header{break-inside:avoid}}
   </style></head><body>
   <div class="header">
-    <div>
+    <div class="header-left">
       <h1>📊 Relatório Financeiro</h1>
-      <p>${emp} &nbsp;·&nbsp; ${periodoLabel}</p>
+      <div class="emp-name">${emp}</div>
+      ${cnpj ? `<div class="emp-cnpj">CNPJ: ${cnpj}</div>` : ''}
     </div>
-    <div style="text-align:right;font-size:12px;opacity:.8">Gerado em ${new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})}</div>
+    <div class="header-right">
+      <div class="gen-date">Gerado em ${new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})}</div>
+      <div class="periodo-label">Período filtrado</div>
+      <div class="periodo-box">${periodoLabel}</div>
+    </div>
   </div>
   <div class="kpis">
     <div class="kpi" style="background:#f0fdf4;border-color:#22C55E44"><div class="ico">💚</div><div class="lbl">Receitas</div><div class="val inc">${fmt(totalInc)}</div></div>
     <div class="kpi" style="background:#fff1f2;border-color:#ef444444"><div class="ico">❤️</div><div class="lbl">Despesas</div><div class="val exp">${fmt(totalExp)}</div></div>
     <div class="kpi" style="background:${totalInc-totalExp>=0?'#f0fdf4':'#fff1f2'};border-color:${totalInc-totalExp>=0?'#22C55E44':'#ef444444'}"><div class="ico">📊</div><div class="lbl">Resultado</div><div class="val" style="color:${totalInc-totalExp>=0?'#22C55E':'#ef4444'}">${fmt(totalInc-totalExp)}</div></div>
-    <div class="kpi" style="background:#eff6ff;border-color:#3b82f644"><div class="ico">✅</div><div class="lbl">Recebido</div><div class="val" style="color:#3b82f6">${fmt(S.receivables.filter(r=>r.done).reduce((s,r)=>s+r.value,0))}</div></div>
-    <div class="kpi" style="background:#faf5ff;border-color:#8b5cf644"><div class="ico">💸</div><div class="lbl">Pago</div><div class="val" style="color:#8b5cf6">${fmt(S.payables.filter(p=>p.done).reduce((s,p)=>s+p.value,0))}</div></div>
+    <div class="kpi" style="background:#eff6ff;border-color:#3b82f644"><div class="ico">✅</div><div class="lbl">Recebido</div><div class="val" style="color:#3b82f6">${fmt(totalDone)}</div></div>
+    <div class="kpi" style="background:#faf5ff;border-color:#8b5cf644"><div class="ico">💸</div><div class="lbl">Pago</div><div class="val" style="color:#8b5cf6">${fmt(totalPaid)}</div></div>
   </div>
-  <div class="section-title">Lançamentos do Período</div>
+  <div class="section-title">Lançamentos do Período &nbsp;<span style="font-size:12px;font-weight:500;color:#94a3b8">(${allItems.length} lançamento${allItems.length!==1?'s':''})</span></div>
   ${tableHtml}
   <div style="margin-top:24px;text-align:center;font-size:11px;color:#94a3b8">Relatório gerado pelo MonBluu — ${new Date().toLocaleDateString('pt-BR')}</div>
   <script>window.onload=()=>window.print()<\/script>
@@ -4912,7 +5259,7 @@ function renderDonut(elId,segments){
   if(!segments.length){ el.innerHTML='<div style="color:#94a3b8;font-size:12px;text-align:center;padding:20px">Sem dados</div>'; return; }
   const total=segments.reduce((s,x)=>s+x.value,0);
   const r=40,circ=2*Math.PI*r; let cum=0;
-  const arcs=segments.map(seg=>{ const pct=seg.value/total; const rot=cum*360; cum+=pct; return `<circle cx="50" cy="50" r="${r}" fill="none" stroke="${seg.color}" stroke-width="18" stroke-dasharray="${circ*pct} ${circ}" stroke-dashoffset="${circ*0.25}" style="transform:rotate(${rot}deg);transform-origin:50px 50px"></circle>`; }).join('');
+  const arcs=segments.map(seg=>{ const pct=seg.value/total; const rot=cum*360-90; cum+=pct; return `<circle cx="50" cy="50" r="${r}" fill="none" stroke="${seg.color}" stroke-width="18" stroke-dasharray="${circ*pct} ${circ-circ*pct}" stroke-dashoffset="0" style="transform:rotate(${rot}deg);transform-origin:50px 50px"></circle>`; }).join('');
   const legend=segments.map(s=>`<div class="donut-legend-item"><div class="donut-dot" style="background:${s.color}"></div><span class="donut-name">${s.label}</span><span class="donut-val">${fmt(s.value)}</span></div>`).join('');
   el.innerHTML=`<div class="donut-wrap"><svg width="100" height="100" viewBox="0 0 100 100" style="flex-shrink:0">${arcs}<text x="50" y="46" text-anchor="middle" font-size="9" fill="#64748b">Total</text><text x="50" y="57" text-anchor="middle" font-size="8" fill="#0F2A44" font-weight="700">${fmt(total)}</text></svg><div class="donut-legend">${legend}</div></div>`;
 }
@@ -5219,25 +5566,40 @@ function exportCashflow(){ toast('Exportação do fluxo disponível na versão P
 function contactRow(x, accentColor, deleteType){
   const pessoa = x.pessoa==='juridica' ? 'Pessoa Jurídica' : 'Pessoa Física';
   const badgeColor = x.pessoa==='juridica' ? {bg:'#fdf4ff',text:'#7e22ce',border:'#e9d5ff'} : {bg:'#eff6ff',text:'#1d4ed8',border:'#bfdbfe'};
-  return `<div style="display:grid;grid-template-columns:1fr 220px 160px 160px 120px 40px;padding:12px 16px;border-bottom:1px solid #f1f5f9;align-items:center;font-size:13px;transition:background .1s" onmouseenter="this.style.background='#f8fafc'" onmouseleave="this.style.background=''">
+  const isActive = x.active !== false;
+  const avatarBg = isActive ? accentColor+'18' : '#94a3b818';
+  const avatarColor = isActive ? accentColor : '#94a3b8';
+  const nameColor = isActive ? '#1e293b' : '#94a3b8';
+  const inactiveBadge = !isActive ? `<span style="background:#f1f5f9;color:#94a3b8;border:1px solid #e2e8f0;border-radius:20px;padding:2px 7px;font-size:9px;font-weight:700;margin-left:6px;vertical-align:middle">Inativo</span>` : '';
+  const toggleTitle = isActive ? 'Inativar' : 'Ativar';
+  const toggleIcon  = isActive ? '⏸' : '▶';
+  const toggleColor = isActive ? '#f59e0b' : '#22C55E';
+  return `<div style="display:grid;grid-template-columns:1fr 220px 160px 160px 120px 76px;padding:12px 16px;border-bottom:1px solid #f1f5f9;align-items:center;font-size:13px;transition:background .1s;opacity:${isActive?1:.7}" onmouseenter="this.style.background='#f8fafc'" onmouseleave="this.style.background=''">
     <div style="display:flex;align-items:center;gap:10px">
-      <div style="width:34px;height:34px;border-radius:50%;background:${accentColor}18;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:${accentColor};flex-shrink:0">${(x.name||'?')[0].toUpperCase()}</div>
-      <div><div style="font-weight:600;color:#1e293b">${x.name}</div>${x.doc?`<div style="font-size:11px;color:#94a3b8">${x.doc}</div>`:''}</div>
+      <div style="width:34px;height:34px;border-radius:50%;background:${avatarBg};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:${avatarColor};flex-shrink:0">${(x.name||'?')[0].toUpperCase()}</div>
+      <div><div style="font-weight:600;color:${nameColor}">${x.name}${inactiveBadge}</div>${x.doc?`<div style="font-size:11px;color:#94a3b8">${x.doc}</div>`:''}</div>
     </div>
     <span style="color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${x.email||'—'}</span>
     <span style="color:#64748b">${x.phone||'—'}</span>
     <span style="color:#64748b;font-size:11px">${x.doc||'—'}</span>
     <span style="background:${badgeColor.bg};color:${badgeColor.text};border:1px solid ${badgeColor.border};border-radius:20px;padding:3px 10px;font-size:10px;font-weight:700;white-space:nowrap;display:inline-block">${pessoa}</span>
-    <button onclick="deleteItem('${deleteType}','${x.id}')" style="background:none;border:none;cursor:pointer;color:#cbd5e1;font-size:15px;padding:4px;border-radius:6px;transition:.1s" onmouseenter="this.style.color='#ef4444'" onmouseleave="this.style.color='#cbd5e1'" title="Excluir">🗑</button>
+    <div style="display:flex;align-items:center;gap:4px">
+      <button onclick="toggleContactActive('${deleteType}','${x.id}')" style="background:none;border:none;cursor:pointer;color:${toggleColor};font-size:13px;padding:4px;border-radius:6px;transition:.1s" title="${toggleTitle}">${toggleIcon}</button>
+      <button onclick="deleteContact('${deleteType}','${x.id}')" style="background:none;border:none;cursor:pointer;color:#cbd5e1;font-size:15px;padding:4px;border-radius:6px;transition:.1s" onmouseenter="this.style.color='#ef4444'" onmouseleave="this.style.color='#cbd5e1'" title="Excluir">🗑</button>
+    </div>
   </div>`;
 }
 
 function renderClientes(){
   const search = ($('cliSearch')||{value:''}).value.toLowerCase();
+  const statusFilter = $('cliStatusFilter')?.value || 'active';
   let list = S.clients;
+  if(statusFilter === 'active')   list = list.filter(c => c.active !== false);
+  if(statusFilter === 'inactive') list = list.filter(c => c.active === false);
   if(search) list = list.filter(c=>(c.name||'').toLowerCase().includes(search)||(c.email||'').toLowerCase().includes(search)||(c.doc||'').includes(search));
   if(!list.length){
-    $('clientsList').innerHTML=`<div style="padding:60px;text-align:center;color:#94a3b8"><div style="font-size:48px;margin-bottom:12px;opacity:.3">📭</div><div style="font-size:14px;font-weight:600">Não há dados</div></div>`;
+    const msg = statusFilter === 'inactive' ? 'Nenhum cliente inativo' : 'Não há dados';
+    $('clientsList').innerHTML=`<div style="padding:60px;text-align:center;color:#94a3b8"><div style="font-size:48px;margin-bottom:12px;opacity:.3">📭</div><div style="font-size:14px;font-weight:600">${msg}</div></div>`;
     return;
   }
   $('clientsList').innerHTML = list.map(c=>contactRow(c,'#2F80ED','clients')).join('');
@@ -5245,10 +5607,14 @@ function renderClientes(){
 
 function renderFornecedores(){
   const search = ($('supSearch')||{value:''}).value.toLowerCase();
+  const statusFilter = $('supStatusFilter')?.value || 'active';
   let list = S.suppliers;
+  if(statusFilter === 'active')   list = list.filter(s => s.active !== false);
+  if(statusFilter === 'inactive') list = list.filter(s => s.active === false);
   if(search) list = list.filter(s=>(s.name||'').toLowerCase().includes(search)||(s.email||'').toLowerCase().includes(search)||(s.doc||'').includes(search));
   if(!list.length){
-    $('suppliersList').innerHTML=`<div style="padding:60px;text-align:center;color:#94a3b8"><div style="font-size:48px;margin-bottom:12px;opacity:.3">📭</div><div style="font-size:14px;font-weight:600">Não há dados</div></div>`;
+    const msg = statusFilter === 'inactive' ? 'Nenhum fornecedor inativo' : 'Não há dados';
+    $('suppliersList').innerHTML=`<div style="padding:60px;text-align:center;color:#94a3b8"><div style="font-size:48px;margin-bottom:12px;opacity:.3">📭</div><div style="font-size:14px;font-weight:600">${msg}</div></div>`;
     return;
   }
   $('suppliersList').innerHTML = list.map(s=>contactRow(s,'#2F80ED','suppliers')).join('');
@@ -5511,20 +5877,140 @@ function renderExtratoTable(acc){
     : rows[0] + `<div style="padding:48px;text-align:center;color:#94a3b8"><div style="font-size:36px;margin-bottom:8px;opacity:.3">📄</div><div style="font-size:13px">Nenhuma movimentação neste mês</div></div>`;
 }
 
-function exportExtrato(){
-  const acc=S.accounts.find(a=>a.id===S.extratoAccountId);
-  if(!acc){toast('Nenhuma conta selecionada','error');return;}
-  const rows=[['Data','Nome','Descrição','Entrada','Saída','Saldo']];
-  // simplified: just receivables and payables
+function toggleExtratoExportMenu(e){
+  e.stopPropagation();
+  const menu=document.getElementById('extratoExportMenu');
+  const open=menu.style.display!=='none';
+  menu.style.display=open?'none':'block';
+  if(!open){ const close=()=>{menu.style.display='none';document.removeEventListener('click',close);}; setTimeout(()=>document.addEventListener('click',close),0); }
+}
+
+function _getExtratoEntries(acc){
   const yr=S.extratoYear, mo=S.extratoMonth;
+  const entries=[];
+  const prevDate=new Date(yr,mo,0);
+  entries.push({date:prevDate,label:'Saldo Anterior',desc:'Saldo Anterior',entrada:0,saida:0,isSaldo:true});
   S.receivables.filter(r=>r.accountId===acc.id&&r.done).forEach(r=>{
     const d=new Date((r.doneDate||r.dueDate||today())+'T12:00:00');
-    if(d.getFullYear()===yr&&d.getMonth()===mo)
-      rows.push([fmtD(r.doneDate||r.dueDate),r.desc||'Recebimento','',fmt(r.value),'','']);
+    if(d.getFullYear()===yr&&d.getMonth()===mo) entries.push({date:d,label:r.desc||'Recebimento',desc:'',entrada:r.value,saida:0});
   });
-  const csv=rows.map(r=>r.join(';')).join('\n');
-  const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv); a.download='extrato.csv'; a.click();
-  toast('Extrato exportado! 📥');
+  S.payables.filter(p=>p.accountId===acc.id&&p.done).forEach(p=>{
+    const d=new Date((p.doneDate||p.dueDate||today())+'T12:00:00');
+    if(d.getFullYear()===yr&&d.getMonth()===mo) entries.push({date:d,label:p.desc||'Pagamento',desc:'',entrada:0,saida:p.value});
+  });
+  S.transfers.forEach(t=>{
+    const d=new Date((t.date||today())+'T12:00:00');
+    if(d.getFullYear()!==yr||d.getMonth()!==mo) return;
+    if(t.fromId===acc.id) entries.push({date:d,label:'Transferência',desc:t.desc||'',entrada:0,saida:t.value});
+    if(t.toId===acc.id)   entries.push({date:d,label:'Transferência',desc:t.desc||'',entrada:t.value,saida:0});
+  });
+  entries.sort((a,b)=>a.date-b.date);
+  let bal=acc.balance;
+  S.receivables.filter(r=>r.accountId===acc.id&&r.done).forEach(r=>{
+    const d=new Date((r.doneDate||r.dueDate||today())+'T12:00:00');
+    if(d.getFullYear()>yr||(d.getFullYear()===yr&&d.getMonth()>mo)) bal-=r.value;
+  });
+  S.payables.filter(p=>p.accountId===acc.id&&p.done).forEach(p=>{
+    const d=new Date((p.doneDate||p.dueDate||today())+'T12:00:00');
+    if(d.getFullYear()>yr||(d.getFullYear()===yr&&d.getMonth()>mo)) bal+=p.value;
+  });
+  entries.filter(e=>!e.isSaldo).forEach(e=>{bal-=e.entrada;bal+=e.saida;});
+  return {entries,bal};
+}
+
+function exportExtrato(){ exportExtratoXLS(); }
+
+function exportExtratoXLS(){
+  const acc=S.accounts.find(a=>a.id===S.extratoAccountId);
+  if(!acc){toast('Nenhuma conta selecionada','error');return;}
+  const {entries,bal:startBal}=_getExtratoEntries(acc);
+  let running=startBal;
+  const rows=[['Data','Nome','Descrição','Entrada','Saída','Saldo']];
+  entries.forEach(e=>{
+    if(e.isSaldo){ rows.push([e.date.toLocaleDateString('pt-BR'),'','Saldo Anterior','','',running]); return; }
+    running+=e.entrada-e.saida;
+    rows.push([e.date.toLocaleDateString('pt-BR'),e.label,e.desc||'',e.entrada||'',e.saida||'',running]);
+  });
+  const csv=rows.map(r=>r.map(v=>typeof v==='number'?v:`"${String(v).replace(/"/g,'""')}"`).join(';')).join('\n');
+  const a=document.createElement('a'); a.href='data:application/vnd.ms-excel;charset=utf-8,\uFEFF'+encodeURIComponent(csv); a.download='extrato.xls'; a.click();
+  toast('Excel exportado! 📊');
+}
+
+function exportExtratoPDF(){
+  const acc=S.accounts.find(a=>a.id===S.extratoAccountId);
+  if(!acc){toast('Nenhuma conta selecionada','error');return;}
+  const emp=S.empresa?.nome||'MonBluu';
+  const cnpj=S.empresa?.doc||'';
+  const yr=S.extratoYear, mo=S.extratoMonth;
+  const mesLabel=new Date(yr,mo,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+  const {entries,bal:startBal}=_getExtratoEntries(acc);
+  let running=startBal;
+  const tableRows=entries.map(e=>{
+    if(e.isSaldo){
+      return `<tr style="background:#f8fafc"><td>${e.date.toLocaleDateString('pt-BR')}</td><td colspan="2" style="color:#94a3b8;font-style:italic">Saldo Anterior</td><td></td><td></td><td style="text-align:right;font-weight:700;color:#475569">${fmt(running)}</td></tr>`;
+    }
+    running+=e.entrada-e.saida;
+    const balColor=running>=0?'#1e293b':'#ef4444';
+    return `<tr>
+      <td>${e.date.toLocaleDateString('pt-BR')}</td>
+      <td style="font-weight:500;color:#1e293b">${e.label}</td>
+      <td style="color:#64748b">${e.desc||'—'}</td>
+      <td style="text-align:right;color:#22C55E;font-family:monospace;font-weight:600">${e.entrada>0?fmt(e.entrada):''}</td>
+      <td style="text-align:right;color:#ef4444;font-family:monospace;font-weight:600">${e.saida>0?fmt(e.saida):''}</td>
+      <td style="text-align:right;font-family:monospace;font-weight:700;color:${balColor}">${fmt(running)}</td>
+    </tr>`;
+  }).join('');
+  const totalEntradas=entries.filter(e=>!e.isSaldo).reduce((s,e)=>s+e.entrada,0);
+  const totalSaidas=entries.filter(e=>!e.isSaldo).reduce((s,e)=>s+e.saida,0);
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
+  <title>Extrato — ${acc.name}</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Segoe UI',sans-serif;background:#f8fafc;color:#1e293b;padding:32px}
+    .header{background:linear-gradient(135deg,#1e40af,#3b82f6);color:#fff;border-radius:16px;padding:28px 32px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-start}
+    .header-left h1{font-size:20px;font-weight:800;letter-spacing:-.02em;margin-bottom:8px}
+    .header-left .emp-name{font-size:15px;font-weight:700;margin-bottom:2px}
+    .header-left .emp-cnpj{font-size:12px;opacity:.75}
+    .header-right{text-align:right;font-size:12px;opacity:.85}
+    .header-right .gen-date{margin-bottom:6px}
+    .header-right .periodo-box{background:rgba(255,255,255,.18);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700}
+    .header-right .periodo-label{font-size:10px;opacity:.75;margin-bottom:2px;text-transform:uppercase;letter-spacing:.06em}
+    .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px}
+    .kpi{border-radius:12px;padding:16px;border:1px solid #e2e8f0;background:#fff}
+    .kpi .lbl{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+    .kpi .val{font-size:18px;font-weight:800;font-family:monospace}
+    table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0}
+    th{background:#f8fafc;padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;border-bottom:2px solid #e2e8f0}
+    td{padding:9px 12px;font-size:12px;border-bottom:1px solid #f1f5f9;color:#475569}
+    tr:last-child td{border-bottom:none}
+    .section-title{font-size:15px;font-weight:800;color:#0F2A44;margin:20px 0 10px}
+    @media print{body{padding:16px}.header{break-inside:avoid}}
+  </style></head><body>
+  <div class="header">
+    <div class="header-left">
+      <h1>🏦 Extrato Bancário</h1>
+      <div class="emp-name">${emp}</div>
+      ${cnpj?`<div class="emp-cnpj">CNPJ: ${cnpj}</div>`:''}
+    </div>
+    <div class="header-right">
+      <div class="gen-date">Gerado em ${new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})}</div>
+      <div class="periodo-label">Conta / Período</div>
+      <div class="periodo-box">${acc.name} — ${mesLabel}</div>
+    </div>
+  </div>
+  <div class="kpis">
+    <div class="kpi" style="background:#f0fdf4;border-color:#22C55E44"><div class="lbl">Total Entradas</div><div class="val" style="color:#22C55E">${fmt(totalEntradas)}</div></div>
+    <div class="kpi" style="background:#fff1f2;border-color:#ef444444"><div class="lbl">Total Saídas</div><div class="val" style="color:#ef4444">${fmt(totalSaidas)}</div></div>
+    <div class="kpi" style="background:#eff6ff;border-color:#3b82f644"><div class="lbl">Saldo Final</div><div class="val" style="color:${running>=0?'#1e293b':'#ef4444'}">${fmt(running)}</div></div>
+  </div>
+  <div class="section-title">Movimentações — ${mesLabel}</div>
+  <table><thead><tr>
+    <th>Data</th><th>Nome</th><th>Descrição</th><th style="text-align:right">Entrada</th><th style="text-align:right">Saída</th><th style="text-align:right">Saldo</th>
+  </tr></thead><tbody>${tableRows}</tbody></table>
+  <script>window.onload=()=>{window.print();}<\/script>
+  </body></html>`);
+  win.document.close();
 }
 
 // ══════════════════════════════════════════════════════════
@@ -5848,6 +6334,65 @@ function renderConfig(){
   el.innerHTML=`
     <div style="font-size:11px;font-weight:700;color:#22C55E;margin-bottom:6px">RECEITAS</div>${html('income')}
     <div style="font-size:11px;font-weight:700;color:#ef4444;margin:12px 0 6px">DESPESAS</div>${html('expense')}`;
+}
+
+function deleteContact(type, id){
+  const isClient = type === 'clients';
+  const hasLinked = isClient
+    ? S.receivables.some(r => r.clientId === id)
+    : S.payables.some(p => p.supplierId === id);
+  if(hasLinked){
+    showContactBlockedModal(type, id);
+    return;
+  }
+  deleteItem(type, id);
+}
+
+async function toggleContactActive(type, id){
+  const item = S[type]?.find(x => x.id === id);
+  if(!item) return;
+  item.active = item.active === false ? true : false;
+  await sbUpdate('contacts', id, { active: item.active });
+  toast(item.active ? 'Reativado! ✅' : 'Inativado! ⏸', 'info');
+  if(type === 'clients') renderClientes();
+  else renderFornecedores();
+}
+
+function showContactBlockedModal(type, id){
+  const isClient = type === 'clients';
+  const item = S[type]?.find(x => x.id === id);
+  const nome = item?.name || (isClient ? 'cliente' : 'fornecedor');
+  const label = isClient ? 'cliente' : 'fornecedor';
+  const lancLabel = isClient ? 'contas a receber' : 'contas a pagar';
+  const existing = document.getElementById('modal-contact-blocked');
+  if(existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'modal-contact-blocked';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:1100;padding:20px';
+  modal.innerHTML = `
+    <div style="background:#1e293b;border-radius:16px;padding:32px 28px;max-width:440px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.4);text-align:center">
+      <div style="font-size:40px;margin-bottom:12px">⚠️</div>
+      <div style="font-size:17px;font-weight:700;color:#f1f5f9;margin-bottom:10px">Não é possível excluir</div>
+      <div style="font-size:13px;color:#94a3b8;margin-bottom:16px">
+        O ${label} <strong style="color:#e2e8f0">${nome}</strong> possui <strong style="color:#e2e8f0">${lancLabel}</strong> vinculados e não pode ser excluído.
+      </div>
+      <div style="background:#0f172a;border-radius:10px;padding:14px 16px;margin-bottom:20px;text-align:left;font-size:12px;color:#64748b">
+        Você pode <strong style="color:#e2e8f0">inativar</strong> este ${label} para que ele não apareça nos relatórios e seleções, mas os lançamentos vinculados serão mantidos.
+      </div>
+      <div style="display:flex;gap:10px">
+        <button onclick="document.getElementById('modal-contact-blocked').remove()"
+          style="flex:1;background:#334155;color:#cbd5e1;border:none;border-radius:10px;padding:11px;font-size:13px;font-weight:600;cursor:pointer">
+          Cancelar
+        </button>
+        <button onclick="toggleContactActive('${type}','${id}');document.getElementById('modal-contact-blocked').remove()"
+          style="flex:1;background:#f59e0b;color:#fff;border:none;border-radius:10px;padding:11px;font-size:13px;font-weight:700;cursor:pointer">
+          ⏸ Inativar
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
 }
 
 async function deleteItem(key, id){
@@ -7785,7 +8330,7 @@ async function loadData() {
       .map(c => ({
         id: c.id, name: c.name, email: c.email,
         phone: c.phone, doc: c.document, notes: c.notes,
-        pessoa: 'fisica'
+        pessoa: 'fisica', active: c.active !== false
       }));
 
     // Fornecedores
@@ -7794,7 +8339,7 @@ async function loadData() {
       .map(c => ({
         id: c.id, name: c.name, email: c.email,
         phone: c.phone, doc: c.document, notes: c.notes,
-        pessoa: 'fisica'
+        pessoa: 'fisica', active: c.active !== false
       }));
 
     // Perfil / Empresa
