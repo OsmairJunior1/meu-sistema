@@ -1751,7 +1751,7 @@ textarea.inp{min-height:80px;resize:vertical}
           <!-- Account with + new -->
           <div class="form-group">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-              <label class="fl">Conta Bancária <span class="req">*</span></label>
+              <label class="fl">Conta Bancária</label>
               <button onclick="quickNewAccount('receivable')" style="font-size:10px;color:#3b82f6;background:none;border:none;cursor:pointer;font-weight:700;padding:0">+ Conta Bancária</button>
             </div>
             <select id="recvAcc" class="inp"><option value="">Selecione a conta...</option></select>
@@ -1853,7 +1853,7 @@ textarea.inp{min-height:80px;resize:vertical}
           <!-- Account with + new -->
           <div class="form-group">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-              <label class="fl">Conta Bancária <span class="req">*</span></label>
+              <label class="fl">Conta Bancária</label>
               <button onclick="quickNewAccount('payable')" style="font-size:10px;color:#3b82f6;background:none;border:none;cursor:pointer;font-weight:700;padding:0">+ Conta Bancária</button>
             </div>
             <select id="payAcc" class="inp"><option value="">Selecione a conta...</option></select>
@@ -2339,6 +2339,9 @@ function showUpgradeModal(page) {
   const diffText = diff > 0 ? `+ R$ ${diff},00/mês` : `R$ ${req.price},00/mês`;
   const el   = document.getElementById('modal-upgrade');
   if (!el) return;
+  // Guarda o plano necessário para o pagamento
+  window._upgradePlanName  = req.plan;
+  window._upgradePlanPrice = req.price;
   document.getElementById('upgrade-icon').textContent    = req.icon;
   document.getElementById('upgrade-title').textContent   = req.title;
   document.getElementById('upgrade-plan').textContent    = req.plan;
@@ -2348,11 +2351,68 @@ function showUpgradeModal(page) {
   document.getElementById('upgrade-fullprice').textContent = `R$ ${req.price},00/mês`;
 
   // Parcelamento anual no cartão (diferença ÷ 12)
-  const annual      = diff * 12;
   const installment = diff.toFixed(0);
   document.getElementById('upgrade-installment').textContent = `ou 12x de R$ ${installment},00 no cartão (anuidade)`;
 
   el.style.display = 'flex';
+}
+
+async function startUpgradePayment(billingType) {
+  const planName  = window._upgradePlanName;
+  const planPrice = window._upgradePlanPrice;
+  if (!planName || !planPrice) return;
+
+  // Busca o plan_id no banco
+  const { data: plans } = await window._sb
+    .from('plans')
+    .select('id, name')
+    .eq('name', planName)
+    .single();
+
+  if (!plans?.id) { toast('Plano não encontrado','error'); return; }
+
+  // Desabilita botões durante carregamento
+  const btnPix  = document.getElementById('btn-upgrade-pix');
+  const btnCard = document.getElementById('btn-upgrade-card');
+  if (btnPix)  { btnPix.disabled  = true; btnPix.textContent  = 'Aguarde...'; }
+  if (btnCard) { btnCard.disabled = true; btnCard.textContent = 'Aguarde...'; }
+
+  try {
+    const session = await window._sb.auth.getSession();
+    const token   = session.data.session?.access_token;
+
+    const res = await fetch(
+      `${SUPABASE_URL}/functions/v1/create-asaas-payment`,
+      {
+        method:  'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': `Bearer ${token}`,
+          'apikey':        SUPABASE_KEY,
+        },
+        body: JSON.stringify({
+          planId:      plans.id,
+          planName:    planName,
+          planPrice:   planPrice,
+          billingType: billingType,
+        }),
+      }
+    );
+
+    const data = await res.json();
+    if (data?.url) {
+      window.open(data.url, '_blank');
+      document.getElementById('modal-upgrade').style.display = 'none';
+      toast('Redirecionando para o pagamento... ✅','success');
+    } else {
+      toast('Erro ao gerar link de pagamento','error');
+    }
+  } catch(e) {
+    toast('Erro ao conectar com o serviço de pagamento','error');
+  } finally {
+    if (btnPix)  { btnPix.disabled  = false; btnPix.textContent  = '💚 Pagar via PIX (à vista)'; }
+    if (btnCard) { btnCard.disabled = false; btnCard.textContent = '💳 Pagar com Cartão (12x)'; }
+  }
 }
 
 function navigate(page){
@@ -2850,7 +2910,7 @@ async function saveReceivable(keepOpen=false){
   if(!value){ toast('Informe o valor','error'); return; }
   if(!desc)  { toast('Informe a descrição','error'); $('recvDesc').focus(); return; }
   if(!catId) { toast('Selecione a categoria','error'); return; }
-  if(!accId) { toast('Selecione a conta','error'); return; }
+  if(done && !accId) { toast('Selecione a conta para registrar o recebimento','error'); return; }
 
   const baseDue   = $('recvDue').value || today();
   const baseComp  = $('recvComp').value || today();
@@ -2912,7 +2972,7 @@ async function savePayable(keepOpen=false){
   if(!value){ toast('Informe o valor','error'); return; }
   if(!desc)  { toast('Informe a descrição','error'); $('payDesc').focus(); return; }
   if(!catId) { toast('Selecione a categoria','error'); return; }
-  if(!accId) { toast('Selecione a conta','error'); return; }
+  if(done && !accId) { toast('Selecione a conta para registrar o pagamento','error'); return; }
 
   const baseDue    = $('payDue').value || today();
   const baseComp   = $('payComp').value || today();
@@ -4796,10 +4856,10 @@ async function saveEditLanc(){
   if(!value){ toast('Informe o valor','error'); return; }
   if(!desc)  { toast('Informe a descrição','error'); return; }
   if(!catId) { toast('Selecione a categoria','error'); return; }
-  if(!accId) { toast('Selecione a conta','error'); return; }
 
   const dueDate  = isIncome ? $('recvDue').value  : $('payDue').value;
   const done     = isIncome ? $('recvDone').checked : $('payDone').checked;
+  if(done && !accId) { toast(isIncome ? 'Selecione a conta para registrar o recebimento' : 'Selecione a conta para registrar o pagamento','error'); return; }
   const doneDate = isIncome
     ? ($('recvDoneDate').value || (done?today():null))
     : ($('payDoneDate').value  || (done?today():null));
@@ -8269,11 +8329,21 @@ function fabAction(name){
       <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:7px 14px;font-size:11px;font-weight:700;color:#2563EB">💳 12x no cartão</div>
     </div>
 
-    <!-- Botão -->
-    <button onclick="document.getElementById('modal-upgrade').style.display='none'"
-      style="width:100%;padding:13px;background:linear-gradient(135deg,#0F2A44,#2F80ED);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 16px rgba(47,128,237,.35);letter-spacing:-.01em">
-      🚀 Quero fazer Upgrade
-    </button>
+    <!-- Botões de pagamento -->
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button id="btn-upgrade-pix" onclick="startUpgradePayment('PIX')"
+        style="width:100%;padding:13px;background:linear-gradient(135deg,#16A34A,#22C55E);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 16px rgba(34,197,94,.3);letter-spacing:-.01em">
+        💚 Pagar via PIX (à vista)
+      </button>
+      <button id="btn-upgrade-card" onclick="startUpgradePayment('CREDIT_CARD')"
+        style="width:100%;padding:13px;background:linear-gradient(135deg,#0F2A44,#2F80ED);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 16px rgba(47,128,237,.35);letter-spacing:-.01em">
+        💳 Pagar com Cartão (12x)
+      </button>
+      <button onclick="document.getElementById('modal-upgrade').style.display='none'"
+        style="width:100%;padding:10px;background:none;color:#94A3B8;border:1px solid #E2E8F0;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">
+        Agora não
+      </button>
+    </div>
   </div>
 </div>
 
@@ -8298,7 +8368,7 @@ async function loadData() {
       _sb.from('transactions').select('*').eq('user_id', uid),
       _sb.from('transfers').select('*').eq('user_id', uid),
       _sb.from('contacts').select('*').eq('user_id', uid),
-      _sb.from('profiles').select('*').eq('user_id', uid).single(),
+      _sb.from('profiles').select('*').eq('user_id', uid).limit(1).maybeSingle(),
     ]);
 
     // Contas bancárias
