@@ -1608,7 +1608,7 @@ textarea.inp{min-height:80px;resize:vertical}
               <button class="tab-btn active" style="color:#22C55E;border-bottom-color:#22C55E" onclick="dvSwitchTab(this,'recv2','open')">Em aberto</button>
               <button class="tab-btn" onclick="dvSwitchTab(this,'recv2','done')">Efetuados</button>
             </div>
-            <div style="display:grid;grid-template-columns:34px 90px 1fr 130px 110px 60px;gap:4px;padding:6px 4px;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;border-bottom:1px solid #e2e8f0">
+            <div style="display:grid;grid-template-columns:28px 86px 1fr 80px 105px 128px;gap:6px;padding:6px 6px;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;border-bottom:1px solid #e2e8f0">
               <span></span><span>Data <span style="color:#cbd5e1">⇅</span></span><span>Descrição <span style="color:#cbd5e1">⇅</span></span><span>Cliente <span style="color:#cbd5e1">⇅</span></span><span style="text-align:right">Valor <span style="color:#cbd5e1">⇅</span></span><span></span>
             </div>
             <div id="dvRecvList"></div>
@@ -1644,7 +1644,7 @@ textarea.inp{min-height:80px;resize:vertical}
               <button class="tab-btn active" style="color:#ef4444;border-bottom-color:#ef4444" onclick="dvSwitchTab(this,'pay2','open')">Em aberto</button>
               <button class="tab-btn" onclick="dvSwitchTab(this,'pay2','done')">Efetuados</button>
             </div>
-            <div style="display:grid;grid-template-columns:34px 90px 1fr 130px 110px 60px;gap:4px;padding:6px 4px;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;border-bottom:1px solid #e2e8f0">
+            <div style="display:grid;grid-template-columns:28px 86px 1fr 80px 105px 128px;gap:6px;padding:6px 6px;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;border-bottom:1px solid #e2e8f0">
               <span></span><span>Data <span style="color:#cbd5e1">⇅</span></span><span>Descrição <span style="color:#cbd5e1">⇅</span></span><span>Fornecedor <span style="color:#cbd5e1">⇅</span></span><span style="text-align:right">Valor <span style="color:#cbd5e1">⇅</span></span><span></span>
             </div>
             <div id="dvPayList"></div>
@@ -1677,7 +1677,7 @@ textarea.inp{min-height:80px;resize:vertical}
               </div>
             </div>
             <div style="padding:6px 0 4px"><span class="tab-btn active" style="color:#22C55E;border-bottom:2px solid #22C55E;padding:6px 12px;font-size:12px;font-weight:700">Vencidos</span></div>
-            <div style="display:grid;grid-template-columns:34px 90px 1fr 130px 110px 60px;gap:4px;padding:6px 4px;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;border-bottom:1px solid #e2e8f0">
+            <div style="display:grid;grid-template-columns:28px 86px 1fr 80px 105px 128px;gap:6px;padding:6px 6px;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;border-bottom:1px solid #e2e8f0">
               <span></span><span>Data</span><span>Descrição</span><span>Cliente</span><span style="text-align:right">Valor</span><span></span>
             </div>
             <div id="dvOvrRecvList"></div>
@@ -1695,7 +1695,7 @@ textarea.inp{min-height:80px;resize:vertical}
               </div>
             </div>
             <div style="padding:6px 0 4px"><span class="tab-btn active" style="color:#ef4444;border-bottom:2px solid #ef4444;padding:6px 12px;font-size:12px;font-weight:700">Vencidos</span></div>
-            <div style="display:grid;grid-template-columns:34px 90px 1fr 130px 110px 60px;gap:4px;padding:6px 4px;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;border-bottom:1px solid #e2e8f0">
+            <div style="display:grid;grid-template-columns:28px 86px 1fr 80px 105px 128px;gap:6px;padding:6px 6px;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;border-bottom:1px solid #e2e8f0">
               <span></span><span>Data</span><span>Descrição</span><span>Fornecedor</span><span style="text-align:right">Valor</span><span></span>
             </div>
             <div id="dvOvrPayList"></div>
@@ -4077,14 +4077,32 @@ function dvSwitchTab(btn, group, val){
 
 function dvRecvItems(){
   const search = ($('dvRecvSearch')||{value:''}).value.toLowerCase();
-  let list = S.dvRecvTab==='done' ? S.receivables.filter(r=>r.done) : S.receivables.filter(r=>!r.done&&r.dueDate>=today());
+  const pFrom = S.periodFrom, pTo = S.periodTo;
+  let list;
+  if(S.dvRecvTab==='done'){
+    list = S.receivables.filter(r=>r.done);
+    if(pFrom && pTo) list = list.filter(r=>(r.paidDate||r.dueDate)>=pFrom && (r.paidDate||r.dueDate)<=pTo);
+  } else {
+    list = S.receivables.filter(r=>!r.done);
+    if(pFrom && pTo) list = list.filter(r=>r.dueDate>=pFrom && r.dueDate<=pTo);
+  }
   if(search) list=list.filter(x=>(x.desc||'').toLowerCase().includes(search));
+  list.sort((a,b)=>(a.dueDate||'').localeCompare(b.dueDate||''));
   return list;
 }
 function dvPayItems(){
   const search = ($('dvPaySearch')||{value:''}).value.toLowerCase();
-  let list = S.dvPayTab==='done' ? S.payables.filter(p=>p.done) : S.payables.filter(p=>!p.done&&p.dueDate>=today());
+  const pFrom = S.periodFrom, pTo = S.periodTo;
+  let list;
+  if(S.dvPayTab==='done'){
+    list = S.payables.filter(p=>p.done);
+    if(pFrom && pTo) list = list.filter(p=>(p.paidDate||p.dueDate)>=pFrom && (p.paidDate||p.dueDate)<=pTo);
+  } else {
+    list = S.payables.filter(p=>!p.done);
+    if(pFrom && pTo) list = list.filter(p=>p.dueDate>=pFrom && p.dueDate<=pTo);
+  }
   if(search) list=list.filter(x=>(x.desc||'').toLowerCase().includes(search));
+  list.sort((a,b)=>(a.dueDate||'').localeCompare(b.dueDate||''));
   return list;
 }
 function dvRow(x, peerName, color){
@@ -4092,21 +4110,23 @@ function dvRow(x, peerName, color){
   const type = isIncome ? 'income' : 'expense';
   const isOver = !x.done && x.dueDate < today();
   const statusDot = x.done ? '#22C55E' : isOver ? '#ef4444' : '#F97316';
-  return `<div style="display:grid;grid-template-columns:34px 90px 1fr 130px 110px 90px;gap:4px;padding:10px 4px;border-bottom:1px solid #f8fafc;font-size:12px;align-items:center">
+  const peerShort = peerName.length > 12 ? peerName.slice(0,12)+'…' : peerName;
+  /* grid: checkbox | data | descrição(1fr) | fornecedor(80px) | valor(105px) | ações(128px) */
+  return `<div style="display:grid;grid-template-columns:28px 86px 1fr 80px 105px 128px;gap:6px;padding:10px 6px;border-bottom:1px solid #f1f5f9;font-size:12px;align-items:center">
     <div><input type="checkbox" style="width:13px;height:13px;accent-color:${color}"></div>
-    <span style="color:#64748b;font-size:11px;display:flex;align-items:center;gap:5px">
-      <span style="width:8px;height:8px;border-radius:50%;background:${statusDot};display:inline-block;flex-shrink:0"></span>
+    <span style="color:#64748b;font-size:11px;display:flex;align-items:center;gap:5px;white-space:nowrap">
+      <span style="width:7px;height:7px;border-radius:50%;background:${statusDot};display:inline-block;flex-shrink:0"></span>
       ${fmtD(x.dueDate)}
     </span>
-    <span style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${x.desc||'—'}</span>
-    <span style="color:#475569;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${peerName}</span>
-    <span style="font-family:monospace;font-weight:700;text-align:right;color:${color}">${fmt(x.value)}</span>
-    <div style="display:flex;gap:2px;justify-content:flex-end">
-      ${!x.done ? `<button title="${isIncome?'Receber':'Pagar'}" style="background:${color}15;border:1px solid ${color}40;border-radius:6px;padding:3px 7px;cursor:pointer;font-size:11px;font-weight:700;color:${color};white-space:nowrap" onclick="openEfetivar('${x.id}','${type}')">
-        ${isIncome?'✅ Receber':'💳 Pagar'}
-      </button>` : `<span style="font-size:10px;color:#22C55E;font-weight:700;padding:3px 7px">✓ Efetivado</span>`}
-      <button title="Editar" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:13px;padding:2px 4px;border-radius:5px" onclick="openEditLanc('${x.id}','${type}')">✏️</button>
-      <button title="Excluir" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:13px;padding:2px 4px;border-radius:5px" onclick="deleteLanc('${x.id}','${type}')">🗑</button>
+    <span style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(x.desc||'').replace(/"/g,'&quot;')}">${x.desc||'—'}</span>
+    <span style="color:#475569;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px" title="${peerName.replace(/"/g,'&quot;')}">${peerShort}</span>
+    <span style="font-family:monospace;font-weight:700;text-align:right;color:${color};white-space:nowrap">${fmt(x.value)}</span>
+    <div style="display:flex;gap:3px;justify-content:flex-end;align-items:center">
+      ${!x.done
+        ? `<button title="${isIncome?'Receber':'Pagar'}" style="background:${color};border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:11px;font-weight:700;color:#fff;white-space:nowrap;box-shadow:0 1px 4px ${color}40;transition:opacity .15s" onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'" onclick="openEfetivar('${x.id}','${type}')">${isIncome?'✅ Receber':'💳 Pagar'}</button>`
+        : `<span style="font-size:10px;color:#22C55E;font-weight:700;padding:4px 8px;background:#22C55E10;border-radius:6px">✓ Pago</span>`}
+      <button title="Editar" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:13px;padding:2px 4px;border-radius:5px;transition:color .15s" onmouseenter="this.style.color='#2F80ED'" onmouseleave="this.style.color='#94a3b8'" onclick="openEditLanc('${x.id}','${type}')">✏️</button>
+      <button title="Excluir" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:13px;padding:2px 4px;border-radius:5px;transition:color .15s" onmouseenter="this.style.color='#ef4444'" onmouseleave="this.style.color='#94a3b8'" onclick="deleteLanc('${x.id}','${type}')">🗑</button>
     </div>
   </div>`;
 }
