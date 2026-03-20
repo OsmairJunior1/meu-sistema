@@ -2302,27 +2302,70 @@ const MODULE_REQUIRES = {
   'precificacao': { plan:'Profissional', price:97, icon:'🧠', title:'Precificação Inteligente' },
 };
 
+// Links Asaas por plano/período para renovação
+const RENEWAL_LINKS = {
+  basico:       { semestral: { cartao: 'https://sandbox.asaas.com/c/bycpy2sdvpvcr829', pix: 'https://sandbox.asaas.com/c/iguwsxikdnjol8s8' }, anual: { cartao: 'https://sandbox.asaas.com/c/tpmwud01ke1a71cm', pix: 'https://sandbox.asaas.com/c/k7edpeu88c77kesh' } },
+  pro:          { semestral: { cartao: 'https://sandbox.asaas.com/c/bv6m3jbzxgevy41n', pix: 'https://sandbox.asaas.com/c/zxotc6egnh81mkj2' }, anual: { cartao: 'https://sandbox.asaas.com/c/icgf2rx5fzli7kaw', pix: 'https://sandbox.asaas.com/c/6lvl41qfxvq7y7dt' } },
+  profissional: { semestral: { cartao: 'https://sandbox.asaas.com/c/k1d7edjygtmuih54', pix: 'https://sandbox.asaas.com/c/yzp15z5cqlx0vryu' }, anual: { cartao: 'https://sandbox.asaas.com/c/w9izczmjtkstu1fp', pix: 'https://sandbox.asaas.com/c/2wcja7qkjgv5t9jy' } }
+};
+window._renewalPlanKey = 'profissional';
+window._renewalPeriod  = 'semestral';
+
+function showRenewalModal() {
+  document.getElementById('modal-renewal').style.display = 'flex';
+}
+
+function doRenewal(tipo) {
+  const link = RENEWAL_LINKS[window._renewalPlanKey]?.[window._renewalPeriod]?.[tipo];
+  if (link) window.open(link, '_blank');
+  else toast('Link de renovação não encontrado','error');
+}
+
 async function loadUserPlan() {
   if (!window._currentUser) return;
   try {
     const { data } = await window._sb
       .from('user_plans')
-      .select('status, expires_at, plans(name, price, modules)')
+      .select('status, expires_at, period, plans(name, price, modules)')
       .eq('user_id', window._currentUser.id)
-      .single();
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
     if (data?.plans?.modules) {
       window._userModules   = data.plans.modules;
       window._userPlanName  = data.plans.name  || 'Básico';
-      window._userPlanPrice = data.plans.price || 47;
+      window._userPlanPrice = data.plans.price || 49;
     } else {
       window._userModules   = PLANS_TABLE[0].modules;
       window._userPlanName  = 'Básico';
-      window._userPlanPrice = 47;
+      window._userPlanPrice = 49;
+    }
+
+    // Salva plano e período para renovação
+    const nameMap = { 'Básico': 'basico', 'Pro': 'pro', 'Profissional': 'profissional' };
+    window._renewalPlanKey = nameMap[data?.plans?.name] || 'profissional';
+    window._renewalPeriod  = data?.period || 'semestral';
+
+    // Verifica vencimento próximo (7 dias)
+    if (data?.expires_at) {
+      const expires  = new Date(data.expires_at);
+      const hoje     = new Date();
+      const diffDias = Math.ceil((expires - hoje) / (1000 * 60 * 60 * 24));
+      if (diffDias <= 7 && diffDias > 0) {
+        const banner = document.getElementById('renewal-banner');
+        document.getElementById('renewal-banner-text').textContent =
+          `⚠️ Seu plano vence em ${diffDias} dia${diffDias > 1 ? 's' : ''}. Renove agora para não perder o acesso.`;
+        document.getElementById('renewal-modal-text').textContent =
+          `Seu plano ${window._userPlanName} vence em ${diffDias} dia${diffDias > 1 ? 's' : ''}. Renove para continuar acessando todas as funcionalidades.`;
+        banner.style.display = 'flex';
+        // Adiciona padding-top ao app para compensar o banner
+        document.getElementById('app').style.paddingTop = '48px';
+      }
     }
   } catch(e) {
     window._userModules   = PLANS_TABLE[0].modules;
     window._userPlanName  = 'Básico';
-    window._userPlanPrice = 47;
+    window._userPlanPrice = 49;
   }
 }
 
@@ -8347,6 +8390,44 @@ function fabAction(name){
   </div>
 </div>
 
+<!-- ── BANNER DE RENOVAÇÃO ── -->
+<div id="renewal-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:800;background:linear-gradient(90deg,#f59e0b,#d97706);padding:10px 20px;display:none;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;box-shadow:0 2px 12px rgba(0,0,0,.15)">
+  <div style="display:flex;align-items:center;gap:10px;color:#fff;font-size:13px;font-weight:600">
+    <span style="font-size:18px">⚠️</span>
+    <span id="renewal-banner-text">Seu plano vence em breve. Renove para continuar acessando.</span>
+  </div>
+  <div style="display:flex;gap:8px;flex-shrink:0">
+    <button onclick="showRenewalModal()" style="background:#fff;color:#d97706;border:none;border-radius:8px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">
+      Renovar agora →
+    </button>
+    <button onclick="document.getElementById('renewal-banner').style.display='none'" style="background:rgba(255,255,255,.2);color:#fff;border:none;border-radius:8px;padding:7px 10px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">
+      ✕
+    </button>
+  </div>
+</div>
+
+<!-- ── MODAL DE RENOVAÇÃO ── -->
+<div id="modal-renewal" style="display:none;position:fixed;inset:0;z-index:900;background:rgba(15,42,68,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:20px;padding:40px 36px;max-width:400px;width:100%;text-align:center;box-shadow:0 24px 60px rgba(15,42,68,.2);position:relative">
+    <button onclick="document.getElementById('modal-renewal').style.display='none'" style="position:absolute;top:14px;right:16px;background:none;border:none;cursor:pointer;color:#94a3b8;font-size:18px;line-height:1">✕</button>
+    <div style="width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 16px;box-shadow:0 8px 24px rgba(245,158,11,.3)">🔄</div>
+    <div style="font-size:10px;font-weight:700;color:#d97706;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px">Renovação do Plano</div>
+    <h2 style="font-size:18px;font-weight:800;color:#0F2A44;margin-bottom:8px">Mantenha o acesso ao MonBluu</h2>
+    <p style="font-size:13px;color:#64748b;line-height:1.6;margin-bottom:24px" id="renewal-modal-text">Renove seu plano para continuar acessando todas as funcionalidades.</p>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button id="btn-renewal-pix" onclick="doRenewal('pix')" style="width:100%;padding:13px;background:linear-gradient(135deg,#16A34A,#22C55E);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 16px rgba(34,197,94,.3)">
+        💚 Renovar via PIX (à vista)
+      </button>
+      <button id="btn-renewal-card" onclick="doRenewal('cartao')" style="width:100%;padding:13px;background:linear-gradient(135deg,#0F2A44,#2F80ED);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 16px rgba(47,128,237,.35)">
+        💳 Renovar com Cartão
+      </button>
+      <button onclick="document.getElementById('modal-renewal').style.display='none'" style="width:100%;padding:10px;background:none;color:#94A3B8;border:1px solid #E2E8F0;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">
+        Agora não
+      </button>
+    </div>
+  </div>
+</div>
+
 </div><!-- /app -->
 
 <!-- ── SUPABASE AUTH ── -->
@@ -8524,6 +8605,33 @@ async function doLogin() {
 
   if (error) {
     errEl.textContent = 'E-mail ou senha incorretos.';
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'ACESSAR';
+    return;
+  }
+
+  // Verifica se o plano está ativo e não expirado
+  const { data: planData } = await _sb
+    .from('user_plans')
+    .select('status, expires_at')
+    .eq('user_id', data.user.id)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!planData || planData.status !== 'active') {
+    await _sb.auth.signOut();
+    errEl.textContent = 'Seu pagamento ainda não foi confirmado. Aguarde alguns minutos ou entre em contato com o suporte.';
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'ACESSAR';
+    return;
+  }
+
+  if (planData.expires_at && new Date(planData.expires_at) < new Date()) {
+    await _sb.auth.signOut();
+    errEl.textContent = 'Seu plano está expirado. Renove seu plano para continuar acessando.';
     errEl.style.display = 'block';
     btn.disabled = false;
     btn.textContent = 'ACESSAR';
