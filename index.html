@@ -741,6 +741,23 @@ body {
   font-size: 12px !important;
 }
 
+
+  /* â”€â”€ PWA Install Banner â”€â”€ */
+  #pwa-banner{
+    display:none;position:fixed;left:0;right:0;
+    bottom:calc(64px + env(safe-area-inset-bottom,0px));
+    z-index:500;padding:0 12px 8px;
+    pointer-events:none;
+  }
+  #pwa-banner-inner{
+    background:#fff;border-radius:18px;
+    box-shadow:0 4px 24px rgba(15,42,68,.18),0 1px 6px rgba(0,0,0,.08);
+    border:1px solid rgba(15,42,68,.08);
+    padding:12px 14px;display:flex;align-items:center;gap:10px;
+    pointer-events:all;
+    transition:opacity .3s,transform .3s;
+  }
+  #pwa-banner.hide #pwa-banner-inner{opacity:0;transform:translateY(16px)}
 </style>
 
 <style>
@@ -1692,6 +1709,23 @@ textarea.inp{min-height:80px;resize:vertical}
   #dv-saldo .card{border-radius:18px!important;box-shadow:0 2px 12px rgba(15,42,68,.06)!important;border:1px solid #f1f5f9!important}
 }
 
+
+  /* â”€â”€ PWA Install Banner â”€â”€ */
+  #pwa-banner{
+    display:none;position:fixed;left:0;right:0;
+    bottom:calc(64px + env(safe-area-inset-bottom,0px));
+    z-index:500;padding:0 12px 8px;
+    pointer-events:none;
+  }
+  #pwa-banner-inner{
+    background:#fff;border-radius:18px;
+    box-shadow:0 4px 24px rgba(15,42,68,.18),0 1px 6px rgba(0,0,0,.08);
+    border:1px solid rgba(15,42,68,.08);
+    padding:12px 14px;display:flex;align-items:center;gap:10px;
+    pointer-events:all;
+    transition:opacity .3s,transform .3s;
+  }
+  #pwa-banner.hide #pwa-banner-inner{opacity:0;transform:translateY(16px)}
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
@@ -1715,6 +1749,23 @@ textarea.inp{min-height:80px;resize:vertical}
   #login-screen>div{border-radius:18px!important;min-height:unset!important;width:100%!important;max-width:400px!important;box-shadow:0 20px 60px rgba(0,0,0,.35)!important}
   #ls-card{border-radius:18px!important;padding:36px 28px!important}
 }
+
+  /* â”€â”€ PWA Install Banner â”€â”€ */
+  #pwa-banner{
+    display:none;position:fixed;left:0;right:0;
+    bottom:calc(64px + env(safe-area-inset-bottom,0px));
+    z-index:500;padding:0 12px 8px;
+    pointer-events:none;
+  }
+  #pwa-banner-inner{
+    background:#fff;border-radius:18px;
+    box-shadow:0 4px 24px rgba(15,42,68,.18),0 1px 6px rgba(0,0,0,.08);
+    border:1px solid rgba(15,42,68,.08);
+    padding:12px 14px;display:flex;align-items:center;gap:10px;
+    pointer-events:all;
+    transition:opacity .3s,transform .3s;
+  }
+  #pwa-banner.hide #pwa-banner-inner{opacity:0;transform:translateY(16px)}
 </style>
 
 <div id="login-screen">
@@ -6708,7 +6759,24 @@ function exportLancPDF(){
     tr:last-child td{border-bottom:none}
     .section-title{font-size:15px;font-weight:800;color:#0F2A44;margin:20px 0 10px}
     @media print{body{padding:16px}.header{break-inside:avoid}}
-  </style></head><body>
+  
+  /* â”€â”€ PWA Install Banner â”€â”€ */
+  #pwa-banner{
+    display:none;position:fixed;left:0;right:0;
+    bottom:calc(64px + env(safe-area-inset-bottom,0px));
+    z-index:500;padding:0 12px 8px;
+    pointer-events:none;
+  }
+  #pwa-banner-inner{
+    background:#fff;border-radius:18px;
+    box-shadow:0 4px 24px rgba(15,42,68,.18),0 1px 6px rgba(0,0,0,.08);
+    border:1px solid rgba(15,42,68,.08);
+    padding:12px 14px;display:flex;align-items:center;gap:10px;
+    pointer-events:all;
+    transition:opacity .3s,transform .3s;
+  }
+  #pwa-banner.hide #pwa-banner-inner{opacity:0;transform:translateY(16px)}
+</style></head><body>
   <div class="header">
     <div class="header-left">
       <h1>${isInc?'💚':'❤️'} ${tabLabel}</h1>
@@ -7217,7 +7285,24 @@ function exportRelPDF(){
     .section-title{font-size:15px;font-weight:800;color:#0F2A44;margin:20px 0 10px}
     .inc{color:#22C55E}.exp{color:#ef4444}
     @media print{body{padding:16px}.header{break-inside:avoid}}
-  </style></head><body>
+  
+  /* â”€â”€ PWA Install Banner â”€â”€ */
+  #pwa-banner{
+    display:none;position:fixed;left:0;right:0;
+    bottom:calc(64px + env(safe-area-inset-bottom,0px));
+    z-index:500;padding:0 12px 8px;
+    pointer-events:none;
+  }
+  #pwa-banner-inner{
+    background:#fff;border-radius:18px;
+    box-shadow:0 4px 24px rgba(15,42,68,.18),0 1px 6px rgba(0,0,0,.08);
+    border:1px solid rgba(15,42,68,.08);
+    padding:12px 14px;display:flex;align-items:center;gap:10px;
+    pointer-events:all;
+    transition:opacity .3s,transform .3s;
+  }
+  #pwa-banner.hide #pwa-banner-inner{opacity:0;transform:translateY(16px)}
+</style></head><body>
   <div class="header">
     <div class="header-left">
       <h1>📊 Relatório Financeiro</h1>
@@ -8001,7 +8086,24 @@ function exportExtratoPDF(){
     tr:last-child td{border-bottom:none}
     .section-title{font-size:15px;font-weight:800;color:#0F2A44;margin:20px 0 10px}
     @media print{body{padding:16px}.header{break-inside:avoid}}
-  </style></head><body>
+  
+  /* â”€â”€ PWA Install Banner â”€â”€ */
+  #pwa-banner{
+    display:none;position:fixed;left:0;right:0;
+    bottom:calc(64px + env(safe-area-inset-bottom,0px));
+    z-index:500;padding:0 12px 8px;
+    pointer-events:none;
+  }
+  #pwa-banner-inner{
+    background:#fff;border-radius:18px;
+    box-shadow:0 4px 24px rgba(15,42,68,.18),0 1px 6px rgba(0,0,0,.08);
+    border:1px solid rgba(15,42,68,.08);
+    padding:12px 14px;display:flex;align-items:center;gap:10px;
+    pointer-events:all;
+    transition:opacity .3s,transform .3s;
+  }
+  #pwa-banner.hide #pwa-banner-inner{opacity:0;transform:translateY(16px)}
+</style></head><body>
   <div class="header">
     <div class="header-left">
       <h1>🏦 Extrato Bancário</h1>
@@ -9104,7 +9206,24 @@ function gerarOrcamentoPDF(){
 
   const html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">'
     +'<title>Orcamento '+numOrc+'</title>'
-    +'<style>'+css+'</style></head><body>'
+    +'<style>'+css+'
+  /* â”€â”€ PWA Install Banner â”€â”€ */
+  #pwa-banner{
+    display:none;position:fixed;left:0;right:0;
+    bottom:calc(64px + env(safe-area-inset-bottom,0px));
+    z-index:500;padding:0 12px 8px;
+    pointer-events:none;
+  }
+  #pwa-banner-inner{
+    background:#fff;border-radius:18px;
+    box-shadow:0 4px 24px rgba(15,42,68,.18),0 1px 6px rgba(0,0,0,.08);
+    border:1px solid rgba(15,42,68,.08);
+    padding:12px 14px;display:flex;align-items:center;gap:10px;
+    pointer-events:all;
+    transition:opacity .3s,transform .3s;
+  }
+  #pwa-banner.hide #pwa-banner-inner{opacity:0;transform:translateY(16px)}
+</style></head><body>'
     +'<div class="page">'
     +'<div class="header">'
       +'<div class="header-left">'
@@ -10120,7 +10239,24 @@ function exportPrcPDF(){
   ].map(s=>({...s, lucro: (s.preco-r.custoUnit-(s.preco*(PRC.params.impostos/100)))*vol}));
 
   const html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Relatório de Precificação</title>'
-    +'<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Segoe UI",sans-serif;color:#1E293B;background:#fff;padding:32px}@page{size:A4;margin:15mm}h1{font-size:22px;font-weight:900;color:#0F2A44;margin-bottom:4px}.sub{color:#64748b;font-size:13px;margin-bottom:24px}.section{margin-bottom:20px}.sec-title{font-size:10px;text-transform:uppercase;letter-spacing:.1em;font-weight:800;color:#2F80ED;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #EFF6FF}table{width:100%;border-collapse:collapse;border:1px solid #E8ECF0;border-radius:8px;overflow:hidden}th{background:#0F2A44;color:#fff;padding:9px 12px;font-size:10px;text-transform:uppercase;letter-spacing:.07em;text-align:left}td{padding:9px 12px;border-bottom:1px solid #E8ECF0;font-size:13px}tr:nth-child(even){background:#F8FAFC}.highlight{background:#0F2A44;color:#fff;padding:20px;border-radius:10px;margin-bottom:20px;display:grid;grid-template-columns:repeat(4,1fr);gap:16px;text-align:center}.hl-label{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.5);margin-bottom:6px}.hl-val{font-size:20px;font-weight:900;color:#fff;font-family:monospace}.eq-box{background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;padding:16px;margin-bottom:20px}.footer{margin-top:32px;text-align:center;font-size:10px;color:#94a3b8;border-top:1px solid #E8ECF0;padding-top:16px}</style>'
+    +'<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Segoe UI",sans-serif;color:#1E293B;background:#fff;padding:32px}@page{size:A4;margin:15mm}h1{font-size:22px;font-weight:900;color:#0F2A44;margin-bottom:4px}.sub{color:#64748b;font-size:13px;margin-bottom:24px}.section{margin-bottom:20px}.sec-title{font-size:10px;text-transform:uppercase;letter-spacing:.1em;font-weight:800;color:#2F80ED;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #EFF6FF}table{width:100%;border-collapse:collapse;border:1px solid #E8ECF0;border-radius:8px;overflow:hidden}th{background:#0F2A44;color:#fff;padding:9px 12px;font-size:10px;text-transform:uppercase;letter-spacing:.07em;text-align:left}td{padding:9px 12px;border-bottom:1px solid #E8ECF0;font-size:13px}tr:nth-child(even){background:#F8FAFC}.highlight{background:#0F2A44;color:#fff;padding:20px;border-radius:10px;margin-bottom:20px;display:grid;grid-template-columns:repeat(4,1fr);gap:16px;text-align:center}.hl-label{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.5);margin-bottom:6px}.hl-val{font-size:20px;font-weight:900;color:#fff;font-family:monospace}.eq-box{background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;padding:16px;margin-bottom:20px}.footer{margin-top:32px;text-align:center;font-size:10px;color:#94a3b8;border-top:1px solid #E8ECF0;padding-top:16px}
+  /* â”€â”€ PWA Install Banner â”€â”€ */
+  #pwa-banner{
+    display:none;position:fixed;left:0;right:0;
+    bottom:calc(64px + env(safe-area-inset-bottom,0px));
+    z-index:500;padding:0 12px 8px;
+    pointer-events:none;
+  }
+  #pwa-banner-inner{
+    background:#fff;border-radius:18px;
+    box-shadow:0 4px 24px rgba(15,42,68,.18),0 1px 6px rgba(0,0,0,.08);
+    border:1px solid rgba(15,42,68,.08);
+    padding:12px 14px;display:flex;align-items:center;gap:10px;
+    pointer-events:all;
+    transition:opacity .3s,transform .3s;
+  }
+  #pwa-banner.hide #pwa-banner-inner{opacity:0;transform:translateY(16px)}
+</style>'
     +'</head><body>'
     +'<h1>Relatório de Precificação</h1>'
     +'<div class="sub">Produto: '+(prod.nome||'Sem nome')+' · Gerado em '+new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})+'</div>'
@@ -11005,9 +11141,77 @@ if(typeof Chart !== 'undefined'){
 </div>
 
 <script>
+<!-- â”€â”€ PWA INSTALL BANNER â€” mobile only â”€â”€ -->
+<div id="pwa-banner">
+  <div id="pwa-banner-inner">
+    <img src="192x192.png" width="42" height="42" style="border-radius:11px;flex-shrink:0" alt="">
+    <div id="pwa-banner-text" style="flex:1;min-width:0">
+      <div style="font-size:14px;font-weight:800;color:#0F2A44;letter-spacing:-.02em;line-height:1.2">Instale o MonBluu</div>
+      <div style="font-size:11.5px;color:#64748b;margin-top:2px">Acesso rapido, sem abrir o navegador</div>
+    </div>
+    <div id="pwa-ios-hint" style="display:none;flex:1;font-size:11.5px;color:#0F2A44;line-height:1.45">
+      Toque em <strong>Compartilhar</strong> e depois em <strong>Adicionar a Tela de Inicio</strong>
+    </div>
+    <button id="pwa-install-btn" onclick="installPWA()" style="background:#0F2A44;color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0;font-family:inherit;white-space:nowrap">Instalar</button>
+    <button onclick="dismissPWABanner()" style="background:none;border:none;color:#94a3b8;font-size:22px;line-height:1;cursor:pointer;padding:2px 6px;flex-shrink:0">&times;</button>
+  </div>
+</div>
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
     navigator.serviceWorker.register('sw.js').catch(function(){});
+// â”€â”€ PWA INSTALL BANNER LOGIC â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+(function(){
+  var inPWA = window.matchMedia('(display-mode: standalone)').matches
+            || window.navigator.standalone === true;
+  if(inPWA) return;
+  if(localStorage.getItem('pwa-dismissed')) return;
+  if(window.innerWidth > 600) return;
+
+  var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent.toLowerCase());
+  var banner = document.getElementById('pwa-banner');
+
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault();
+    window._pwaPrompt = e;
+    if(banner) banner.style.display = 'flex';
+  });
+
+  if(isIOS){
+    setTimeout(function(){
+      if(banner) banner.style.display = 'flex';
+    }, 3000);
+  }
+
+  window.addEventListener('appinstalled', function(){
+    dismissPWABanner();
+  });
+})();
+
+window.installPWA = function(){
+  var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent.toLowerCase());
+  if(window._pwaPrompt){
+    window._pwaPrompt.prompt();
+    window._pwaPrompt.userChoice.then(function(){ dismissPWABanner(); });
+    window._pwaPrompt = null;
+  } else if(isIOS){
+    var btn = document.getElementById('pwa-install-btn');
+    var text = document.getElementById('pwa-banner-text');
+    var hint = document.getElementById('pwa-ios-hint');
+    if(btn) btn.style.display = 'none';
+    if(text) text.style.display = 'none';
+    if(hint){ hint.style.display = 'block'; }
+  }
+};
+
+window.dismissPWABanner = function(){
+  try{ localStorage.setItem('pwa-dismissed','1'); }catch(e){}
+  var b = document.getElementById('pwa-banner');
+  if(b){
+    b.classList.add('hide');
+    setTimeout(function(){ b.style.display='none'; b.classList.remove('hide'); }, 320);
+  }
+};
+
   });
 }
 </script>
