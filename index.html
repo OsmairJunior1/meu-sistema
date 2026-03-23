@@ -344,7 +344,7 @@ hr, .divider {
 }
 @keyframes pageFadeIn {
   from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  to { opacity: 1; transform: none; }
 }
 
 /* === KPI GRID MAIS ESPACADO === */
@@ -1081,6 +1081,14 @@ textarea.inp{min-height:80px;resize:vertical}
   /* ── Tabelas — scroll horizontal controlado ── */
   .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--radius)}
   .tbl-head,.tbl-row{min-width:480px}
+  /* ── Transferências — card mobile ── */
+  #transfersList .tbl-row{min-width:0;display:flex;flex-direction:column;gap:4px;padding:10px 0;border-bottom:1px solid #f1f5f9;grid-template-columns:unset}
+  #transfersList .tbl-row:last-child{border-bottom:none}
+  #transfersList .tr-top{display:flex;justify-content:space-between;align-items:center}
+  #transfersList .tr-route{font-size:14px;font-weight:600;color:#0F2A44}
+  #transfersList .tr-val{font-size:14px;font-weight:700;color:#8b5cf6}
+  #transfersList .tr-date{font-size:11px;color:#94a3b8}
+  #transfersList .tr-desc{font-size:11px;color:#94a3b8;margin-top:1px}
 
   /* ── Lançamentos — card view no mobile ── */
   .lanc-mobile-card{display:flex!important}
@@ -1515,14 +1523,14 @@ textarea.inp{min-height:80px;resize:vertical}
 .mhc-purple{background:rgba(139,92,246,.2);color:#c4b5fd;border:1.5px solid rgba(139,92,246,.25)}
 
 /* Resumo período */
-.mhc-summary{display:flex;align-items:center;background:rgba(255,255,255,.07);border-radius:14px;padding:14px 20px;position:relative;z-index:1;border:1px solid rgba(255,255,255,.09)}
-.mhc-summary-item{display:flex;align-items:center;gap:10px;flex:1}
-.mhc-summary-sep{width:1px;height:36px;background:rgba(255,255,255,.12);margin:0 16px}
-.mhc-summary-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.mhc-summary{display:flex;align-items:center;background:rgba(255,255,255,.07);border-radius:14px;padding:12px 14px;position:relative;z-index:1;border:1px solid rgba(255,255,255,.09)}
+.mhc-summary-item{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+.mhc-summary-sep{width:1px;height:36px;background:rgba(255,255,255,.12);margin:0 12px;flex-shrink:0}
+.mhc-summary-icon{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
 .mhc-summary-icon.up{background:rgba(34,197,94,.2);color:#4ade80}
 .mhc-summary-icon.down{background:rgba(239,68,68,.2);color:#f87171}
 .mhc-summary-label{font-size:10px;color:rgba(255,255,255,.4);font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-bottom:3px}
-.mhc-summary-val{font-size:16px;font-weight:800;letter-spacing:-.02em}
+.mhc-summary-val{font-size:15px;font-weight:800;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mhc-summary-val.green{color:#4ade80}
 .mhc-summary-val.red{color:#f87171}
 
@@ -1986,20 +1994,57 @@ textarea.inp{min-height:80px;resize:vertical}
   </div>
 
   <!-- PERÍODO FILTER BAR -->
-  <div id="period-bar" style="display:flex;align-items:center;gap:8px;padding:8px 24px;background:#fff;border-bottom:1px solid #e2e8f0;flex-wrap:wrap">
-    <!-- Chips de período -->
-    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;flex:1">
-      <button id="pf-mes" onclick="setPeriodFilter('mes')" style="padding:5px 14px;border-radius:100px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;border:1.5px solid #2F80ED;background:#2F80ED;color:#fff;transition:all .18s">Mês atual</button>
-      <button id="pf-ano" onclick="setPeriodFilter('ano')" style="padding:5px 14px;border-radius:100px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;border:1.5px solid #e2e8f0;background:#f1f5f9;color:#64748b;transition:all .18s">Ano atual</button>
-      <button id="pf-custom" onclick="setPeriodFilter('custom')" style="padding:5px 14px;border-radius:100px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;border:1.5px solid #e2e8f0;background:#f1f5f9;color:#64748b;transition:all .18s">Personalizado</button>
-      <!-- Datas personalizadas -->
-      <div id="pf-custom-dates" style="display:none;align-items:center;gap:6px">
-        <input type="date" id="pf-from" class="inp" style="padding:4px 10px;font-size:11px;width:130px" oninput="applyPeriodFilter()">
-        <span style="font-size:11px;color:#94a3b8">até</span>
-        <input type="date" id="pf-to" class="inp" style="padding:4px 10px;font-size:11px;width:130px" oninput="applyPeriodFilter()">
+  <div id="period-bar" style="display:flex;align-items:center;gap:8px;padding:8px 24px;background:#fff;border-bottom:1px solid #e2e8f0;animation:none;transform:none">
+    <div style="position:relative" id="pf-dropdown-wrap">
+      <!-- Trigger button -->
+      <button id="pf-trigger" onclick="togglePeriodDropdown(event)" style="display:inline-flex;align-items:center;gap:7px;padding:6px 16px;border-radius:100px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;border:1.5px solid #2F80ED;background:#2F80ED;color:#fff;transition:all .18s;white-space:nowrap">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="1.5" width="11" height="10" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M1 4.5h11M4 1v2M9 1v2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        <span id="pf-label">Mês atual</span>
+        <svg id="pf-chevron" width="10" height="10" viewBox="0 0 10 10" fill="none" style="transition:transform .2s"><path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <!-- Dropdown panel -->
+      <div id="pf-panel" style="display:none;position:fixed;z-index:800;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.14);border:1px solid #e2e8f0;width:320px;overflow:hidden">
+        <div style="padding:6px 0">
+          <div id="pf-opt-mes" onclick="setPeriodFilter('mes')" style="display:flex;align-items:center;gap:12px;padding:9px 16px;cursor:pointer;background:#eff6ff" onmouseenter="this.style.background='#dbeafe'" onmouseleave="this.style.background=(S.periodFilter==='mes'?'#eff6ff':'')">
+            <div id="pf-radio-mes" style="width:18px;height:18px;border-radius:50%;border:2px solid #2F80ED;display:flex;align-items:center;justify-content:center;flex-shrink:0"><div id="pf-dot-mes" style="width:9px;height:9px;border-radius:50%;background:#2F80ED"></div></div>
+            <div><div style="font-size:13px;font-weight:600;color:#0F2A44">Esse mês</div><div style="font-size:11px;color:#94a3b8;margin-top:1px">Veja os dados apenas do mês atual</div></div>
+          </div>
+          <div id="pf-opt-anterior" onclick="setPeriodFilter('anterior')" style="display:flex;align-items:center;gap:12px;padding:9px 16px;cursor:pointer" onmouseenter="this.style.background='#f8fafc'" onmouseleave="this.style.background=(S.periodFilter==='anterior'?'#eff6ff':'')">
+            <div id="pf-radio-anterior" style="width:18px;height:18px;border-radius:50%;border:2px solid #cbd5e1;display:flex;align-items:center;justify-content:center;flex-shrink:0"><div id="pf-dot-anterior" style="display:none;width:9px;height:9px;border-radius:50%;background:#2F80ED"></div></div>
+            <div><div style="font-size:13px;font-weight:600;color:#0F2A44">Mês anterior</div><div style="font-size:11px;color:#94a3b8;margin-top:1px">Veja os dados do mês anterior ao atual.</div></div>
+          </div>
+          <div id="pf-opt-proximo" onclick="setPeriodFilter('proximo')" style="display:flex;align-items:center;gap:12px;padding:9px 16px;cursor:pointer" onmouseenter="this.style.background='#f8fafc'" onmouseleave="this.style.background=(S.periodFilter==='proximo'?'#eff6ff':'')">
+            <div id="pf-radio-proximo" style="width:18px;height:18px;border-radius:50%;border:2px solid #cbd5e1;display:flex;align-items:center;justify-content:center;flex-shrink:0"><div id="pf-dot-proximo" style="display:none;width:9px;height:9px;border-radius:50%;background:#2F80ED"></div></div>
+            <div><div style="font-size:13px;font-weight:600;color:#0F2A44">Próximo mês</div><div style="font-size:11px;color:#94a3b8;margin-top:1px">Veja os dados do próximo mês</div></div>
+          </div>
+          <div id="pf-opt-3meses" onclick="setPeriodFilter('3meses')" style="display:flex;align-items:center;gap:12px;padding:9px 16px;cursor:pointer" onmouseenter="this.style.background='#f8fafc'" onmouseleave="this.style.background=(S.periodFilter==='3meses'?'#eff6ff':'')">
+            <div id="pf-radio-3meses" style="width:18px;height:18px;border-radius:50%;border:2px solid #cbd5e1;display:flex;align-items:center;justify-content:center;flex-shrink:0"><div id="pf-dot-3meses" style="display:none;width:9px;height:9px;border-radius:50%;background:#2F80ED"></div></div>
+            <div><div style="font-size:13px;font-weight:600;color:#0F2A44">3 meses</div><div style="font-size:11px;color:#94a3b8;margin-top:1px">Veja os dados do último mês, do atual e do próximo.</div></div>
+          </div>
+          <div id="pf-opt-ultimoano" onclick="setPeriodFilter('ultimoano')" style="display:flex;align-items:center;gap:12px;padding:9px 16px;cursor:pointer" onmouseenter="this.style.background='#f8fafc'" onmouseleave="this.style.background=(S.periodFilter==='ultimoano'?'#eff6ff':'')">
+            <div id="pf-radio-ultimoano" style="width:18px;height:18px;border-radius:50%;border:2px solid #cbd5e1;display:flex;align-items:center;justify-content:center;flex-shrink:0"><div id="pf-dot-ultimoano" style="display:none;width:9px;height:9px;border-radius:50%;background:#2F80ED"></div></div>
+            <div><div style="font-size:13px;font-weight:600;color:#0F2A44">Último ano</div><div style="font-size:11px;color:#94a3b8;margin-top:1px">Veja os dados do último ano, incluindo o mês atual</div></div>
+          </div>
+          <div id="pf-opt-ano" onclick="setPeriodFilter('ano')" style="display:flex;align-items:center;gap:12px;padding:9px 16px;cursor:pointer" onmouseenter="this.style.background='#f8fafc'" onmouseleave="this.style.background=(S.periodFilter==='ano'?'#eff6ff':'')">
+            <div id="pf-radio-ano" style="width:18px;height:18px;border-radius:50%;border:2px solid #cbd5e1;display:flex;align-items:center;justify-content:center;flex-shrink:0"><div id="pf-dot-ano" style="display:none;width:9px;height:9px;border-radius:50%;background:#2F80ED"></div></div>
+            <div><div style="font-size:13px;font-weight:600;color:#0F2A44">Esse ano</div><div style="font-size:11px;color:#94a3b8;margin-top:1px">Veja os dados do ano atual.</div></div>
+          </div>
+          <div id="pf-opt-anoanterior" onclick="setPeriodFilter('anoanterior')" style="display:flex;align-items:center;gap:12px;padding:9px 16px;cursor:pointer" onmouseenter="this.style.background='#f8fafc'" onmouseleave="this.style.background=(S.periodFilter==='anoanterior'?'#eff6ff':'')">
+            <div id="pf-radio-anoanterior" style="width:18px;height:18px;border-radius:50%;border:2px solid #cbd5e1;display:flex;align-items:center;justify-content:center;flex-shrink:0"><div id="pf-dot-anoanterior" style="display:none;width:9px;height:9px;border-radius:50%;background:#2F80ED"></div></div>
+            <div><div style="font-size:13px;font-weight:600;color:#0F2A44">Ano anterior</div><div style="font-size:11px;color:#94a3b8;margin-top:1px">Veja os dados do ano anterior ao atual.</div></div>
+          </div>
+        </div>
+        <!-- Custom date range -->
+        <div style="padding:10px 16px 14px;border-top:1px solid #f1f5f9">
+          <div style="font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px">Personalizado</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <input type="date" id="pf-from" class="inp" style="flex:1;padding:5px 8px;font-size:12px;border:1.5px solid #e2e8f0;border-radius:8px;font-family:inherit;color:#0F2A44">
+            <span style="font-size:12px;color:#94a3b8;flex-shrink:0">→</span>
+            <input type="date" id="pf-to" class="inp" style="flex:1;padding:5px 8px;font-size:12px;border:1.5px solid #e2e8f0;border-radius:8px;font-family:inherit;color:#0F2A44">
+            <button onclick="applyCustomPeriod()" style="width:32px;height:32px;border-radius:8px;background:#2F80ED;color:#fff;border:none;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0">✓</button>
+          </div>
+        </div>
       </div>
-      <!-- Label do período ativo -->
-      <span id="pf-label" style="font-size:11px;color:#94a3b8;font-weight:500"></span>
     </div>
     <!-- Export PDF -->
     <button onclick="exportDashboardPDF()" style="display:flex;align-items:center;gap:6px;padding:5px 14px;border-radius:100px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;border:1.5px solid #e2e8f0;background:#fff;color:#0F2A44;transition:all .18s;white-space:nowrap" onmouseenter="this.style.background='#f1f5f9'" onmouseleave="this.style.background='#fff'">
@@ -2189,8 +2234,6 @@ textarea.inp{min-height:80px;resize:vertical}
               <span class="card-title" id="cashflowTitle">Fluxo de Caixa</span>
             </div>
             <div style="flex:1;min-height:220px;position:relative;overflow:hidden" id="cashflowChart"></div>
-            <!-- Tooltip -->
-            <div id="cfTooltip" style="display:none;position:fixed;background:#1E293B;color:#fff;border-radius:10px;padding:10px 14px;font-size:12px;pointer-events:none;z-index:500;box-shadow:0 8px 24px rgba(0,0,0,.2);min-width:180px"></div>
           </div>
         </div>
         <div class="grid-2">
@@ -2415,10 +2458,6 @@ textarea.inp{min-height:80px;resize:vertical}
       <!-- Top bar: title + action buttons -->
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px">
         <h2 style="font-size:20px;font-weight:800;letter-spacing:-.02em">Entradas e Saídas</h2>
-        <div style="display:flex;gap:10px">
-          <button class="btn btn-outline" onclick="lancImport()" style="font-size:12px;font-weight:700;border:1.5px solid #3b82f6;color:#3b82f6;background:transparent;padding:8px 16px;border-radius:8px">Importar Lançamentos</button>
-          <button class="btn btn-outline" style="font-size:12px;font-weight:700;border:1.5px solid #e2e8f0;color:#64748b;background:transparent;padding:8px 16px;border-radius:8px" disabled>Nenhuma conta</button>
-        </div>
       </div>
 
       <!-- Entradas / Saídas tabs -->
@@ -2752,11 +2791,11 @@ textarea.inp{min-height:80px;resize:vertical}
       <div id="contas-list-view">
 
         <!-- MOBILE: botões de ação no topo -->
-        <div class="mob-only-flex" style="gap:10px;margin-bottom:16px">
-          <button class="btn btn-blue" onclick="openModal('account')" style="flex:1;justify-content:center;padding:12px;font-size:14px;font-weight:800;border-radius:12px">
+        <div class="mob-only-flex" style="flex-direction:column;gap:10px;margin-bottom:16px">
+          <button class="btn btn-blue" onclick="openModal('account')" style="width:100%;justify-content:center;padding:13px;font-size:14px;font-weight:800;border-radius:12px">
             + Nova Conta
           </button>
-          <button class="btn btn-purple" onclick="openModal('transfer')" style="flex:1;justify-content:center;padding:12px;font-size:14px;font-weight:800;border-radius:12px">
+          <button class="btn btn-purple" onclick="openModal('transfer')" style="width:100%;justify-content:center;padding:13px;font-size:14px;font-weight:800;border-radius:12px">
             ↔ Transferir
           </button>
         </div>
@@ -4017,7 +4056,7 @@ function navigate(page){
   $('pageTitle').textContent=TITLES[page]||page;
   S.currentPage=page;
   if(page==='dashboard')renderDashboard();
-  if(page==='lancamentos')renderLancamentos();
+  if(page==='lancamentos'){ _syncLancDates(); renderLancamentos(); }
   if(page==='relatorios')renderRelatorios();
   if(page==='clientes')renderClientes();
   if(page==='fornecedores')renderFornecedores();
@@ -5220,60 +5259,121 @@ S.periodFilter = 'mes';
 S.periodFrom   = null;
 S.periodTo     = null;
 
+var _PF_MODES = ['mes','anterior','proximo','3meses','ultimoano','ano','anoanterior'];
+
 (function initPeriod(){
   const now = new Date();
   S.periodFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
   S.periodTo   = new Date(now.getFullYear(), now.getMonth()+1, 0).toISOString().split('T')[0];
 })();
 
+function _pfClose(){
+  var p=$('pf-panel'), c=$('pf-chevron');
+  if(p) p.style.display='none';
+  if(c) c.style.transform='';
+}
+
+function togglePeriodDropdown(e){
+  if(e) e.stopPropagation();
+  var panel=$('pf-panel'), chevron=$('pf-chevron'), btn=$('pf-trigger');
+  if(!panel) return;
+  if(panel.style.display!=='none'){ _pfClose(); return; }
+  // Sync custom inputs
+  if($('pf-from') && S.periodFrom) $('pf-from').value=S.periodFrom;
+  if($('pf-to')   && S.periodTo)   $('pf-to').value=S.periodTo;
+  _pfUpdateRadios();
+  // Position below the trigger button (fixed, avoids overflow:hidden clipping)
+  if(btn){
+    var r=btn.getBoundingClientRect();
+    var panW=320;
+    var left=r.left;
+    if(left+panW > window.innerWidth-8) left=window.innerWidth-panW-8;
+    panel.style.top=(r.bottom+6)+'px';
+    panel.style.left=Math.max(8,left)+'px';
+  }
+  panel.style.display='block';
+  if(chevron) chevron.style.transform='rotate(180deg)';
+}
+
+function _pfUpdateRadios(){
+  _PF_MODES.forEach(function(k){
+    var radio=$('pf-radio-'+k), dot=$('pf-dot-'+k), row=$('pf-opt-'+k);
+    var active=(S.periodFilter===k);
+    if(radio){ radio.style.borderColor=active?'#2F80ED':'#cbd5e1'; }
+    if(dot)  { dot.style.display=active?'block':'none'; }
+    if(row)  { row.style.background=active?'#eff6ff':''; }
+  });
+}
+
 function setPeriodFilter(mode){
   S.periodFilter = mode;
-  const now = new Date();
-  if(mode==='mes'){
-    S.periodFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-    S.periodTo   = new Date(now.getFullYear(), now.getMonth()+1, 0).toISOString().split('T')[0];
-    $('pf-custom-dates').style.display='none';
-  } else if(mode==='ano'){
-    S.periodFrom = `${now.getFullYear()}-01-01`;
-    S.periodTo   = `${now.getFullYear()}-12-31`;
-    $('pf-custom-dates').style.display='none';
-  } else {
-    $('pf-custom-dates').style.display='flex';
-    if(!$('pf-from').value) $('pf-from').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-    if(!$('pf-to').value)   $('pf-to').value   = now.toISOString().split('T')[0];
-    S.periodFrom = $('pf-from').value;
-    S.periodTo   = $('pf-to').value;
+  const now=new Date(), y=now.getFullYear(), m=now.getMonth();
+  switch(mode){
+    case 'mes':
+      S.periodFrom=new Date(y,m,1).toISOString().split('T')[0];
+      S.periodTo  =new Date(y,m+1,0).toISOString().split('T')[0]; break;
+    case 'anterior':
+      S.periodFrom=new Date(y,m-1,1).toISOString().split('T')[0];
+      S.periodTo  =new Date(y,m,0).toISOString().split('T')[0]; break;
+    case 'proximo':
+      S.periodFrom=new Date(y,m+1,1).toISOString().split('T')[0];
+      S.periodTo  =new Date(y,m+2,0).toISOString().split('T')[0]; break;
+    case '3meses':
+      S.periodFrom=new Date(y,m-1,1).toISOString().split('T')[0];
+      S.periodTo  =new Date(y,m+2,0).toISOString().split('T')[0]; break;
+    case 'ultimoano':
+      S.periodFrom=new Date(y-1,m,now.getDate()).toISOString().split('T')[0];
+      S.periodTo  =now.toISOString().split('T')[0]; break;
+    case 'ano':
+      S.periodFrom=y+'-01-01'; S.periodTo=y+'-12-31'; break;
+    case 'anoanterior':
+      S.periodFrom=(y-1)+'-01-01'; S.periodTo=(y-1)+'-12-31'; break;
   }
-  ['mes','ano','custom'].forEach(k=>{
-    const btn = $('pf-'+k);
-    const active = k===mode;
-    if(btn){ btn.style.background=active?'#2F80ED':'#f1f5f9'; btn.style.color=active?'#fff':'#64748b'; btn.style.borderColor=active?'#2F80ED':'#e2e8f0'; }
-  });
+  _pfClose();
   updatePeriodLabel();
+  _syncLancDates();
   renderDashboard();
 }
 
-function applyPeriodFilter(){
-  if(S.periodFilter==='custom'){
-    S.periodFrom = $('pf-from').value||null;
-    S.periodTo   = $('pf-to').value||null;
-    updatePeriodLabel();
-  }
+function applyCustomPeriod(){
+  var f=$('pf-from'), t=$('pf-to');
+  if(!f||!t||!f.value||!t.value) return;
+  S.periodFilter='custom';
+  S.periodFrom=f.value;
+  S.periodTo=t.value;
+  _pfClose();
+  updatePeriodLabel();
+  _syncLancDates();
   renderDashboard();
 }
+
+// Sincroniza os inputs de data de Lançamentos com o filtro global
+function _syncLancDates(){
+  var ldf=$('lancDateFrom'), ldt=$('lancDateTo');
+  if(ldf && S.periodFrom) ldf.value=S.periodFrom;
+  if(ldt && S.periodTo)   ldt.value=S.periodTo;
+  if(S.currentPage==='lancamentos') renderLancamentos();
+}
+
+// backward compat
+function applyPeriodFilter(){ applyCustomPeriod(); }
+
+// Close on outside click
+document.addEventListener('click',function(e){
+  var wrap=$('pf-dropdown-wrap'), panel=$('pf-panel');
+  if(panel&&panel.style.display!=='none'&&wrap&&!wrap.contains(e.target)) _pfClose();
+});
 
 function updatePeriodLabel(){
-  const lbl = $('pf-label'); if(!lbl) return;
+  const lbl=$('pf-label'); if(!lbl) return;
   if(!S.periodFrom||!S.periodTo){ lbl.textContent=''; return; }
-  const fd = d => new Date(d+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
-  if(S.periodFilter==='mes'){
-    const m=new Date(S.periodFrom+'T12:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
-    lbl.textContent=m.charAt(0).toUpperCase()+m.slice(1);
-  } else if(S.periodFilter==='ano'){
-    lbl.textContent=new Date(S.periodFrom+'T12:00:00').getFullYear();
-  } else {
-    lbl.textContent=`${fd(S.periodFrom)} → ${fd(S.periodTo)}`;
-  }
+  const fmtM=d=>{ const s=new Date(d+'T12:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'}); return s.charAt(0).toUpperCase()+s.slice(1); };
+  const fmtD=d=>new Date(d+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
+  const labels={mes:fmtM(S.periodFrom),anterior:fmtM(S.periodFrom),proximo:fmtM(S.periodFrom),
+    '3meses':'3 meses',ultimoano:'Último ano',
+    ano:String(new Date(S.periodFrom+'T12:00:00').getFullYear()),
+    anoanterior:String(new Date(S.periodFrom+'T12:00:00').getFullYear())};
+  lbl.textContent = labels[S.periodFilter] || (fmtD(S.periodFrom)+' → '+fmtD(S.periodTo));
 }
 
 function inPeriod(dateStr){
@@ -6153,10 +6253,10 @@ function getLancItems(){
 }
 
 function renderLancamentos(){
-  // init dates if empty
+  // init dates se vazios: usa o período global se disponível, senão mês atual
   const df=$('lancDateFrom'), dt=$('lancDateTo');
-  if(df&&!df.value){ const d=new Date(); d.setMonth(d.getMonth()-3); df.value=d.toISOString().split('T')[0]; }
-  if(dt&&!dt.value){ const d=new Date(); d.setMonth(d.getMonth()+3); dt.value=d.toISOString().split('T')[0]; }
+  if(df&&!df.value) df.value = S.periodFrom || new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+  if(dt&&!dt.value) dt.value = S.periodTo   || new Date(new Date().getFullYear(), new Date().getMonth()+1, 0).toISOString().split('T')[0];
 
   const list=getLancItems();
   const total=list.reduce((s,x)=>s+x.value,0);
@@ -7701,10 +7801,12 @@ function renderContas(){
     $('transfersList').innerHTML=S.transfers.map(t=>{
       const from=S.accounts.find(a=>a.id===t.fromId);
       const to=S.accounts.find(a=>a.id===t.toId);
-      return `<div class="tbl-row" style="grid-template-columns:80px 1fr 110px">
-        <span style="color:#64748b;font-size:11px">${fmtD(t.date)}</span>
-        <span style="font-weight:500">${from?.name||'?'} → ${to?.name||'?'}${t.desc?' — '+t.desc:''}</span>
-        <span class="mono" style="color:#8b5cf6">${fmt(t.value)}</span>
+      return `<div class="tbl-row">
+        <div class="tr-top">
+          <span class="tr-route">${from?.name||'?'} → ${to?.name||'?'}</span>
+          <span class="tr-val mono">${fmt(t.value)}</span>
+        </div>
+        <div class="tr-date">${fmtD(t.date)}${t.desc?' · '+t.desc:''}</div>
       </div>`;
     }).join('');
   } else $('transfersCard').style.display='none';
@@ -10660,6 +10762,17 @@ async function showApp(user) {
   _currentUser = user;
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
+  // Sempre inicia no mês atual ao entrar no sistema
+  (function(){
+    const now = new Date();
+    S.periodFilter = 'mes';
+    S.periodFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    S.periodTo   = new Date(now.getFullYear(), now.getMonth()+1, 0).toISOString().split('T')[0];
+    // Mobile: também reseta navegação de mês para o mês atual
+    S.mobRef  = new Date();
+    S.mobMode = 'mes';
+    updateMobPeriodNav();
+  })();
   // Atualiza nome/email no sidebar
   const email = user.email || '';
   const name = email.split('@')[0];
@@ -11100,7 +11213,7 @@ if(typeof Chart !== 'undefined'){
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
-    navigator.serviceWorker.register('sw.js').catch(function(){});
+    navigator.serviceWorker.register('/sw.js', {scope: '/'}).catch(function(){});
 // â"€â"€ PWA INSTALL BANNER LOGIC â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 (function(){
   var inPWA = window.matchMedia('(display-mode: standalone)').matches
@@ -11165,5 +11278,7 @@ window.dismissPWABanner = function(){
   });
 }
 </script>
+<!-- Tooltip global — fora de qualquer elemento animado/transformado -->
+<div id="cfTooltip" style="display:none;position:fixed;background:#1E293B;color:#fff;border-radius:10px;padding:10px 14px;font-size:12px;pointer-events:none;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.2);min-width:180px"></div>
 </body>
 </html>
