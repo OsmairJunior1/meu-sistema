@@ -10832,31 +10832,37 @@ async function doLogin() {
     return;
   }
 
-  // Verifica se o plano está ativo e não expirado
-  const { data: planData } = await _sb
-    .from('user_plans')
-    .select('status, expires_at')
-    .eq('user_id', data.user.id)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  // Verifica plano apenas se a tabela existir e houver registro
+  try {
+    const { data: planData } = await _sb
+      .from('user_plans')
+      .select('status, expires_at')
+      .eq('user_id', data.user.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-  if (!planData || planData.status !== 'active') {
-    await _sb.auth.signOut();
-    errEl.textContent = 'Seu pagamento ainda não foi confirmado. Aguarde alguns minutos ou entre em contato com o suporte.';
-    errEl.style.display = 'block';
-    btn.disabled = false;
-    btn.textContent = 'ACESSAR';
-    return;
-  }
-
-  if (planData.expires_at && new Date(planData.expires_at) < new Date()) {
-    await _sb.auth.signOut();
-    errEl.textContent = 'Seu plano está expirado. Renove seu plano para continuar acessando.';
-    errEl.style.display = 'block';
-    btn.disabled = false;
-    btn.textContent = 'ACESSAR';
-    return;
+    // Só bloqueia se existir registro com status inativo
+    if (planData && planData.status !== 'active') {
+      await _sb.auth.signOut();
+      errEl.textContent = 'Seu pagamento ainda não foi confirmado. Aguarde alguns minutos ou entre em contato com o suporte.';
+      errEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'ACESSAR';
+      return;
+    }
+    // Só bloqueia se existir registro ativo mas expirado
+    if (planData && planData.status === 'active' && planData.expires_at && new Date(planData.expires_at) < new Date()) {
+      await _sb.auth.signOut();
+      errEl.textContent = 'Seu plano está expirado. Renove seu plano para continuar acessando.';
+      errEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'ACESSAR';
+      return;
+    }
+  } catch(e) {
+    // Se a tabela não existir ou der erro, ignora e permite acesso básico
+    console.warn('user_plans não encontrado, acesso básico liberado:', e);
   }
 
   await showApp(data.user);
@@ -11142,19 +11148,28 @@ if(typeof Chart !== 'undefined'){
   </div>
 </div>
 
-<!-- ── PWA INSTALL BANNER – mobile only ── -->
+<!-- ── PWA INSTALL POPUP ── -->
+<style>
+#pwa-banner{display:none!important;position:fixed!important;bottom:24px!important;right:20px!important;left:auto!important;width:300px!important;max-width:calc(100vw - 32px)!important;z-index:600!important;padding:0!important;pointer-events:none!important}
+#pwa-banner-inner{background:#fff!important;border-radius:18px!important;box-shadow:0 8px 32px rgba(15,42,68,.20),0 2px 8px rgba(0,0,0,.08)!important;border:1px solid rgba(15,42,68,.1)!important;padding:14px 16px!important;display:flex!important;align-items:flex-start!important;gap:10px!important;pointer-events:all!important;transition:opacity .3s,transform .3s!important;flex-direction:column!important}
+#pwa-banner-inner .pwa-row{display:flex;align-items:center;gap:10px;width:100%}
+#pwa-banner.hide #pwa-banner-inner{opacity:0!important;transform:translateY(16px)!important}
+@media(max-width:600px){#pwa-banner{bottom:80px!important;right:12px!important;width:calc(100vw - 24px)!important}}
+</style>
 <div id=”pwa-banner”>
   <div id=”pwa-banner-inner”>
-    <img src=”192x192.png” width=”42” height=”42” style=”border-radius:11px;flex-shrink:0” alt=””>
-    <div id=”pwa-banner-text” style=”flex:1;min-width:0”>
-      <div style=”font-size:14px;font-weight:800;color:#0F2A44;letter-spacing:-.02em;line-height:1.2”>Instale o MonBluu</div>
-      <div style=”font-size:11.5px;color:#64748b;margin-top:2px”>Acesso rapido, sem abrir o navegador</div>
+    <div class=”pwa-row”>
+      <img src=”192x192.png” width=”38” height=”38” style=”border-radius:10px;flex-shrink:0” alt=””>
+      <div style=”flex:1;min-width:0”>
+        <div style=”font-size:13px;font-weight:800;color:#0F2A44;letter-spacing:-.02em;line-height:1.2”>Instale o MonBluu</div>
+        <div style=”font-size:11px;color:#64748b;margin-top:2px”>Acesso rápido, sem abrir o navegador</div>
+      </div>
+      <button onclick=”dismissPWABanner()” style=”background:none;border:none;color:#94a3b8;font-size:20px;line-height:1;cursor:pointer;padding:2px 4px;flex-shrink:0;margin-top:-2px”>&times;</button>
     </div>
-    <div id=”pwa-ios-hint” style=”display:none;flex:1;font-size:11.5px;color:#0F2A44;line-height:1.45”>
-      Toque em <strong>Compartilhar</strong> e depois em <strong>Adicionar a Tela de Inicio</strong>
+    <div id=”pwa-ios-hint” style=”display:none;font-size:11.5px;color:#475569;line-height:1.5;padding:0 2px”>
+      Toque em <strong>Compartilhar</strong> e depois em <strong>Adicionar à Tela de Início</strong>
     </div>
-    <button id=”pwa-install-btn” onclick=”installPWA()” style=”background:#0F2A44;color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0;font-family:inherit;white-space:nowrap”>Instalar</button>
-    <button onclick=”dismissPWABanner()” style=”background:none;border:none;color:#94a3b8;font-size:22px;line-height:1;cursor:pointer;padding:2px 6px;flex-shrink:0”>&times;</button>
+    <button id=”pwa-install-btn” onclick=”installPWA()” style=”width:100%;background:linear-gradient(135deg,#0F2A44,#1E5EFF);color:#fff;border:none;border-radius:10px;padding:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.02em”>Instalar App</button>
   </div>
 </div>
 <script>
