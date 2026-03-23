@@ -1,7 +1,7 @@
-const CACHE = 'monbluu-v4';
-const SHELL = '/sistema.html';
+const CACHE = 'monbluu-v5';
+const SHELL = '/index.html';
 const ASSETS = [
-  '/sistema.html',
+  '/index.html',
   '/manifest.json'
 ];
 
