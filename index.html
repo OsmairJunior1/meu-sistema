@@ -742,7 +742,7 @@ body {
 }
 
 
-  /* â”€â”€ PWA Install Banner â”€â”€ */
+  /* â"€â"€ PWA Install Banner â"€â"€ */
   #pwa-banner{
     display:none;position:fixed;left:0;right:0;
     bottom:calc(64px + env(safe-area-inset-bottom,0px));
@@ -1710,7 +1710,7 @@ textarea.inp{min-height:80px;resize:vertical}
 }
 
 
-  /* â”€â”€ PWA Install Banner â”€â”€ */
+  /* â"€â"€ PWA Install Banner â"€â"€ */
   #pwa-banner{
     display:none;position:fixed;left:0;right:0;
     bottom:calc(64px + env(safe-area-inset-bottom,0px));
@@ -1750,7 +1750,7 @@ textarea.inp{min-height:80px;resize:vertical}
   #ls-card{border-radius:18px!important;padding:36px 28px!important}
 }
 
-  /* â”€â”€ PWA Install Banner â”€â”€ */
+  /* â"€â"€ PWA Install Banner â"€â"€ */
   #pwa-banner{
     display:none;position:fixed;left:0;right:0;
     bottom:calc(64px + env(safe-area-inset-bottom,0px));
@@ -6761,7 +6761,7 @@ function exportLancPDF(){
     .section-title{font-size:15px;font-weight:800;color:#0F2A44;margin:20px 0 10px}
     @media print{body{padding:16px}.header{break-inside:avoid}}
   
-  /* â”€â”€ PWA Install Banner â”€â”€ */
+  /* â"€â"€ PWA Install Banner â"€â"€ */
   #pwa-banner{
     display:none;position:fixed;left:0;right:0;
     bottom:calc(64px + env(safe-area-inset-bottom,0px));
@@ -7287,7 +7287,7 @@ function exportRelPDF(){
     .inc{color:#22C55E}.exp{color:#ef4444}
     @media print{body{padding:16px}.header{break-inside:avoid}}
   
-  /* â”€â”€ PWA Install Banner â”€â”€ */
+  /* â"€â"€ PWA Install Banner â"€â"€ */
   #pwa-banner{
     display:none;position:fixed;left:0;right:0;
     bottom:calc(64px + env(safe-area-inset-bottom,0px));
@@ -8088,7 +8088,7 @@ function exportExtratoPDF(){
     .section-title{font-size:15px;font-weight:800;color:#0F2A44;margin:20px 0 10px}
     @media print{body{padding:16px}.header{break-inside:avoid}}
   
-  /* â”€â”€ PWA Install Banner â”€â”€ */
+  /* â"€â"€ PWA Install Banner â"€â"€ */
   #pwa-banner{
     display:none;position:fixed;left:0;right:0;
     bottom:calc(64px + env(safe-area-inset-bottom,0px));
@@ -9207,24 +9207,7 @@ function gerarOrcamentoPDF(){
 
   const html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">'
     +'<title>Orcamento '+numOrc+'</title>'
-    +'<style>'+css+'
-  /* â”€â”€ PWA Install Banner â”€â”€ */
-  #pwa-banner{
-    display:none;position:fixed;left:0;right:0;
-    bottom:calc(64px + env(safe-area-inset-bottom,0px));
-    z-index:500;padding:0 12px 8px;
-    pointer-events:none;
-  }
-  #pwa-banner-inner{
-    background:#fff;border-radius:18px;
-    box-shadow:0 4px 24px rgba(15,42,68,.18),0 1px 6px rgba(0,0,0,.08);
-    border:1px solid rgba(15,42,68,.08);
-    padding:12px 14px;display:flex;align-items:center;gap:10px;
-    pointer-events:all;
-    transition:opacity .3s,transform .3s;
-  }
-  #pwa-banner.hide #pwa-banner-inner{opacity:0;transform:translateY(16px)}
-</style></head><body>'
+    +'<style>'+css+'</style></head><body>'
     +'<div class="page">'
     +'<div class="header">'
       +'<div class="header-left">'
@@ -10240,24 +10223,7 @@ function exportPrcPDF(){
   ].map(s=>({...s, lucro: (s.preco-r.custoUnit-(s.preco*(PRC.params.impostos/100)))*vol}));
 
   const html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Relatório de Precificação</title>'
-    +'<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Segoe UI",sans-serif;color:#1E293B;background:#fff;padding:32px}@page{size:A4;margin:15mm}h1{font-size:22px;font-weight:900;color:#0F2A44;margin-bottom:4px}.sub{color:#64748b;font-size:13px;margin-bottom:24px}.section{margin-bottom:20px}.sec-title{font-size:10px;text-transform:uppercase;letter-spacing:.1em;font-weight:800;color:#2F80ED;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #EFF6FF}table{width:100%;border-collapse:collapse;border:1px solid #E8ECF0;border-radius:8px;overflow:hidden}th{background:#0F2A44;color:#fff;padding:9px 12px;font-size:10px;text-transform:uppercase;letter-spacing:.07em;text-align:left}td{padding:9px 12px;border-bottom:1px solid #E8ECF0;font-size:13px}tr:nth-child(even){background:#F8FAFC}.highlight{background:#0F2A44;color:#fff;padding:20px;border-radius:10px;margin-bottom:20px;display:grid;grid-template-columns:repeat(4,1fr);gap:16px;text-align:center}.hl-label{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.5);margin-bottom:6px}.hl-val{font-size:20px;font-weight:900;color:#fff;font-family:monospace}.eq-box{background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;padding:16px;margin-bottom:20px}.footer{margin-top:32px;text-align:center;font-size:10px;color:#94a3b8;border-top:1px solid #E8ECF0;padding-top:16px}
-  /* â”€â”€ PWA Install Banner â”€â”€ */
-  #pwa-banner{
-    display:none;position:fixed;left:0;right:0;
-    bottom:calc(64px + env(safe-area-inset-bottom,0px));
-    z-index:500;padding:0 12px 8px;
-    pointer-events:none;
-  }
-  #pwa-banner-inner{
-    background:#fff;border-radius:18px;
-    box-shadow:0 4px 24px rgba(15,42,68,.18),0 1px 6px rgba(0,0,0,.08);
-    border:1px solid rgba(15,42,68,.08);
-    padding:12px 14px;display:flex;align-items:center;gap:10px;
-    pointer-events:all;
-    transition:opacity .3s,transform .3s;
-  }
-  #pwa-banner.hide #pwa-banner-inner{opacity:0;transform:translateY(16px)}
-</style>'
+    +'<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Segoe UI",sans-serif;color:#1E293B;background:#fff;padding:32px}@page{size:A4;margin:15mm}h1{font-size:22px;font-weight:900;color:#0F2A44;margin-bottom:4px}.sub{color:#64748b;font-size:13px;margin-bottom:24px}.section{margin-bottom:20px}.sec-title{font-size:10px;text-transform:uppercase;letter-spacing:.1em;font-weight:800;color:#2F80ED;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #EFF6FF}table{width:100%;border-collapse:collapse;border:1px solid #E8ECF0;border-radius:8px;overflow:hidden}th{background:#0F2A44;color:#fff;padding:9px 12px;font-size:10px;text-transform:uppercase;letter-spacing:.07em;text-align:left}td{padding:9px 12px;border-bottom:1px solid #E8ECF0;font-size:13px}tr:nth-child(even){background:#F8FAFC}.highlight{background:#0F2A44;color:#fff;padding:20px;border-radius:10px;margin-bottom:20px;display:grid;grid-template-columns:repeat(4,1fr);gap:16px;text-align:center}.hl-label{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.5);margin-bottom:6px}.hl-val{font-size:20px;font-weight:900;color:#fff;font-family:monospace}.eq-box{background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;padding:16px;margin-bottom:20px}.footer{margin-top:32px;text-align:center;font-size:10px;color:#94a3b8;border-top:1px solid #E8ECF0;padding-top:16px}</style>'
     +'</head><body>'
     +'<h1>Relatório de Precificação</h1>'
     +'<div class="sub">Produto: '+(prod.nome||'Sem nome')+' · Gerado em '+new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})+'</div>'
@@ -11150,33 +11116,81 @@ if(typeof Chart !== 'undefined'){
 
 <!-- ── PWA INSTALL POPUP ── -->
 <style>
-#pwa-banner{display:none!important;position:fixed!important;bottom:24px!important;right:20px!important;left:auto!important;width:300px!important;max-width:calc(100vw - 32px)!important;z-index:600!important;padding:0!important;pointer-events:none!important}
-#pwa-banner-inner{background:#fff!important;border-radius:18px!important;box-shadow:0 8px 32px rgba(15,42,68,.20),0 2px 8px rgba(0,0,0,.08)!important;border:1px solid rgba(15,42,68,.1)!important;padding:14px 16px!important;display:flex!important;align-items:flex-start!important;gap:10px!important;pointer-events:all!important;transition:opacity .3s,transform .3s!important;flex-direction:column!important}
-#pwa-banner-inner .pwa-row{display:flex;align-items:center;gap:10px;width:100%}
-#pwa-banner.hide #pwa-banner-inner{opacity:0!important;transform:translateY(16px)!important}
-@media(max-width:600px){#pwa-banner{bottom:80px!important;right:12px!important;width:calc(100vw - 24px)!important}}
+#pwa-banner{
+  display:none;
+  position:fixed;
+  bottom:90px;
+  left:50%;
+  transform:translateX(-50%);
+  width:320px;
+  max-width:calc(100vw - 32px);
+  z-index:9000;
+}
+#pwa-banner-inner{
+  background:#fff;
+  border-radius:20px;
+  box-shadow:0 12px 40px rgba(15,42,68,.22),0 2px 10px rgba(0,0,0,.10);
+  border:1px solid rgba(15,42,68,.08);
+  padding:20px;
+  font-family:inherit;
+}
+#pwa-banner .pwa-icon{
+  width:48px;height:48px;border-radius:12px;
+  background:linear-gradient(135deg,#0F2A44,#1E5EFF);
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;flex-shrink:0;
+}
+#pwa-banner .pwa-top{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+#pwa-banner .pwa-title{font-size:14px;font-weight:800;color:#0F2A44;line-height:1.2}
+#pwa-banner .pwa-sub{font-size:12px;color:#64748b;margin-top:3px}
+#pwa-banner .pwa-dismiss{
+  position:absolute;top:12px;right:14px;
+  background:none;border:none;color:#94a3b8;
+  font-size:22px;line-height:1;cursor:pointer;padding:2px 6px;
+}
+#pwa-banner .pwa-btns{display:flex;gap:8px;margin-top:4px}
+#pwa-banner .pwa-btn-install{
+  flex:1;background:linear-gradient(135deg,#0F2A44,#1E5EFF);
+  color:#fff;border:none;border-radius:10px;
+  padding:10px;font-size:13px;font-weight:700;
+  cursor:pointer;font-family:inherit;
+}
+#pwa-banner .pwa-btn-later{
+  flex:1;background:#f1f5f9;color:#475569;
+  border:none;border-radius:10px;
+  padding:10px;font-size:13px;font-weight:600;
+  cursor:pointer;font-family:inherit;
+}
+#pwa-ios-hint{display:none;font-size:12px;color:#475569;line-height:1.6;margin-top:8px;padding:10px;background:#f8fafc;border-radius:10px;text-align:center}
+#pwa-banner.pwa-hide{animation:pwaFadeOut .3s ease forwards}
+#pwa-banner.pwa-show{animation:pwaFadeIn .35s cubic-bezier(.34,1.56,.64,1) forwards}
+@keyframes pwaFadeIn{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+@keyframes pwaFadeOut{from{opacity:1;transform:translateX(-50%) translateY(0)}to{opacity:0;transform:translateX(-50%) translateY(16px)}}
 </style>
-<div id=”pwa-banner”>
-  <div id=”pwa-banner-inner”>
-    <div class=”pwa-row”>
-      <img src=”192x192.png” width=”38” height=”38” style=”border-radius:10px;flex-shrink:0” alt=””>
-      <div style=”flex:1;min-width:0”>
-        <div style=”font-size:13px;font-weight:800;color:#0F2A44;letter-spacing:-.02em;line-height:1.2”>Instale o MonBluu</div>
-        <div style=”font-size:11px;color:#64748b;margin-top:2px”>Acesso rápido, sem abrir o navegador</div>
+<div id="pwa-banner" style="position:fixed">
+  <div id="pwa-banner-inner" style="position:relative">
+    <button class="pwa-dismiss" onclick="dismissPWABanner()">&times;</button>
+    <div class="pwa-top">
+      <div class="pwa-icon">💙</div>
+      <div>
+        <div class="pwa-title">Instale o MonBluu</div>
+        <div class="pwa-sub">Acesso rápido, sem abrir o navegador</div>
       </div>
-      <button onclick=”dismissPWABanner()” style=”background:none;border:none;color:#94a3b8;font-size:20px;line-height:1;cursor:pointer;padding:2px 4px;flex-shrink:0;margin-top:-2px”>&times;</button>
     </div>
-    <div id=”pwa-ios-hint” style=”display:none;font-size:11.5px;color:#475569;line-height:1.5;padding:0 2px”>
-      Toque em <strong>Compartilhar</strong> e depois em <strong>Adicionar à Tela de Início</strong>
+    <div id="pwa-ios-hint">
+      Toque em <strong>Compartilhar</strong> ↑ e depois em<br><strong>Adicionar à Tela de Início</strong>
     </div>
-    <button id=”pwa-install-btn” onclick=”installPWA()” style=”width:100%;background:linear-gradient(135deg,#0F2A44,#1E5EFF);color:#fff;border:none;border-radius:10px;padding:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.02em”>Instalar App</button>
+    <div class="pwa-btns">
+      <button id="pwa-install-btn" class="pwa-btn-install" onclick="installPWA()">Instalar App</button>
+      <button class="pwa-btn-later" onclick="dismissPWABanner()">Agora não</button>
+    </div>
   </div>
 </div>
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
     navigator.serviceWorker.register('sw.js').catch(function(){});
-// â”€â”€ PWA INSTALL BANNER LOGIC â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€ PWA INSTALL BANNER LOGIC â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 (function(){
   var inPWA = window.matchMedia('(display-mode: standalone)').matches
             || window.navigator.standalone === true;
@@ -11187,16 +11201,21 @@ if('serviceWorker' in navigator){
   var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent.toLowerCase());
   var banner = document.getElementById('pwa-banner');
 
+  function showBanner(){
+    if(!banner) return;
+    banner.style.display = 'block';
+    banner.classList.remove('pwa-hide');
+    banner.classList.add('pwa-show');
+  }
+
   window.addEventListener('beforeinstallprompt', function(e){
     e.preventDefault();
     window._pwaPrompt = e;
-    if(banner) banner.style.display = 'flex';
+    setTimeout(showBanner, 1500);
   });
 
   if(isIOS){
-    setTimeout(function(){
-      if(banner) banner.style.display = 'flex';
-    }, 3000);
+    setTimeout(showBanner, 3000);
   }
 
   window.addEventListener('appinstalled', function(){
@@ -11224,8 +11243,9 @@ window.dismissPWABanner = function(){
   try{ localStorage.setItem('pwa-dismissed','1'); }catch(e){}
   var b = document.getElementById('pwa-banner');
   if(b){
-    b.classList.add('hide');
-    setTimeout(function(){ b.style.display='none'; b.classList.remove('hide'); }, 320);
+    b.classList.remove('pwa-show');
+    b.classList.add('pwa-hide');
+    setTimeout(function(){ b.style.display='none'; b.classList.remove('pwa-hide'); }, 320);
   }
 };
 
