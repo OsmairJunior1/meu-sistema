@@ -1,4 +1,4 @@
-const CACHE = 'monbluu-v1';
+const CACHE = 'monbluu-v2';
 const ASSETS = [
   './sistema.html',
   './manifest.json',
