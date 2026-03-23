@@ -11195,8 +11195,10 @@ if('serviceWorker' in navigator){
   var inPWA = window.matchMedia('(display-mode: standalone)').matches
             || window.navigator.standalone === true;
   if(inPWA) return;
-  if(localStorage.getItem('pwa-dismissed')) return;
-  if(window.innerWidth > 600) return;
+
+  // Check dismissed — resets after 7 days
+  var dismissed = localStorage.getItem('pwa-dismissed');
+  if(dismissed && (Date.now() - parseInt(dismissed)) < 7*24*60*60*1000) return;
 
   var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent.toLowerCase());
   var banner = document.getElementById('pwa-banner');
@@ -11211,7 +11213,7 @@ if('serviceWorker' in navigator){
   window.addEventListener('beforeinstallprompt', function(e){
     e.preventDefault();
     window._pwaPrompt = e;
-    setTimeout(showBanner, 1500);
+    setTimeout(showBanner, 2000);
   });
 
   if(isIOS){
@@ -11240,7 +11242,7 @@ window.installPWA = function(){
 };
 
 window.dismissPWABanner = function(){
-  try{ localStorage.setItem('pwa-dismissed','1'); }catch(e){}
+  try{ localStorage.setItem('pwa-dismissed', Date.now().toString()); }catch(e){}
   var b = document.getElementById('pwa-banner');
   if(b){
     b.classList.remove('pwa-show');
