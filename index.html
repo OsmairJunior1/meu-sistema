@@ -3776,7 +3776,7 @@ textarea.inp{min-height:80px;resize:vertical}
 
 <div id="toast-container"></div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
 // ─── STATE ───────────────────────────────────────────────
 const S = {
   accounts:[], receivables:[], payables:[], transfers:[], clients:[], suppliers:[],
@@ -4053,7 +4053,8 @@ function navigate(page){
   document.querySelectorAll('.page').forEach(p=>p.style.display='none');
   $('page-'+page).style.display='block';
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  document.querySelector(`.nav-btn[data-page="${page}"]`).classList.add('active');
+  const activeBtn=document.querySelector(`.nav-btn[data-page="${page}"]`);
+  if(activeBtn) activeBtn.classList.add('active');
   document.querySelectorAll('[data-mbn]').forEach(b=>b.classList.remove('active'));
   const mbnKey=page==='fornecedores'?'clientes':page;
   const mbnBtn=document.querySelector(`[data-mbn="${mbnKey}"]`);
@@ -10741,6 +10742,7 @@ async function loadData() {
     populateSelects();
   } catch(e) {
     console.error('Erro ao carregar dados:', e);
+    refresh();
   }
 }
 
@@ -11140,22 +11142,22 @@ if(typeof Chart !== 'undefined'){
   </div>
 </div>
 
-<script>
-<!-- â”€â”€ PWA INSTALL BANNER â€” mobile only â”€â”€ -->
-<div id="pwa-banner">
-  <div id="pwa-banner-inner">
-    <img src="192x192.png" width="42" height="42" style="border-radius:11px;flex-shrink:0" alt="">
-    <div id="pwa-banner-text" style="flex:1;min-width:0">
-      <div style="font-size:14px;font-weight:800;color:#0F2A44;letter-spacing:-.02em;line-height:1.2">Instale o MonBluu</div>
-      <div style="font-size:11.5px;color:#64748b;margin-top:2px">Acesso rapido, sem abrir o navegador</div>
+<!-- ── PWA INSTALL BANNER – mobile only ── -->
+<div id=”pwa-banner”>
+  <div id=”pwa-banner-inner”>
+    <img src=”192x192.png” width=”42” height=”42” style=”border-radius:11px;flex-shrink:0” alt=””>
+    <div id=”pwa-banner-text” style=”flex:1;min-width:0”>
+      <div style=”font-size:14px;font-weight:800;color:#0F2A44;letter-spacing:-.02em;line-height:1.2”>Instale o MonBluu</div>
+      <div style=”font-size:11.5px;color:#64748b;margin-top:2px”>Acesso rapido, sem abrir o navegador</div>
     </div>
-    <div id="pwa-ios-hint" style="display:none;flex:1;font-size:11.5px;color:#0F2A44;line-height:1.45">
+    <div id=”pwa-ios-hint” style=”display:none;flex:1;font-size:11.5px;color:#0F2A44;line-height:1.45”>
       Toque em <strong>Compartilhar</strong> e depois em <strong>Adicionar a Tela de Inicio</strong>
     </div>
-    <button id="pwa-install-btn" onclick="installPWA()" style="background:#0F2A44;color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0;font-family:inherit;white-space:nowrap">Instalar</button>
-    <button onclick="dismissPWABanner()" style="background:none;border:none;color:#94a3b8;font-size:22px;line-height:1;cursor:pointer;padding:2px 6px;flex-shrink:0">&times;</button>
+    <button id=”pwa-install-btn” onclick=”installPWA()” style=”background:#0F2A44;color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0;font-family:inherit;white-space:nowrap”>Instalar</button>
+    <button onclick=”dismissPWABanner()” style=”background:none;border:none;color:#94a3b8;font-size:22px;line-height:1;cursor:pointer;padding:2px 6px;flex-shrink:0”>&times;</button>
   </div>
 </div>
+<script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
     navigator.serviceWorker.register('sw.js').catch(function(){});
