@@ -1,0 +1,1791 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="apple-touch-icon" href="192x192.png">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0F2A44">
+  <meta name="description" content="MonBluu — Controle financeiro simples para pequenas empresas. Saiba quanto cobrar e quanto sobra no final do mês.">
+  <title>MonBluu — Controle Financeiro para Pequenas Empresas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ── RESET ─────────────────────────────────────── */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;font-size:16px;}
+body{font-family:'Inter',sans-serif;background:#fff;color:#1a2235;line-height:1.6;overflow-x:hidden;}
+img{max-width:100%;height:auto;display:block;}
+a{text-decoration:none;}
+
+/* ── TOKENS ─────────────────────────────────────── */
+:root{
+  --ink:      #0f1b35;
+  --ink-2:    #3d4f6e;
+  --ink-3:    #6b7c99;
+  --blue:     #1855f4;
+  --blue-lt:  #eef2ff;
+  --blue-md:  #c7d4fd;
+  --green:    #17c964;
+  --green-lt: #e8faf0;
+  --green-dk: #0fa554;
+  --red-lt:   #fff1f0;
+  --red:      #f04438;
+  --surface:  #f7f8fc;
+  --border:   #e4e9f4;
+  --white:    #ffffff;
+  --r4:4px;--r8:8px;--r12:12px;--r16:16px;--r24:24px;--r32:32px;--rpill:100px;
+  --sh-sm: 0 1px 4px rgba(15,27,53,.06),0 4px 16px rgba(15,27,53,.06);
+  --sh-md: 0 4px 8px rgba(15,27,53,.06),0 12px 40px rgba(15,27,53,.1);
+  --sh-lg: 0 8px 16px rgba(15,27,53,.08),0 32px 64px rgba(15,27,53,.14);
+  --t:.22s cubic-bezier(.4,0,.2,1);
+}
+
+/* ── SCROLL BAR ─────────────────────────────────── */
+#prog{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--blue),var(--green));z-index:9999;transition:width .08s linear;}
+
+/* ── HEADER ─────────────────────────────────────── */
+.nav{
+  position:fixed;inset:0 0 auto 0;z-index:900;
+  background:rgba(255,255,255,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  transition:box-shadow var(--t);
+}
+.nav.elevated{box-shadow:var(--sh-sm);}
+.nav-inner{
+  max-width:1200px;margin:0 auto;padding:0 24px;
+  display:flex;align-items:center;justify-content:space-between;
+  height:68px;gap:24px;
+}
+.nav-logo img{height:36px;width:auto;display:block;}
+.nav-links{display:flex;align-items:center;gap:32px;list-style:none;}
+.nav-links a{font-size:.9rem;font-weight:500;color:var(--ink-2);transition:color var(--t);}
+.nav-links a:hover{color:var(--blue);}
+.nav-actions{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.btn-link{font-size:.9rem;font-weight:600;color:var(--ink-2);padding:8px 16px;border-radius:var(--r8);transition:all var(--t);border:none;background:none;cursor:pointer;}
+.btn-link:hover{color:var(--blue);background:var(--blue-lt);}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;font-family:'Inter',sans-serif;font-size:.9rem;font-weight:700;color:#fff;background:var(--blue);border:none;border-radius:var(--r8);padding:10px 22px;cursor:pointer;transition:all var(--t);white-space:nowrap;position:relative;overflow:hidden;}
+.btn-primary:hover{background:#0e42d4;transform:translateY(-1px);box-shadow:0 6px 20px rgba(24,85,244,.35);}
+.btn-primary.green{background:var(--green);}
+.btn-primary.green:hover{background:var(--green-dk);box-shadow:0 6px 20px rgba(23,201,100,.4);}
+.btn-primary.lg{padding:15px 32px;font-size:1rem;border-radius:var(--r12);}
+.btn-outline{display:inline-flex;align-items:center;gap:8px;font-family:'Inter',sans-serif;font-size:.9rem;font-weight:600;color:var(--ink);background:#fff;border:1.5px solid var(--border);border-radius:var(--r8);padding:9px 20px;cursor:pointer;transition:all var(--t);white-space:nowrap;}
+.btn-outline:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-lt);}
+.btn-outline.lg{padding:14px 28px;font-size:.975rem;border-radius:var(--r12);}
+.ham{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:6px;}
+.ham span{display:block;width:22px;height:2px;background:var(--ink);border-radius:2px;transition:all var(--t);}
+.nav-link-entrar{display:none;}
+
+/* ── HERO ────────────────────────────────────────── */
+.hero{
+  padding:130px 0 0;
+  background:linear-gradient(165deg,#f7f9ff 0%,#eef2ff 60%,#f0faf5 100%);
+  position:relative;overflow:hidden;
+  padding-bottom:60px;
+}
+.hero::before{
+  content:'';position:absolute;top:-200px;right:-200px;
+  width:700px;height:700px;border-radius:50%;
+  background:radial-gradient(circle,rgba(24,85,244,.07) 0%,transparent 70%);
+  pointer-events:none;
+}
+.hero::after{
+  content:'';position:absolute;bottom:-100px;left:-100px;
+  width:500px;height:500px;border-radius:50%;
+  background:radial-gradient(circle,rgba(23,201,100,.06) 0%,transparent 70%);
+  pointer-events:none;
+}
+.hero-inner{
+  max-width:1200px;margin:0 auto;padding:0 24px;
+  position:relative;z-index:2;
+}
+.hero-grid{display:grid;grid-template-columns:52% 48%;align-items:center;gap:0;}
+.hero-left{padding:20px 48px 80px 0;}
+
+.tag{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:6px 14px;border-radius:var(--rpill);
+  background:#fff;border:1px solid var(--blue-md);
+  font-size:.8rem;font-weight:700;color:var(--blue);
+  letter-spacing:.04em;margin-bottom:24px;
+  box-shadow:0 2px 8px rgba(24,85,244,.1);
+  animation:fadeUp .5s ease both;
+}
+.tag-dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;animation:blink 2.2s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+
+.hero h1{
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:clamp(2.4rem,4.5vw,3.5rem);
+  font-weight:800;line-height:1.1;color:var(--ink);
+  margin-bottom:20px;letter-spacing:-.02em;
+  animation:fadeUp .5s .08s ease both;
+}
+.hero h1 .accent{color:var(--blue);}
+.hero h1 .accent-g{color:var(--green-dk);}
+
+.hero-sub{
+  font-size:1.0625rem;color:var(--ink-2);line-height:1.75;
+  max-width:460px;margin-bottom:36px;
+  animation:fadeUp .5s .16s ease both;
+}
+
+.hero-ctas{
+  display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;
+  animation:fadeUp .5s .22s ease both;
+}
+.hero-microcopy{
+  font-size:.8rem;color:var(--ink-3);
+  animation:fadeUp .5s .28s ease both;
+}
+.hero-microcopy span{display:inline-flex;align-items:center;gap:4px;}
+.hero-microcopy span+span::before{content:'·';margin:0 6px;}
+
+.hero-stats{
+  display:flex;gap:36px;flex-wrap:wrap;margin-top:40px;padding-top:36px;
+  border-top:1px solid rgba(24,85,244,.12);
+  animation:fadeUp .5s .34s ease both;
+}
+.hero-stat-n{font-family:'Plus Jakarta Sans',sans-serif;font-size:1.875rem;font-weight:800;color:var(--blue);line-height:1;}
+.hero-stat-l{font-size:.8rem;color:var(--ink-3);margin-top:3px;font-weight:500;}
+
+/* hero right — mockup card */
+.hero-right{
+  align-self:center;
+  margin-top:-40px;
+  animation:fadeRight .6s .12s ease both;
+}
+.hero-right img{
+  width:118%;
+  margin-left:-30px;
+  filter:drop-shadow(0 32px 56px rgba(15,27,53,.22));
+  border-radius:16px;
+  animation:float 3.8s ease-in-out infinite;
+}
+@keyframes float{
+  0%,100%{transform:translateY(0);}
+  50%{transform:translateY(-14px);}
+}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeRight{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+
+/* ── HERO WAVE ───────────────────────────────────── */
+.hero-wave{
+  position:absolute;bottom:-2px;left:0;right:0;
+  line-height:0;z-index:3;pointer-events:none;
+}
+.hero-wave svg{display:block;width:100%;}
+.wave1{animation:wave-move 8s linear infinite;}
+.wave2{animation:wave-move 12s linear infinite reverse;opacity:.5;}
+@keyframes wave-move{
+  0%{transform:translateX(0);}
+  100%{transform:translateX(-50%);}
+}
+
+/* ── SOCIAL PROOF STRIP ──────────────────────────── */
+.social-proof{
+  background:var(--ink);
+  padding:18px 0;
+}
+.sp-inner{
+  max-width:1200px;margin:0 auto;padding:0 24px;
+  display:flex;align-items:center;justify-content:center;
+  gap:40px;flex-wrap:wrap;
+}
+.sp-item{
+  display:flex;align-items:center;gap:10px;
+  font-size:.875rem;font-weight:600;color:rgba(255,255,255,.75);
+}
+.sp-item strong{color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-size:1.0625rem;}
+.sp-stars{display:flex;gap:2px;}
+.sp-stars svg{width:14px;height:14px;fill:#f59e0b;}
+.sp-sep{width:1px;height:24px;background:rgba(255,255,255,.12);}
+.sp-avatars{display:flex;}
+.sp-avatar{
+  width:28px;height:28px;border-radius:50%;
+  background:linear-gradient(135deg,var(--blue),var(--green-dk));
+  border:2px solid var(--ink);margin-left:-8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.6rem;font-weight:800;color:#fff;
+  font-family:'Plus Jakarta Sans',sans-serif;
+}
+.sp-avatar:first-child{margin-left:0;}
+
+/* ── TRUST BAR ──────────────────────────────────── */
+.trust-bar{
+  background:#fff;border-bottom:1px solid var(--border);
+  padding:20px 0;
+}
+.trust-inner{
+  max-width:1200px;margin:0 auto;padding:0 24px;
+  display:flex;align-items:center;gap:32px;flex-wrap:wrap;justify-content:center;
+}
+.trust-item{
+  display:flex;align-items:center;gap:8px;
+  font-size:.8375rem;font-weight:600;color:var(--ink-2);
+}
+.trust-icon{width:18px;height:18px;flex-shrink:0;stroke:var(--green-dk);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.trust-sep{width:1px;height:20px;background:var(--border);}
+
+/* ── CONTAINER ──────────────────────────────────── */
+.c{max-width:1200px;margin:0 auto;padding:0 24px;}
+
+/* ── SECTION LABELS ─────────────────────────────── */
+.eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--blue);margin-bottom:16px;
+}
+.eyebrow::before{content:'';width:20px;height:2px;background:var(--blue);border-radius:2px;}
+.h2{
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:clamp(1.75rem,3vw,2.375rem);
+  font-weight:800;line-height:1.2;letter-spacing:-.02em;
+  color:var(--ink);margin-bottom:16px;
+}
+.h2 .grad{
+  background:linear-gradient(135deg,var(--blue) 0%,var(--green-dk) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.lead{font-size:1rem;color:var(--ink-2);line-height:1.75;max-width:560px;}
+.sh{margin-bottom:64px;}
+.sh.center{text-align:center;}
+.sh.center .lead{margin:0 auto;}
+.sh.center .eyebrow{display:flex;justify-content:center;}
+
+/* ── IMPACT SECTION ─────────────────────────────── */
+.s-impact{padding:80px 0;background:#fff;}
+.impact-quote-box{
+  max-width:780px;margin:0 auto;text-align:center;
+}
+.impact-quote-box blockquote{
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:clamp(1.5rem,3vw,2rem);
+  font-weight:700;line-height:1.35;color:var(--ink);
+  margin-bottom:20px;letter-spacing:-.01em;
+}
+.impact-quote-box blockquote span{color:var(--blue);}
+.impact-quote-box p{font-size:1.0625rem;color:var(--ink-2);line-height:1.8;}
+.impact-quote-box p strong{color:var(--ink);font-weight:700;}
+
+/* ── FEATURES HIGHLIGHT (3 cards, ContaAzul style) ─ */
+.s-highlight{background:var(--surface);padding:80px 0;}
+.highlight-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--r16);overflow:hidden;}
+.hl-card{
+  background:#fff;padding:40px 36px;
+  transition:background var(--t);position:relative;
+}
+.hl-card:hover{background:#fafbff;}
+.hl-icon{
+  width:52px;height:52px;border-radius:var(--r12);
+  background:var(--blue-lt);display:flex;align-items:center;justify-content:center;
+  margin-bottom:20px;
+}
+.hl-icon svg{width:24px;height:24px;stroke:var(--blue);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.hl-card h3{font-family:'Plus Jakarta Sans',sans-serif;font-size:1.125rem;font-weight:700;color:var(--ink);margin-bottom:10px;}
+.hl-card p{font-size:.9rem;color:var(--ink-2);line-height:1.7;}
+.hl-card a{
+  display:inline-flex;align-items:center;gap:6px;margin-top:20px;
+  font-size:.875rem;font-weight:600;color:var(--blue);transition:gap var(--t);
+}
+.hl-card a:hover{gap:10px;}
+.hl-card a svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
+
+/* ── PAIN SECTION ───────────────────────────────── */
+.s-pain{padding:96px 0;background:#fff;}
+.pain-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+.pain-card{
+  background:#fff;border:1px solid var(--border);
+  border-radius:var(--r16);padding:32px 28px;
+  display:flex;gap:20px;align-items:flex-start;
+  box-shadow:var(--sh-sm);transition:all var(--t);
+}
+.pain-card:hover{box-shadow:var(--sh-md);border-color:rgba(240,68,56,.2);transform:translateY(-3px);}
+.pain-num{
+  width:36px;height:36px;flex-shrink:0;border-radius:50%;
+  background:var(--red-lt);display:flex;align-items:center;justify-content:center;
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:.875rem;font-weight:800;color:var(--red);
+  margin-top:2px;
+}
+.pain-card h3{font-family:'Plus Jakarta Sans',sans-serif;font-size:1rem;font-weight:700;color:var(--ink);margin-bottom:7px;}
+.pain-card p{font-size:.9rem;color:var(--ink-2);line-height:1.7;}
+
+/* ── FEATURES (alternating) ─────────────────────── */
+.s-features{padding:96px 0;background:var(--surface);}
+.feature-row{
+  display:grid;grid-template-columns:1fr 1fr;gap:80px;
+  align-items:center;margin-bottom:96px;
+}
+.feature-row:last-child{margin-bottom:0;}
+.feature-row.flip .f-copy{order:2;}
+.feature-row.flip .f-visual{order:1;}
+.f-copy .eyebrow{display:flex;}
+.f-copy h3{font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(1.5rem,2.5vw,1.875rem);font-weight:800;color:var(--ink);letter-spacing:-.02em;margin-bottom:14px;line-height:1.25;}
+.f-copy p{font-size:.9625rem;color:var(--ink-2);line-height:1.8;margin-bottom:28px;}
+.f-list{list-style:none;display:flex;flex-direction:column;gap:10px;}
+.f-list li{display:flex;align-items:center;gap:12px;font-size:.9rem;color:var(--ink);font-weight:500;}
+.f-check{width:20px;height:20px;flex-shrink:0;border-radius:50%;background:var(--green-lt);display:flex;align-items:center;justify-content:center;}
+.f-check svg{width:11px;height:11px;stroke:var(--green-dk);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;}
+.f-visual{position:relative;}
+.f-box{
+  background:#fff;border:1px solid var(--border);border-radius:var(--r24);
+  padding:48px 40px;min-height:340px;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:var(--sh-md);position:relative;overflow:hidden;
+}
+.f-box::before{content:'';position:absolute;inset:0;background:linear-gradient(145deg,#fff 0%,var(--surface) 100%);z-index:0;}
+.f-box-inner{position:relative;z-index:1;text-align:center;}
+.f-big-icon{
+  width:88px;height:88px;border-radius:var(--r24);
+  background:linear-gradient(135deg,var(--blue) 0%,#0e42d4 100%);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 20px;box-shadow:0 12px 36px rgba(24,85,244,.3);
+}
+.f-big-icon svg{width:44px;height:44px;stroke:#fff;fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;}
+.f-big-label{font-family:'Plus Jakarta Sans',sans-serif;font-size:1rem;font-weight:700;color:var(--ink);}
+.f-big-sub{font-size:.875rem;color:var(--ink-3);margin-top:6px;}
+.f-box-n{
+  position:absolute;bottom:-12px;right:16px;
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:6.5rem;font-weight:800;
+  color:rgba(24,85,244,.05);line-height:1;user-select:none;pointer-events:none;
+}
+
+/* ── TRANSFORMATION ─────────────────────────────── */
+.s-transform{padding:96px 0;background:#fff;}
+.tf-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:840px;margin:0 auto;}
+.tf-col{border-radius:var(--r24);padding:36px 32px;}
+.tf-col.before{background:var(--red-lt);border:1.5px solid rgba(240,68,56,.15);}
+.tf-col.after{background:var(--green-lt);border:1.5px solid rgba(23,201,100,.2);}
+.tf-head{
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:.8rem;font-weight:800;
+  letter-spacing:.1em;text-transform:uppercase;
+  display:flex;align-items:center;gap:10px;margin-bottom:28px;
+}
+.tf-col.before .tf-head{color:var(--red);}
+.tf-col.after .tf-head{color:var(--green-dk);}
+.tf-list{list-style:none;display:flex;flex-direction:column;gap:14px;}
+.tf-list li{display:flex;align-items:center;gap:12px;font-size:.9375rem;font-weight:600;color:var(--ink);}
+.tf-ico{font-size:1.1rem;flex-shrink:0;width:28px;text-align:center;}
+
+/* ── HOW IT WORKS ───────────────────────────────── */
+.s-how{padding:96px 0;background:var(--surface);}
+.how-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;position:relative;}
+.how-grid::before{
+  content:'';position:absolute;top:48px;left:calc(16.67% + 12px);right:calc(16.67% + 12px);
+  height:2px;background:linear-gradient(90deg,var(--blue),var(--green));
+  border-radius:2px;z-index:0;
+}
+.how-card{
+  background:#fff;border:1px solid var(--border);border-radius:var(--r16);
+  padding:36px 28px;text-align:center;position:relative;z-index:1;
+  box-shadow:var(--sh-sm);transition:all var(--t);
+}
+.how-card:hover{box-shadow:var(--sh-md);transform:translateY(-4px);}
+.how-num{
+  width:56px;height:56px;border-radius:50%;
+  background:linear-gradient(135deg,var(--blue),#0e42d4);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:1.25rem;font-weight:800;color:#fff;
+  margin:0 auto 20px;box-shadow:0 8px 24px rgba(24,85,244,.3);
+}
+.how-card h3{font-family:'Plus Jakarta Sans',sans-serif;font-size:1.0625rem;font-weight:700;color:var(--ink);margin-bottom:10px;}
+.how-card p{font-size:.9rem;color:var(--ink-2);line-height:1.7;}
+
+/* ── TESTIMONIALS ───────────────────────────────── */
+.s-testi{padding:96px 0;background:#fff;}
+.testi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.t-card{
+  background:#fff;border:1px solid var(--border);border-radius:var(--r16);
+  padding:32px 28px;box-shadow:var(--sh-sm);
+  display:flex;flex-direction:column;transition:all var(--t);
+}
+.t-card:hover{box-shadow:var(--sh-md);border-color:var(--blue-md);transform:translateY(-4px);}
+.t-stars{display:flex;gap:3px;margin-bottom:16px;}
+.t-stars svg{width:16px;height:16px;fill:#f59e0b;}
+.t-quote{font-size:.9375rem;color:var(--ink-2);line-height:1.8;font-style:italic;flex:1;margin-bottom:24px;}
+.t-author{display:flex;align-items:center;gap:12px;}
+.t-avatar{
+  width:42px;height:42px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--blue),var(--green-dk));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;color:#fff;font-size:.8rem;
+}
+.t-name{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;color:var(--ink);font-size:.9rem;}
+.t-role{font-size:.8rem;color:var(--ink-3);}
+
+/* ── PRICING ─────────────────────────────────────── */
+.s-pricing{padding:96px 0;background:var(--surface);}
+.ptgl-wrap{
+  display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:52px;
+}
+.ptgl-lbl{font-size:.9rem;font-weight:600;color:var(--ink-3);transition:color var(--t);}
+.ptgl-lbl.active{color:var(--ink);}
+.ptgl-track{
+  width:52px;height:28px;border-radius:var(--rpill);
+  background:var(--border);border:none;cursor:pointer;position:relative;
+  transition:background var(--t);
+}
+.ptgl-track::after{
+  content:'';position:absolute;top:3px;left:3px;
+  width:22px;height:22px;border-radius:50%;background:#fff;
+  box-shadow:0 1px 4px rgba(0,0,0,.15);transition:transform var(--t);
+}
+.ptgl-track.on{background:var(--blue);}
+.ptgl-track.on::after{transform:translateX(24px);}
+.ptgl-badge{font-size:.75rem;font-weight:700;color:var(--green-dk);background:var(--green-lt);padding:3px 10px;border-radius:var(--rpill);}
+
+.p-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1040px;margin:0 auto;}
+.p-card{
+  background:#fff;border:1.5px solid var(--border);border-radius:var(--r24);
+  padding:36px 30px;position:relative;transition:all var(--t);
+  display:flex;flex-direction:column;
+}
+.p-feats{flex:1;}
+.p-card:hover{box-shadow:var(--sh-md);transform:translateY(-4px);}
+.p-card.hot{
+  background:var(--ink);border-color:var(--ink);
+  transform:scale(1.035);z-index:1;
+  box-shadow:var(--sh-lg);
+}
+.p-card.hot:hover{transform:scale(1.035) translateY(-4px);}
+.p-badge-top{
+  position:absolute;top:-12px;left:50%;transform:translateX(-50%);
+  background:linear-gradient(90deg,var(--blue),var(--green-dk));color:#fff;
+  font-size:.7rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  padding:4px 16px;border-radius:var(--rpill);white-space:nowrap;
+}
+.p-name{font-family:'Plus Jakarta Sans',sans-serif;font-size:1rem;font-weight:800;color:var(--ink);margin-bottom:4px;}
+.p-card.hot .p-name{color:#fff;}
+.p-desc{font-size:.825rem;color:var(--ink-3);margin-bottom:20px;}
+.p-card.hot .p-desc{color:rgba(255,255,255,.5);}
+.p-price{display:flex;align-items:baseline;gap:2px;margin-bottom:6px;}
+.p-curr{font-size:1.125rem;font-weight:600;color:var(--ink-3);}
+.p-amt{font-family:'Plus Jakarta Sans',sans-serif;font-size:3rem;font-weight:800;color:var(--ink);line-height:1;}
+.p-card.hot .p-curr,.p-card.hot .p-amt{color:#fff;}
+.p-period{font-size:.825rem;color:var(--ink-3);margin-bottom:28px;}
+.p-card.hot .p-period{color:rgba(255,255,255,.45);}
+.p-div{border:none;border-top:1px solid var(--border);margin-bottom:24px;}
+.p-card.hot .p-div{border-color:rgba(255,255,255,.12);}
+.p-feats{list-style:none;display:flex;flex-direction:column;gap:11px;margin-bottom:32px;}
+.p-feats li{display:flex;align-items:center;gap:10px;font-size:.9rem;color:var(--ink-2);}
+.p-card.hot .p-feats li{color:rgba(255,255,255,.75);}
+.p-feats li svg{width:17px;height:17px;stroke:var(--green-dk);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
+.p-feats li.off{opacity:.4;}
+.p-feats li.off svg{stroke:var(--ink-3);}
+.p-feats li.off svg.x{display:block;}
+.btn-p{
+  width:100%;display:flex;align-items:center;justify-content:center;
+  padding:14px;border-radius:var(--r12);font-family:'Inter',sans-serif;
+  font-weight:700;font-size:.9rem;cursor:pointer;transition:all var(--t);
+  border:1.5px solid var(--border);background:#fff;color:var(--ink);
+}
+.btn-p:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-lt);}
+
+/* ── FAQ ─────────────────────────────────────────── */
+.s-faq{padding:96px 0;background:#fff;}
+.faq-wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:8px;}
+.faq-item{background:#fff;border:1px solid var(--border);border-radius:var(--r12);overflow:hidden;transition:border-color var(--t),box-shadow var(--t);}
+.faq-item.open{border-color:var(--blue-md);box-shadow:0 4px 16px rgba(24,85,244,.08);}
+.faq-btn{
+  width:100%;background:none;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:20px 24px;text-align:left;
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:.9625rem;font-weight:600;color:var(--ink);
+}
+.faq-ico{
+  width:28px;height:28px;flex-shrink:0;border-radius:50%;
+  background:var(--surface);display:flex;align-items:center;justify-content:center;
+  transition:all var(--t);
+}
+.faq-ico svg{width:14px;height:14px;stroke:var(--ink-2);fill:none;stroke-width:2.5;stroke-linecap:round;transition:transform var(--t);}
+.faq-item.open .faq-ico{background:var(--blue);box-shadow:0 4px 12px rgba(24,85,244,.3);}
+.faq-item.open .faq-ico svg{stroke:#fff;transform:rotate(45deg);}
+.faq-body{max-height:0;overflow:hidden;transition:max-height .3s cubic-bezier(.4,0,.2,1);}
+.faq-item.open .faq-body{max-height:300px;}
+.faq-body p{padding:0 24px 20px;font-size:.925rem;color:var(--ink-2);line-height:1.8;}
+
+/* ── GUARANTEE ───────────────────────────────────── */
+.s-guarantee{padding:64px 0;background:var(--surface);}
+.guarantee-strip{
+  max-width:900px;margin:0 auto;
+  background:#fff;border:1px solid var(--border);border-radius:var(--r24);
+  padding:48px 52px;display:flex;align-items:center;gap:40px;
+  box-shadow:var(--sh-md);
+}
+.g-icon-wrap{
+  width:80px;height:80px;flex-shrink:0;border-radius:50%;
+  background:var(--green-lt);border:2px solid rgba(23,201,100,.25);
+  display:flex;align-items:center;justify-content:center;
+}
+.g-icon-wrap svg{width:38px;height:38px;stroke:var(--green-dk);fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;}
+.g-body h3{font-family:'Plus Jakarta Sans',sans-serif;font-size:1.375rem;font-weight:800;color:var(--ink);margin-bottom:8px;}
+.g-body p{font-size:.9375rem;color:var(--ink-2);line-height:1.75;}
+
+/* ── FINAL CTA ───────────────────────────────────── */
+.s-cta{
+  padding:120px 0;
+  background:linear-gradient(135deg,var(--ink) 0%,#1a2f60 50%,#0e3a8a 100%);
+  position:relative;overflow:hidden;text-align:center;
+}
+.s-cta::before{
+  content:'';position:absolute;inset:0;
+  background-image:radial-gradient(rgba(255,255,255,.025) 1px,transparent 1px);
+  background-size:28px 28px;
+}
+.s-cta::after{
+  content:'';position:absolute;bottom:-120px;left:50%;transform:translateX(-50%);
+  width:640px;height:320px;border-radius:50%;
+  background:radial-gradient(ellipse,rgba(23,201,100,.1) 0%,transparent 70%);
+}
+.cta-inner{position:relative;z-index:2;max-width:660px;margin:0 auto;}
+.cta-inner h2{
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:clamp(1.875rem,4vw,2.75rem);font-weight:800;
+  color:#fff;line-height:1.18;margin-bottom:16px;letter-spacing:-.02em;
+}
+.cta-inner h2 em{font-style:normal;color:var(--green);}
+.cta-inner p{font-size:1.0625rem;color:rgba(255,255,255,.6);margin-bottom:40px;}
+.cta-btns{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;}
+.btn-cta-ghost{
+  display:inline-flex;align-items:center;gap:8px;
+  font-family:'Inter',sans-serif;font-size:.9375rem;font-weight:600;
+  color:rgba(255,255,255,.8);background:rgba(255,255,255,.08);
+  border:1.5px solid rgba(255,255,255,.2);border-radius:var(--r12);
+  padding:14px 28px;cursor:pointer;transition:all var(--t);
+}
+.btn-cta-ghost:hover{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.4);color:#fff;}
+
+/* ── FOOTER ──────────────────────────────────────── */
+.footer{background:#fff;padding:64px 0 28px;border-top:1px solid var(--border);}
+.footer-grid{display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr;gap:48px;margin-bottom:52px;}
+.footer-brand img{height:32px;margin-bottom:16px;filter:brightness(0) saturate(100%) invert(13%) sepia(65%) saturate(900%) hue-rotate(200deg) brightness(0.85);}
+.footer-brand p{font-size:.85rem;color:var(--ink-3);line-height:1.75;max-width:260px;}
+.footer-col h5{font-family:'Plus Jakarta Sans',sans-serif;font-size:.9rem;font-weight:700;color:var(--ink);margin-bottom:16px;}
+.footer-col ul{list-style:none;display:flex;flex-direction:column;gap:10px;}
+.footer-col a{font-size:.85rem;color:var(--ink-3);transition:color var(--t);}
+.footer-col a:hover{color:var(--blue);}
+.footer-bar{border-top:1px solid var(--border);padding-top:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;}
+.footer-bar p{font-size:.8rem;color:var(--ink-3);}
+.footer-socials{display:flex;gap:10px;}
+.footer-socials a{width:34px;height:34px;border-radius:var(--r8);background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;transition:all var(--t);}
+.footer-socials a:hover{background:var(--blue);border-color:var(--blue);}
+.footer-socials svg{width:16px;height:16px;fill:var(--ink-3);}
+.footer-socials a:hover svg{fill:#fff;}
+
+/* ── CONTACT BAR ─────────────────────────────────── */
+.contact-bar{background:var(--blue);padding:0;overflow:visible;position:relative;z-index:2;}
+.contact-bar.cb-fixed{
+  position:fixed;bottom:0;left:0;width:100%;z-index:800;
+  box-shadow:0 -4px 20px rgba(0,0,0,.25);
+}
+.contact-bar-inner{
+  max-width:1200px;margin:0 auto;
+  display:flex;align-items:center;flex-wrap:wrap;
+  justify-content:center;
+}
+.contact-bar-label{
+  display:flex;align-items:center;padding:0 28px;
+  font-size:.9rem;font-weight:700;color:rgba(255,255,255,.85);
+  white-space:nowrap;
+}
+.contact-bar-item{
+  display:flex;align-items:center;gap:12px;
+  padding:16px 28px;color:#fff;
+  transition:background var(--t);text-decoration:none;
+  text-align:center;justify-content:center;
+}
+.contact-bar-item:hover{background:rgba(255,255,255,.1);}
+.contact-bar-item svg{width:26px;height:26px;fill:#fff;flex-shrink:0;opacity:.85;}
+.contact-bar-item strong{display:block;font-size:.85rem;font-weight:700;line-height:1.2;}
+.contact-bar-item span{display:block;font-size:.82rem;opacity:.85;line-height:1.3;}
+.contact-bar-sep{width:1px;background:rgba(255,255,255,.15);margin:8px 0;}
+.contact-bar-whatsapp{background:#25d366;padding:22px 40px;gap:14px;margin:-10px 0;border-radius:0 var(--r8) var(--r8) 0;box-shadow:0 4px 16px rgba(37,211,102,.35);}
+.contact-bar-whatsapp:hover{background:#1fba58;}
+.contact-bar-whatsapp svg{width:32px;height:32px;opacity:1;}
+.contact-bar-whatsapp strong{font-size:.9rem;}
+.contact-bar-whatsapp span{font-size:.85rem;}
+@media(max-width:768px){
+  .contact-bar{padding:0;overflow:visible;transition:box-shadow .3s;}
+  .contact-bar.cb-fixed{
+    position:fixed;bottom:0;left:0;width:100%;z-index:800;
+    box-shadow:0 -4px 20px rgba(0,0,0,.25);
+    padding-bottom:env(safe-area-inset-bottom, 8px);
+  }
+  .contact-bar-placeholder{display:none;}
+  .contact-bar.cb-fixed ~ .contact-bar-placeholder,
+  body.cb-active .contact-bar-placeholder{display:block;}
+  .contact-bar-inner{flex-wrap:nowrap;justify-content:stretch;min-height:48px;}
+  .contact-bar-label{
+    padding:8px 10px;font-size:.7rem;
+    background:rgba(0,0,0,.18);
+    align-self:stretch;display:flex;align-items:center;
+    white-space:normal;max-width:62px;line-height:1.3;
+    flex-shrink:0;
+  }
+  /* Oculta o item Suporte (email) no mobile */
+  .contact-bar-item:not(.contact-bar-whatsapp):first-of-type{display:none;}
+  .contact-bar-sep{display:none;}
+  .contact-bar-item{
+    flex:1;padding:8px 10px;gap:4px;
+    flex-direction:column;align-items:center;justify-content:center;
+    border-left:1px solid rgba(255,255,255,.15);
+  }
+  .contact-bar-item svg{width:16px;height:16px;}
+  .contact-bar-item strong{font-size:.72rem;}
+  .contact-bar-item span{font-size:.68rem;}
+  .contact-bar-whatsapp{
+    padding:12px 16px;margin:-6px 0;border-radius:0 6px 6px 0;
+    flex-direction:column;align-items:center;gap:3px;
+    flex-shrink:0;position:relative;z-index:1;
+    box-shadow:-2px 0 12px rgba(37,211,102,.4),2px 0 12px rgba(37,211,102,.4);
+  }
+  .contact-bar-whatsapp svg{width:22px;height:22px;}
+  .contact-bar-whatsapp strong{font-size:.75rem;}
+  .contact-bar-whatsapp span{font-size:.68rem;}
+}
+
+/* ── REVEAL ──────────────────────────────────────── */
+.rv{opacity:0;transform:translateY(28px);transition:opacity .65s cubic-bezier(.22,1,.36,1),transform .65s cubic-bezier(.22,1,.36,1);}
+.rv.in{opacity:1;transform:translateY(0);}
+.rv-l{opacity:0;transform:translateX(-36px);transition:opacity .65s cubic-bezier(.22,1,.36,1),transform .65s cubic-bezier(.22,1,.36,1);}
+.rv-l.in{opacity:1;transform:translateX(0);}
+.rv-r{opacity:0;transform:translateX(36px);transition:opacity .65s cubic-bezier(.22,1,.36,1),transform .65s cubic-bezier(.22,1,.36,1);}
+.rv-r.in{opacity:1;transform:translateX(0);}
+
+/* ── TYPEWRITER CURSOR ───────────────────────────── */
+.tw-cursor{
+  display:inline-block;color:var(--green-dk);font-weight:300;
+  animation:blink-cursor .7s step-end infinite;
+  margin-left:1px;
+}
+@keyframes blink-cursor{0%,100%{opacity:1}50%{opacity:0}}
+
+/* ── BACK TO TOP ─────────────────────────────────── */
+#btt{
+  position:fixed;bottom:80px;right:24px;width:44px;height:44px;border-radius:50%;
+  background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 16px rgba(24,85,244,.4);opacity:0;transform:translateY(12px);
+  transition:all var(--t);z-index:990;cursor:pointer;border:none;
+}
+#btt.show{opacity:1;transform:translateY(0);}
+#btt:hover{transform:translateY(-3px);background:#0e42d4;}
+#btt svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
+
+.hero-img-mobile{display:none;}
+
+
+/* ── RESPONSIVE ──────────────────────────────────── */
+@media(max-width:1024px){
+  .hero-grid{grid-template-columns:1fr;}
+  .hero-left{padding:20px 0 40px;}
+  .hero-right{display:none;}
+  @keyframes floatImg{
+    0%,100%{transform:translateY(0) scale(1);}
+    50%{transform:translateY(-10px) scale(1.01);}
+  }
+  .hero-img-mobile{
+    display:block;
+    width:100%;
+    margin-top:28px;
+    border-radius:16px;
+    box-shadow:0 12px 40px rgba(24,85,244,.15);
+    animation:floatImg 4s ease-in-out infinite;
+  }
+  .hero-ctas{
+    flex-direction:column;
+    align-items:stretch;
+  }
+  .hero-ctas a{
+    text-align:center;
+    width:100%;
+  }
+  .hero-microcopy{text-align:center;}
+  .hero-stats{display:none;}
+  .sp-inner{flex-direction:column;gap:16px;text-align:center;}
+  .sp-item{justify-content:center;}
+  .sp-sep{width:40px;height:1px;}
+  .trust-inner{flex-direction:column;gap:14px;text-align:center;}
+  .trust-item{justify-content:center;}
+  .trust-sep{width:40px;height:1px;}
+
+  .hero-stats-ticker{
+    display:flex;align-items:center;justify-content:center;
+    margin-top:32px;padding-top:28px;
+    border-top:1px solid rgba(24,85,244,.12);
+    min-height:60px;
+  }
+  .hero-stats-ticker .ticker-item{
+    text-align:center;
+    animation:tickerFade 0.5s ease;
+  }
+  @keyframes tickerFade{
+    from{opacity:0;transform:translateY(8px);}
+    to{opacity:1;transform:translateY(0);}
+  }
+  .highlight-grid{grid-template-columns:1fr;}
+  .pain-grid{grid-template-columns:1fr;}
+  .feature-row{grid-template-columns:1fr;gap:40px;}
+  .feature-row.flip .f-copy{order:1;}
+  .feature-row.flip .f-visual{order:2;}
+  .tf-grid{grid-template-columns:1fr;}
+  .how-grid{grid-template-columns:1fr;gap:16px;}
+  .how-grid::before{display:none;}
+  .testi-grid{grid-template-columns:1fr;}
+  .p-grid{grid-template-columns:1fr;max-width:420px;margin:0 auto;}
+  .p-card.hot{transform:none;}
+  .p-card.hot:hover{transform:translateY(-4px);}
+  .footer-grid{grid-template-columns:1fr 1fr;}
+  .guarantee-strip{flex-direction:column;text-align:center;padding:36px 28px;}
+}
+@media(max-width:768px){
+  .nav-links,.nav-actions .btn-link{display:none;}
+  .ham{display:flex;}
+  nav.mobile-open{
+    display:flex;flex-direction:column;
+    position:absolute;top:100%;left:0;right:0;
+    background:rgba(255,255,255,.98);backdrop-filter:blur(20px);
+    padding:16px 24px 24px;border-bottom:1px solid var(--border);
+    box-shadow:var(--sh-md);
+  }
+  nav.mobile-open .nav-links{display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin-bottom:16px;}
+  nav.mobile-open .nav-links a{font-size:1rem;padding:8px 0;}
+  .nav-link-entrar{display:none;}
+  nav.mobile-open .nav-link-entrar{display:block;width:100%;margin-top:8px;padding-top:12px;border-top:1px solid var(--border);}
+  nav.mobile-open .nav-link-entrar a{font-weight:700;color:var(--blue);}
+  nav.mobile-open .nav-actions{display:flex;}
+  nav.mobile-open .btn-link{display:inline-flex;}
+  .s-cta{padding:80px 0;}
+  .cta-inner h2{font-size:1.75rem;}
+}
+@media(max-width:480px){
+  .hero h1{font-size:2rem;}
+  .cta-btns{flex-direction:column;}
+  .footer-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- Scroll progress -->
+<div id="prog"></div>
+
+<!-- Back to top -->
+<button id="btt" aria-label="Voltar ao topo">
+  <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
+</button>
+
+<!-- ════════════════════════════════════════════════
+     HEADER
+════════════════════════════════════════════════ -->
+<header class="nav" id="nav">
+  <div class="nav-inner">
+    <a href="#top" class="nav-logo">
+      <img src="logo 1.png" alt="MonBluu" id="navLogo">
+    </a>
+
+    <nav id="mainNav">
+      <ul class="nav-links">
+        <li><a href="#funcionalidades">Funcionalidades</a></li>
+        <li><a href="#como-funciona">Como Funciona</a></li>
+        <li><a href="#planos">Preços</a></li>
+        <li><a href="#faq">FAQ</a></li>
+        <li class="nav-link-entrar"><a href="https://app.monbluu.com.br" target="_blank" rel="noopener">Entrar</a></li>
+      </ul>
+    </nav>
+
+    <div class="nav-actions">
+      <a href="https://app.monbluu.com.br" class="btn-link">Entrar</a>
+      <a href="#planos" class="btn-primary">Começar agora →</a>
+      <button class="ham" id="hamBtn" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ════════════════════════════════════════════════
+     HERO
+════════════════════════════════════════════════ -->
+<section class="hero" id="top">
+  <div class="hero-inner">
+    <div class="hero-grid">
+
+      <div class="hero-left">
+        <div class="tag">
+          <span class="tag-dot"></span>
+          Controle Financeiro Inteligente
+        </div>
+
+        <h1>
+          Você pode estar<br>
+          <span class="accent" style="white-space:nowrap">perdendo dinheiro por</span><br>
+          <span class="accent-g" id="typewriter"></span><span class="tw-cursor">|</span>
+        </h1>
+
+        <p class="hero-sub">
+          A MonBluu mostra, em minutos, quanto realmente sobra no seu negócio.
+          Sem planilhas e sem achismo.
+        </p>
+
+        <div class="hero-ctas">
+          <a href="#planos" class="btn-primary green lg">Descobrir meu lucro real →</a>
+          <a href="#como-funciona" class="btn-outline lg">Ver como funciona</a>
+        </div>
+
+        <p class="hero-microcopy">
+          <span>✓ Comece em 2 minutos</span>
+          <span>7 dias de garantia</span>
+          <span>Exclusivo para empresas</span>
+        </p>
+
+        <div class="hero-stats">
+          <div>
+            <div class="hero-stat-n">5 min</div>
+            <div class="hero-stat-l">Para ver seu lucro real</div>
+          </div>
+          <div>
+            <div class="hero-stat-n">7 dias</div>
+            <div class="hero-stat-l">De garantia</div>
+          </div>
+          <div>
+            <div class="hero-stat-n">100%</div>
+            <div class="hero-stat-l">Sem planilhas</div>
+          </div>
+        </div>
+
+        <div class="hero-stats-ticker" id="heroTicker" style="display:none;">
+          <div class="ticker-item">
+            <div class="hero-stat-n" id="tickerN">5 min</div>
+            <div class="hero-stat-l" id="tickerL">Para ver seu lucro real</div>
+          </div>
+        </div>
+
+        <img src="fundo.png" alt="Dashboard MonBluu" class="hero-img-mobile">
+      </div>
+
+      <div class="hero-right">
+        <img src="fundo.png" alt="Dashboard MonBluu — painel financeiro completo">
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Wave -->
+  <div class="hero-wave">
+    <svg viewBox="0 0 1440 80" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="wg" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#dce8ff" stop-opacity=".6"/>
+          <stop offset="50%" stop-color="#e8f5ee" stop-opacity=".5"/>
+          <stop offset="100%" stop-color="#dce8ff" stop-opacity=".6"/>
+        </linearGradient>
+      </defs>
+      <!-- wave 1 -->
+      <path class="wave1" d="M0,40 C180,80 360,0 540,40 C720,80 900,0 1080,40 C1260,80 1440,0 1620,40 C1800,80 1980,0 2160,40 L2160,80 L0,80 Z" fill="url(#wg)"/>
+      <!-- wave 2 -->
+      <path class="wave2" d="M0,55 C200,20 400,70 600,45 C800,20 1000,65 1200,45 C1400,20 1600,65 1800,45 C2000,20 2200,65 2400,45 L2400,80 L0,80 Z" fill="#fff" fill-opacity=".4"/>
+      <!-- flat white to merge with next section -->
+      <rect x="0" y="72" width="2880" height="8" fill="#fff"/>
+    </svg>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════
+     SOCIAL PROOF
+════════════════════════════════════════════════ -->
+<div class="social-proof">
+  <div class="sp-inner">
+    <div class="sp-item">
+      <div class="sp-avatars">
+        <div class="sp-avatar">RS</div>
+        <div class="sp-avatar">AM</div>
+        <div class="sp-avatar">PO</div>
+        <div class="sp-avatar">LF</div>
+        <div class="sp-avatar">+</div>
+      </div>
+    </div>
+    <div class="sp-item">
+      <strong>+2.000</strong> empreendedores já controlam suas finanças com a MonBluu
+    </div>
+    <div class="sp-sep"></div>
+    <div class="sp-item">
+      <div class="sp-stars">
+        <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      </div>
+      <span><strong>4.9/5</strong> de avaliação média</span>
+    </div>
+    <div class="sp-sep"></div>
+    <div class="sp-item">
+      ✓ <strong>7 dias</strong> de garantia sem risco
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     TRUST BAR
+════════════════════════════════════════════════ -->
+<div class="trust-bar">
+  <div class="trust-inner">
+    <div class="trust-item">
+      <svg class="trust-icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+      Dados protegidos com criptografia
+    </div>
+    <div class="trust-sep"></div>
+    <div class="trust-item">
+      <svg class="trust-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Funciona em qualquer dispositivo
+    </div>
+    <div class="trust-sep"></div>
+    <div class="trust-item">
+      <svg class="trust-icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      Exclusivo para PJ
+    </div>
+    <div class="trust-sep"></div>
+    <div class="trust-item">
+      <svg class="trust-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      +2.000 empreendedores ativos
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     IMPACT
+════════════════════════════════════════════════ -->
+<section class="s-impact">
+  <div class="c">
+    <div class="impact-quote-box rv">
+      <blockquote>
+        <strong>MonBluu</strong> é um Sistema de Controle Financeiro<br>
+        <span>e Precificação Inteligente.</span>
+      </blockquote>
+      <p>
+        Ajudamos sua empresa a <strong>organizar o caixa, definir preços corretos e aumentar o seu lucro</strong>.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════
+     FEATURE HIGHLIGHT (3 cards, ContaAzul style)
+════════════════════════════════════════════════ -->
+<section class="s-highlight" id="funcionalidades">
+  <div class="c">
+    <div class="sh center rv">
+      <div class="eyebrow">Por que a MonBluu?</div>
+      <h2 class="h2">A clareza que faltava no <span class="grad">seu negócio.</span></h2>
+      <p class="lead">Tudo que você precisa para saber exatamente quanto ganha, gasta e lucra — em tempo real.</p>
+    </div>
+
+    <div class="highlight-grid rv">
+      <div class="hl-card">
+        <div class="hl-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <h3>Saiba seu lucro real</h3>
+        <p>Descubra quanto você realmente ganha — não o que acha que ganha. Sem chute, sem surpresa no final do mês.</p>
+        <a href="#planos">Ver planos <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
+      </div>
+      <div class="hl-card">
+        <div class="hl-icon">
+          <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <h3>Precifique com precisão</h3>
+        <p>Calcule o preço justo de cada serviço considerando seus custos, impostos e a margem que você quer ter.</p>
+        <a href="#planos">Ver planos <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
+      </div>
+      <div class="hl-card">
+        <div class="hl-icon">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/></svg>
+        </div>
+        <h3>Controle total em tempo real</h3>
+        <p>Veja entradas, saídas e saldo atualizados. Feche o mês em minutos, não em horas. Chega de planilha.</p>
+        <a href="#planos">Ver planos <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════
+     PAIN POINTS
+════════════════════════════════════════════════ -->
+<section class="s-pain">
+  <div class="c">
+    <div class="sh center">
+      <div class="eyebrow rv">As Dores</div>
+      <h2 class="h2 rv">Se você é empreendedor, <span class="grad">isso vai doer:</span></h2>
+      <p class="lead rv">Reconhece alguma dessas situações? Você não está sozinho. E a boa notícia é que tem solução.</p>
+    </div>
+
+    <div class="pain-grid">
+      <div class="pain-card rv">
+        <div class="pain-num">01</div>
+        <div>
+          <h3>Você fatura… mas nunca sabe quanto realmente sobra</h3>
+          <p>O dinheiro entra, sai, e no final do mês sobra a dúvida. Você merece clareza, não chute.</p>
+        </div>
+      </div>
+      <div class="pain-card rv" style="transition-delay:.08s">
+        <div class="pain-num">02</div>
+        <div>
+          <h3>Já terminou o mês sem entender para onde foi o dinheiro</h3>
+          <p>Trabalhou o mês todo, pagou as contas, e cadê o lucro? Isso não é azar, é falta de controle.</p>
+        </div>
+      </div>
+      <div class="pain-card rv" style="transition-delay:.16s">
+        <div class="pain-num">03</div>
+        <div>
+          <h3>Mistura dinheiro pessoal com o da empresa</h3>
+          <p>Uma conta só para tudo. Resultado: nunca sabe se o negócio está lucrando ou se está pagando do próprio bolso.</p>
+        </div>
+      </div>
+      <div class="pain-card rv" style="transition-delay:.24s">
+        <div class="pain-num">04</div>
+        <div>
+          <h3>Tem medo de estar cobrando errado e não sabe como precificar</h3>
+          <p>Preço no chute, copiado da concorrência, ou na base do medo. Qualquer um pode estar te colocando no prejuízo.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════
+     FEATURES (alternating rows)
+════════════════════════════════════════════════ -->
+<section class="s-features">
+  <div class="c">
+    <div class="sh center">
+      <div class="eyebrow rv">Funcionalidades</div>
+      <h2 class="h2 rv">Tudo que você precisa, <span class="grad">nada que não precisa.</span></h2>
+      <p class="lead rv">A MonBluu organiza, calcula e mostra tudo automaticamente. Sem planilhas. Sem complicação.</p>
+    </div>
+
+    <!-- Feature 1 -->
+    <div class="feature-row">
+      <div class="f-copy rv-l">
+        <div class="eyebrow">Fluxo de Caixa</div>
+        <h3>Veja para onde vai cada centavo do seu negócio</h3>
+        <p>Registre receitas e despesas em segundos. O dashboard atualiza em tempo real e você sempre sabe exatamente sua posição financeira.</p>
+        <ul class="f-list">
+          <li><span class="f-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Entradas e saídas categorizadas automaticamente</li>
+          <li><span class="f-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Saldo do dia, semana e mês em um clique</li>
+          <li><span class="f-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Visualize de maneira fácil as contas a vencer / receber</li>
+          <li><span class="f-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Relatórios personalizados e exportáveis</li>
+        </ul>
+      </div>
+      <div class="f-visual rv-r">
+        <div class="f-box">
+          <div class="f-box-inner">
+            <div class="f-big-icon">
+              <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+            <div class="f-big-label">Fluxo de Caixa</div>
+            <div class="f-big-sub">Visualize cada movimentação</div>
+          </div>
+          <span class="f-box-n">01</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feature 2 -->
+    <div class="feature-row flip">
+      <div class="f-visual rv-l">
+        <div class="f-box">
+          <div class="f-box-inner">
+            <div class="f-big-icon">
+              <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+            <div class="f-big-label">Precificação Inteligente</div>
+            <div class="f-big-sub">Calcule o preço ideal</div>
+          </div>
+          <span class="f-box-n">02</span>
+        </div>
+      </div>
+      <div class="f-copy rv-r">
+        <div class="eyebrow">Precificação Inteligente</div>
+        <h3>Cobre o preço certo e pare de pagar para trabalhar</h3>
+        <p>Informe seus custos, horas trabalhadas e a margem desejada. A MonBluu calcula automaticamente o preço ideal para cada serviço ou produto.</p>
+        <ul class="f-list">
+          <li><span class="f-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Calcule seus custos</li>
+          <li><span class="f-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Inclua seus impostos</li>
+          <li><span class="f-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Simulador de margem de lucro</li>
+          <li><span class="f-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Comparativo com o mercado</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Feature 3 -->
+    <div class="feature-row">
+      <div class="f-copy rv-l">
+        <div class="eyebrow">Orçamentos Profissionais</div>
+        <h3>Impressione clientes com orçamentos em PDF em segundos</h3>
+        <p>Gere orçamentos profissionais personalizados com sua logo. Envie por WhatsApp ou e-mail e feche mais negócios.</p>
+        <ul class="f-list">
+          <li><span class="f-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Template personalizável com sua marca</li>
+          <li><span class="f-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Geração de PDF em um clique</li>
+          <li><span class="f-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Mais profissionalismo</li>
+          <li><span class="f-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Envie por WhatsApp, e-mail ou até mesmo impresso</li>
+        </ul>
+      </div>
+      <div class="f-visual rv-r">
+        <div class="f-box">
+          <div class="f-box-inner">
+            <div class="f-big-icon">
+              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </div>
+            <div class="f-big-label">Orçamentos PDF</div>
+            <div class="f-big-sub">Profissional em segundos</div>
+          </div>
+          <span class="f-box-n">03</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════
+     TRANSFORMATION
+════════════════════════════════════════════════ -->
+<section class="s-transform">
+  <div class="c">
+    <div class="sh center">
+      <div class="eyebrow rv">Transformação</div>
+      <h2 class="h2 rv">O que muda quando você <span class="grad">tem clareza.</span></h2>
+      <p class="lead rv">Uma única ferramenta que transforma a forma como você enxerga seu negócio. E isso muda tudo!</p>
+    </div>
+
+    <div class="tf-grid">
+      <div class="tf-col before rv-l">
+        <div class="tf-head"><span>✗</span> Sem a MonBluu</div>
+        <ul class="tf-list">
+          <li><span class="tf-ico">😰</span> Confusão sobre quanto sobra no mês</li>
+          <li><span class="tf-ico">📊</span> Planilhas que nunca fecham</li>
+          <li><span class="tf-ico">🤔</span> Incerteza na hora de precificar</li>
+          <li><span class="tf-ico">🎲</span> Decisões no achismo</li>
+          <li><span class="tf-ico">😓</span> Trabalho que não gera lucro visível</li>
+        </ul>
+      </div>
+      <div class="tf-col after rv-r">
+        <div class="tf-head"><span>✓</span> Com a MonBluu</div>
+        <ul class="tf-list">
+          <li><span class="tf-ico">💡</span> Clareza sobre o lucro real do mês</li>
+          <li><span class="tf-ico">⚡</span> Controle automático e organizado</li>
+          <li><span class="tf-ico">🎯</span> Preço calculado com precisão</li>
+          <li><span class="tf-ico">📈</span> Decisões baseadas em dados</li>
+          <li><span class="tf-ico">💰</span> Negócio lucrativo de verdade</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════
+     HOW IT WORKS
+════════════════════════════════════════════════ -->
+<section class="s-how" id="como-funciona">
+  <div class="c">
+    <div class="sh center">
+      <div class="eyebrow rv">Como Funciona</div>
+      <h2 class="h2 rv">Simples assim — <span class="grad">3 passos</span></h2>
+      <p class="lead rv">Sem configuração complicada. Em minutos você já vê os resultados.</p>
+    </div>
+
+    <div class="how-grid">
+      <div class="how-card rv" style="transition-delay:.04s">
+        <div class="how-num">1</div>
+        <h3>Inclua suas informações</h3>
+        <p>Cadastro super rápido. Adicione suas contas bancárias, receitas e despesas. Tudo de forma simples e intuitiva.</p>
+      </div>
+      <div class="how-card rv" style="transition-delay:.14s">
+        <div class="how-num">2</div>
+        <h3>A MonBluu organiza tudo</h3>
+        <p>Veja os valores realizados e a realizar. Sem planilhas. Sem complicação.</p>
+      </div>
+      <div class="how-card rv" style="transition-delay:.24s">
+        <div class="how-num">3</div>
+        <h3>Veja seu lucro real</h3>
+        <p>Dashboard mostra quanto você ganhou, gastou e lucrou de verdade — em tempo real. Tome decisões com confiança.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════
+     TESTIMONIALS
+════════════════════════════════════════════════ -->
+<section class="s-testi" id="depoimentos">
+  <div class="c">
+    <div class="sh center">
+      <div class="eyebrow rv">Depoimentos</div>
+      <h2 class="h2 rv">Quem usa, <span class="grad">recomenda</span></h2>
+      <p class="lead rv">Veja o que dizem os empreendedores que já transformaram suas finanças com a MonBluu.</p>
+    </div>
+
+    <div class="testi-grid">
+      <div class="t-card rv" style="transition-delay:.04s">
+        <div class="t-stars">
+          <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
+        <p class="t-quote">"Eu usava planilha e vivia perdido. Com a MonBluu, descobri que estava cobrando 30% abaixo do que deveria. Em 2 meses, meu lucro aumentou sem trabalhar mais."</p>
+        <div class="t-author">
+          <div class="t-avatar">RS</div>
+          <div>
+            <div class="t-name">Ricardo Silva</div>
+            <div class="t-role">Designer Freelancer</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="t-card rv" style="transition-delay:.12s">
+        <div class="t-stars">
+          <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
+        <p class="t-quote">"Testei outros sistemas e achei complicado demais. A MonBluu tem só o que preciso. O gerador de orçamento em PDF é sensacional, meus clientes elogiam o profissionalismo."</p>
+        <div class="t-author">
+          <div class="t-avatar">AM</div>
+          <div>
+            <div class="t-name">Ana Martins</div>
+            <div class="t-role">Consultora de Marketing</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="t-card rv" style="transition-delay:.20s">
+        <div class="t-stars">
+          <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
+        <p class="t-quote">"Finalmente sei quanto tenho que faturar pra pagar as contas e ainda sobrar. O fluxo de caixa me salvou de vários apertos. Recomendo pra todo mundo que tem negócio."</p>
+        <div class="t-author">
+          <div class="t-avatar">PO</div>
+          <div>
+            <div class="t-name">Pedro Oliveira</div>
+            <div class="t-role">Técnico de Ar-Condicionado</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════
+     PRICING
+════════════════════════════════════════════════ -->
+<section class="s-pricing" id="planos">
+  <div class="c">
+    <div class="sh center">
+      <div class="eyebrow rv">Planos</div>
+      <h2 class="h2 rv">Escolha o plano ideal <span class="grad">para seu momento</span></h2>
+      <p class="lead rv">Todos os planos incluem garantia de satisfação de 7 dias.</p>
+    </div>
+
+    <div class="ptgl-wrap">
+      <span class="ptgl-lbl active" id="lblM">Semestral</span>
+      <button class="ptgl-track" id="ptgl" aria-label="Alternar período"></button>
+      <span class="ptgl-lbl" id="lblA">Anual</span>
+      <span class="ptgl-badge">2 meses grátis</span>
+    </div>
+
+    <div class="p-grid">
+
+      <div class="p-card rv">
+        <div class="p-name">Básico</div>
+        <div class="p-desc">Para quem está começando a organizar</div>
+        <div class="p-price">
+          <span class="p-curr">R$</span>
+          <span class="p-amt" data-m="49" data-a="39">49</span>
+        </div>
+        <div class="p-period">/mês · cobrado semestralmente</div>
+        <hr class="p-div">
+        <ul class="p-feats">
+          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Controle financeiro completo</li>
+          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Fluxo de caixa visual</li>
+          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Dashboard inteligente</li>
+          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Relatórios financeiros</li>
+          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Suporte por e-mail</li>
+          <li class="off"><svg class="x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Gerador de orçamentos PDF</li>
+          <li class="off"><svg class="x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Precificação inteligente</li>
+        </ul>
+        <a href="cadastro.html#basico/semestral" class="btn-p" id="btn-basico">Começar Agora</a>
+      </div>
+
+      <div class="p-card rv" style="transition-delay:.1s">
+        <div class="p-name">Pró</div>
+        <div class="p-desc">Para quem quer profissionalizar o negócio</div>
+        <div class="p-price">
+          <span class="p-curr">R$</span>
+          <span class="p-amt" data-m="69" data-a="55">69</span>
+        </div>
+        <div class="p-period">/mês · cobrado semestralmente</div>
+        <hr class="p-div">
+        <ul class="p-feats">
+          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Tudo do plano Básico</li>
+          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Gerador de orçamentos PDF</li>
+          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Template personalizável</li>
+          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Suporte prioritário</li>
+          <li class="off"><svg class="x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Precificação inteligente</li>
+        </ul>
+        <a href="cadastro.html#pro/semestral" class="btn-p" id="btn-pro">Começar Agora</a>
+      </div>
+
+      <div class="p-card hot rv" style="transition-delay:.2s">
+        <div class="p-badge-top">MAIS ESCOLHIDO</div>
+        <div class="p-name">Profissional</div>
+        <div class="p-desc">Para quem quer maximizar o lucro</div>
+        <div class="p-price">
+          <span class="p-curr">R$</span>
+          <span class="p-amt" data-m="99" data-a="79">99</span>
+        </div>
+        <div class="p-period">/mês · cobrado semestralmente</div>
+        <hr class="p-div">
+        <ul class="p-feats">
+          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Tudo do plano Pró</li>
+          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Precificação inteligente</li>
+          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Simulador de margem</li>
+          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Importe com facilidade seus custos e despesas</li>
+          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Suporte VIP via WhatsApp</li>
+        </ul>
+        <a href="cadastro.html#profissional/semestral" class="btn-primary green" id="btn-profissional" style="width:100%;justify-content:center;padding:15px;">Começar Agora →</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════
+     FAQ
+════════════════════════════════════════════════ -->
+<section class="s-faq" id="faq">
+  <div class="c">
+    <div class="sh center">
+      <div class="eyebrow rv">Dúvidas</div>
+      <h2 class="h2 rv">Perguntas frequentes</h2>
+      <p class="lead rv">Ainda tem dúvidas? Veja as perguntas mais comuns ou fale com a gente.</p>
+    </div>
+
+    <div class="faq-wrap">
+      <div class="faq-item rv">
+        <button class="faq-btn">
+          Preciso de conhecimento técnico para usar?
+          <span class="faq-ico"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
+        </button>
+        <div class="faq-body"><p>Não! A MonBluu foi feita para quem não entende de contabilidade. A interface é simples e intuitiva. Se você sabe usar WhatsApp, sabe usar a MonBluu.</p></div>
+      </div>
+      <div class="faq-item rv" style="transition-delay:.06s">
+        <button class="faq-btn">
+          Funciona para qualquer tipo de negócio?
+          <span class="faq-ico"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
+        </button>
+        <div class="faq-body"><p>Sim! A MonBluu é ideal para prestadores de serviço, freelancers, consultores, pequenos comércios e qualquer empresa do Simples Nacional. Se você precisa controlar receitas, despesas e saber quanto está lucrando, a MonBluu é pra você.</p></div>
+      </div>
+      <div class="faq-item rv" style="transition-delay:.12s">
+        <button class="faq-btn">
+          Posso cancelar a qualquer momento?
+          <span class="faq-ico"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
+        </button>
+        <div class="faq-body"><p>Sim, sem burocracia nenhuma. Você cancela direto no sistema com poucos cliques. Sem precisar ligar, sem pegadinha. E você continua com acesso até o final do período pago.</p></div>
+      </div>
+      <div class="faq-item rv" style="transition-delay:.18s">
+        <button class="faq-btn">
+          Meus dados ficam seguros?
+          <span class="faq-ico"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
+        </button>
+        <div class="faq-body"><p>Absolutamente. Usamos criptografia de ponta e servidores seguros. Seus dados financeiros são tratados com o máximo sigilo e nunca são compartilhados com terceiros.</p></div>
+      </div>
+      <div class="faq-item rv" style="transition-delay:.24s">
+        <button class="faq-btn">
+          Qual a diferença entre os planos?
+          <span class="faq-ico"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
+        </button>
+        <div class="faq-body"><p>O plano Básico tem o controle financeiro completo. O Pró adiciona a geração de orçamentos em PDF. O Profissional inclui a precificação inteligente, que calcula o preço certo considerando seus custos e a margem que você quer ter.</p></div>
+      </div>
+      <div class="faq-item rv" style="transition-delay:.30s">
+        <button class="faq-btn">
+          A MonBluu substitui meu contador?
+          <span class="faq-ico"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
+        </button>
+        <div class="faq-body"><p>Não, e nem é esse o objetivo. A MonBluu é para o controle financeiro do dia a dia de sua empresa. Ou seja, saber quanto entra, quanto sai e quanto sobra. Seu contador continua cuidando de impostos e obrigações fiscais.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════
+     CONTACT BAR
+════════════════════════════════════════════════ -->
+<div class="contact-bar-placeholder"></div>
+<div class="contact-bar" id="contactBar">
+  <div class="contact-bar-inner">
+    <span class="contact-bar-label">Fale com a gente</span>
+    <a href="mailto:comercial@monbluu.com.br" class="contact-bar-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      <div>
+        <strong>Suporte</strong>
+        <span>comercial@monbluu.com.br</span>
+      </div>
+    </a>
+    <div class="contact-bar-sep"></div>
+    <a href="tel:+5547996242669" class="contact-bar-item">
+      <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.07 12 19.79 19.79 0 0 1 1 3.18 2 2 0 0 1 3 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 5.61 5.61l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      <div>
+        <strong>Adquira</strong>
+        <span>(47) 99624-2669</span>
+      </div>
+    </a>
+    <a href="https://wa.me/5547996242669?text=Ol%C3%A1%2C%20estava%20olhando%20o%20site%20da%20MonBluu." class="contact-bar-item contact-bar-whatsapp" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+      <div>
+        <strong>Atendimento</strong>
+        <span>WhatsApp</span>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     GUARANTEE
+════════════════════════════════════════════════ -->
+<section class="s-guarantee">
+  <div class="c">
+    <div class="guarantee-strip rv">
+      <div class="g-icon-wrap">
+        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+      </div>
+      <div class="g-body">
+        <h3>Teste por 7 dias. Sem risco nenhum.</h3>
+        <p>Se não fizer sentido para o seu negócio, você cancela. Sem burocracia, sem explicação, sem cobrança. Simples assim — porque temos certeza de que você vai gostar.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════
+     FINAL CTA
+════════════════════════════════════════════════ -->
+<section class="s-cta">
+  <div class="c">
+    <div class="cta-inner">
+      <h2>Você pode continuar no escuro… ou <em>descobrir hoje quanto realmente lucra.</em></h2>
+      <p>Sem planilha. Sem achismo. Sem risco. Comece agora mesmo.</p>
+      <div class="cta-btns">
+        <a href="#planos" class="btn-primary green lg">Descobrir meu lucro agora →</a>
+        <a href="#como-funciona" class="btn-cta-ghost">Ver como funciona</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════
+     FOOTER
+════════════════════════════════════════════════ -->
+<footer class="footer">
+  <div class="c">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.375rem;font-weight:800;color:var(--ink);margin-bottom:16px;">MonBluu</div>
+        <p>Sistema de controle financeiro simples para pequenas empresas. Saiba quanto cobrar e quanto sobra no final do mês.</p>
+      </div>
+      <div class="footer-col">
+        <h5>Produto</h5>
+        <ul>
+          <li><a href="#funcionalidades">Funcionalidades</a></li>
+          <li><a href="#planos">Preços</a></li>
+          <li><a href="#faq">FAQ</a></li>
+          <li><a href="#">Atualizações</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Empresa</h5>
+        <ul>
+          <li><a href="#">Sobre Nós</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Contato</a></li>
+          <li><a href="#">Trabalhe Conosco</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Legal</h5>
+        <ul>
+          <li><a href="termos/privacidade.html">Política de Privacidade</a></li>
+          <li><a href="termos/privacidade.html">Termos de Uso</a></li>
+          <li><a href="termos/privacidade.html">LGPD</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bar">
+      <p>© 2026 MonBluu. Todos os direitos reservados.</p>
+      <div class="footer-socials">
+        <a href="#" aria-label="Instagram">
+          <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+        </a>
+        <a href="#" aria-label="LinkedIn">
+          <svg viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+        </a>
+        <a href="#" aria-label="YouTube">
+          <svg viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- ════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+/* scroll progress */
+const prog = document.getElementById('prog');
+function updateProg(){
+  const st = window.scrollY, dh = document.documentElement.scrollHeight - window.innerHeight;
+  prog.style.width = (dh > 0 ? (st/dh)*100 : 0)+'%';
+}
+
+/* header */
+const nav = document.getElementById('nav');
+const navLogo = document.getElementById('navLogo');
+function updateNav(){
+  const stuck = window.scrollY > 40;
+  nav.classList.toggle('elevated', stuck);
+  navLogo.style.filter = '';
+}
+updateNav();
+
+/* back to top */
+const btt = document.getElementById('btt');
+function updateBtt(){ btt.classList.toggle('show', window.scrollY > 500); }
+btt.addEventListener('click', () => window.scrollTo({ top:0, behavior:'smooth' }));
+
+window.addEventListener('scroll', () => { updateProg(); updateBtt(); }, { passive:true });
+
+/* mobile menu */
+const hamBtn = document.getElementById('hamBtn');
+const mainNav = document.getElementById('mainNav');
+hamBtn.addEventListener('click', () => mainNav.classList.toggle('mobile-open'));
+mainNav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => mainNav.classList.remove('mobile-open')));
+
+/* smooth scroll */
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', function(e){
+    const id = this.getAttribute('href');
+    if(id==='#') return;
+    const el = document.querySelector(id);
+    if(el){ e.preventDefault(); el.scrollIntoView({ behavior:'smooth', block:'start' }); }
+  });
+});
+
+/* FAQ */
+document.querySelectorAll('.faq-item').forEach(item => {
+  item.querySelector('.faq-btn').addEventListener('click', () => {
+    const wasOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+    if(!wasOpen) item.classList.add('open');
+  });
+});
+
+/* pricing toggle */
+const ptgl = document.getElementById('ptgl');
+const lblM = document.getElementById('lblM');
+const lblA = document.getElementById('lblA');
+let annual = false;
+ptgl.addEventListener('click', () => {
+  annual = !annual;
+  ptgl.classList.toggle('on', annual);
+  lblM.classList.toggle('active', !annual);
+  lblA.classList.toggle('active', annual);
+  document.querySelectorAll('.p-amt').forEach(el => { el.textContent = annual ? el.dataset.a : el.dataset.m; });
+  document.querySelectorAll('.p-period').forEach(el => { el.textContent = annual ? '/mês · cobrado anualmente' : '/mês · cobrado semestralmente'; });
+  // Sincroniza links dos botões com o período selecionado
+  const per = annual ? 'anual' : 'semestral';
+  document.getElementById('btn-basico').href       = `cadastro.html#basico/${per}`;
+  document.getElementById('btn-pro').href          = `cadastro.html#pro/${per}`;
+  document.getElementById('btn-profissional').href = `cadastro.html#profissional/${per}`;
+});
+
+/* reveal on scroll */
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting){ e.target.classList.add('in'); obs.unobserve(e.target); } });
+}, { threshold:0.08, rootMargin:'0px 0px -40px 0px' });
+document.querySelectorAll('.rv,.rv-l,.rv-r').forEach(el => obs.observe(el));
+
+/* card hover tilt */
+function tilt(sel, d){
+  document.querySelectorAll(sel).forEach(c => {
+    c.addEventListener('mousemove', e => {
+      const r = c.getBoundingClientRect();
+      const rx = ((e.clientY-r.top)/r.height-.5)*-d*2;
+      const ry = ((e.clientX-r.left)/r.width-.5)*d*2;
+      c.style.transform = `perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg) translateY(-4px)`;
+      c.style.transition = 'transform .1s ease';
+    });
+    c.addEventListener('mouseleave', () => {
+      c.style.transform = '';
+      c.style.transition = 'transform .5s cubic-bezier(.22,1,.36,1)';
+    });
+  });
+}
+tilt('.hl-card',3);
+tilt('.pain-card',3);
+tilt('.t-card',3);
+tilt('.p-card',3);
+
+/* ── TYPEWRITER ── */
+(function(){
+  const el = document.getElementById('typewriter');
+  if(!el) return;
+  const phrases = ['falta de controle.', 'precificar errado.', 'má gestão do caixa.'];
+  let pi = 0, ci = 0, deleting = false;
+  const TYPE_SPEED = 55, DELETE_SPEED = 30, PAUSE = 3000;
+
+  function tick(){
+    const word = phrases[pi];
+    if(!deleting){
+      el.textContent = word.slice(0, ci + 1);
+      ci++;
+      if(ci === word.length){
+        // finished typing — pause then delete
+        setTimeout(() => { deleting = true; tick(); }, PAUSE);
+        return;
+      }
+      setTimeout(tick, TYPE_SPEED);
+    } else {
+      el.textContent = word.slice(0, ci - 1);
+      ci--;
+      if(ci === 0){
+        deleting = false;
+        pi = (pi + 1) % phrases.length;
+        setTimeout(tick, 300);
+        return;
+      }
+      setTimeout(tick, DELETE_SPEED);
+    }
+  }
+  tick();
+})();
+
+/* ── HERO STATS TICKER (mobile only) ── */
+(function(){
+  const ticker = document.getElementById('heroTicker');
+  const n = document.getElementById('tickerN');
+  const l = document.getElementById('tickerL');
+  if(!ticker||!n||!l) return;
+  const stats = [
+    {num:'5 min', label:'Para ver seu lucro real'},
+    {num:'7 dias', label:'De garantia'},
+    {num:'100%', label:'Sem planilhas'}
+  ];
+  let i = 0;
+  function isMobile(){ return window.innerWidth <= 1024; }
+  function showTicker(){
+    if(isMobile()){
+      ticker.style.display = 'flex';
+    } else {
+      ticker.style.display = 'none';
+    }
+  }
+  function next(){
+    i = (i + 1) % stats.length;
+    n.parentElement.style.animation = 'none';
+    void n.parentElement.offsetWidth;
+    n.parentElement.style.animation = 'tickerFade 0.5s ease';
+    n.textContent = stats[i].num;
+    l.textContent = stats[i].label;
+  }
+  showTicker();
+  window.addEventListener('resize', showTicker);
+  setInterval(next, 2500);
+})();
+
+/* ── CONTACT BAR STICKY BOTTOM ── */
+(function(){
+  const bar = document.getElementById('contactBar');
+  const placeholder = bar ? bar.previousElementSibling : null;
+  if(!bar || !placeholder) return;
+  // Captura a posição natural UMA vez, antes de qualquer alteração de layout
+  const barNaturalTop = bar.offsetTop;
+  const barH = bar.offsetHeight;
+  placeholder.style.height = barH + 'px';
+
+  function update(){
+    const scrollBottom = window.scrollY + window.innerHeight;
+    if(scrollBottom < barNaturalTop - 4){
+      bar.classList.add('cb-fixed');
+    } else {
+      bar.classList.remove('cb-fixed');
+    }
+  }
+  window.addEventListener('scroll', update, {passive:true});
+  window.addEventListener('resize', update);
+  update();
+})();
+</script>
+
+<!-- ════════════════════════════════════════════════
+     COOKIE BANNER
+════════════════════════════════════════════════ -->
+<div id="cookie-banner" role="dialog" aria-label="Aviso de cookies" style="
+  display:none;
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  width:calc(100% - 48px);max-width:620px;
+  background:#fff;border:1px solid #e2e8f0;border-radius:16px;
+  box-shadow:0 8px 40px rgba(0,0,0,.13);
+  padding:24px 28px;z-index:9999;
+  font-family:'Inter',sans-serif;
+">
+  <p style="font-size:.95rem;color:#1a2235;line-height:1.6;margin:0 0 16px">
+    Usamos cookies para melhorar sua experiência e garantir o funcionamento do site.
+    Ao continuar, você concorda com nossa
+    <a href="termos/privacidade.html" style="color:#1855f4;font-weight:600;text-decoration:underline">Política de Privacidade</a>.
+  </p>
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <button id="cookie-accept" style="
+      flex:1;min-width:120px;padding:11px 20px;
+      background:#1855f4;color:#fff;border:none;border-radius:10px;
+      font-size:.9rem;font-weight:600;cursor:pointer;
+    ">Aceitar cookies</button>
+    <button id="cookie-reject" style="
+      flex:1;min-width:120px;padding:11px 20px;
+      background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;border-radius:10px;
+      font-size:.9rem;font-weight:600;cursor:pointer;
+    ">Apenas essenciais</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  if(!localStorage.getItem('cookie_consent')){
+    const banner = document.getElementById('cookie-banner');
+    banner.style.display = 'block';
+    document.getElementById('cookie-accept').onclick = function(){
+      localStorage.setItem('cookie_consent','accepted');
+      banner.style.display = 'none';
+    };
+    document.getElementById('cookie-reject').onclick = function(){
+      localStorage.setItem('cookie_consent','rejected');
+      banner.style.display = 'none';
+    };
+  }
+})();
+</script>
+</body>
+</html>
