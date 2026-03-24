@@ -1053,7 +1053,7 @@ textarea.inp{min-height:80px;resize:vertical}
   .grid-2,.grid-3,.grid-accounts-chart,.form-row{grid-template-columns:1fr!important}
 
   /* ── Modais — bottom sheet ── */
-  .modal-overlay{align-items:flex-end!important;padding:0!important;justify-content:center}
+  .modal-overlay{align-items:flex-end!important;padding:0!important;justify-content:center;z-index:600!important}
   .modal-box{
     width:100%!important;max-width:100%!important;margin:0!important;
     border-radius:20px 20px 0 0!important;
@@ -1187,6 +1187,23 @@ textarea.inp{min-height:80px;resize:vertical}
   .dash-bottom-grid{grid-template-columns:1fr!important}
   /* ── Extrato — 3 cols → 1 col ── */
   .extrato-3col{grid-template-columns:1fr!important}
+  /* Reorder: chart first, accounts second, hide Conciliações */
+  .extrato-3col > div:nth-child(1){order:2}
+  .extrato-3col > div:nth-child(2){order:1}
+  .extrato-3col > div:nth-child(3){display:none!important}
+  /* Sub-toolbar compacto */
+  .extrato-subtoolbar{flex-wrap:wrap!important;gap:6px!important;padding:10px 12px!important}
+  .extrato-subtoolbar-title{display:none!important}
+  /* Esconder header da tabela */
+  #extrato-table-header{display:none!important}
+  /* Linhas da tabela: card layout */
+  .extrato-row{display:flex!important;flex-wrap:wrap!important;align-items:center!important;padding:10px 14px!important;gap:0!important;grid-template-columns:unset!important}
+  .extrato-row .er-date{font-size:10px;color:#94a3b8;flex:0 0 auto;margin-right:8px}
+  .extrato-row .er-name{flex:1;font-size:13px;font-weight:600;color:#1e293b;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .extrato-row .er-bal{font-size:13px;font-weight:700;text-align:right!important;flex:0 0 auto}
+  .extrato-row .er-desc{display:none!important}
+  .extrato-row .er-amounts{width:100%;display:flex;justify-content:flex-end;gap:12px;margin-top:3px;padding-left:calc(10px + 8px)}
+  .extrato-row .er-in,.extrato-row .er-out{font-size:11px}
 
   /* ── Clientes / Fornecedores ── */
   .contact-tbl-header{display:none!important}
@@ -1222,12 +1239,12 @@ textarea.inp{min-height:80px;resize:vertical}
   /* FAB menu vira bottom sheet no mobile */
   #fab-wrap{bottom:0!important;right:0!important;left:0!important;width:100%!important;align-items:stretch!important;z-index:500!important}
   #fab-menu{
-    position:fixed!important;bottom:64px!important;left:0!important;right:0!important;
+    position:fixed!important;bottom:calc(64px + env(safe-area-inset-bottom, 0px))!important;left:0!important;right:0!important;
     width:100%!important;min-width:unset!important;margin-bottom:0!important;
     border-radius:20px 20px 0 0!important;border:none!important;
     max-height:calc(80vh - 64px);overflow-y:auto;
     box-shadow:0 -8px 40px rgba(0,0,0,.22)!important;
-    padding-bottom:8px
+    padding-bottom:calc(12px + env(safe-area-inset-bottom, 0px))
   }
   #fab-btn{position:fixed!important;bottom:20px!important;right:20px!important;width:58px!important;height:58px!important;z-index:501!important}
 }
@@ -1955,6 +1972,10 @@ textarea.inp{min-height:80px;resize:vertical}
       <svg class="nav-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.4"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.1 3.1l1.4 1.4M11.5 11.5l1.4 1.4M3.1 12.9l1.4-1.4M11.5 4.5l1.4-1.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
       <span class="nav-label">Configurações</span>
     </button>
+    <button class="nav-btn" onclick="localStorage.removeItem('monbluu-tour-done');startTour();" title="Rever o tour de boas-vindas">
+      <svg class="nav-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.4"/><path d="M8 5v3.5l2 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 2.5C6.2 2.2 7 2 8 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M3 5.5A6 6 0 0 0 2 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      <span class="nav-label">Rever Tour</span>
+    </button>
   </nav>
   <div class="sidebar-bottom">
 
@@ -2231,7 +2252,7 @@ textarea.inp{min-height:80px;resize:vertical}
             <div class="card-header">
               <span class="card-title">Todas as Contas</span>
               <span class="kpi-hint kpi-hint-inline" data-tip="Clique no nome da conta para ver o extrato e fazer conciliação" onclick="event.stopPropagation()">?</span>
-              <button class="btn btn-blue btn-sm" onclick="openModal('account')">+ Nova conta</button>
+              <button id="tour-btn-nova-conta" class="btn btn-blue btn-sm" onclick="openModal('account')">+ Nova conta</button>
             </div>
             <!-- Filtro de conta -->
             <div id="acc-filter-wrap" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
@@ -2256,7 +2277,7 @@ textarea.inp{min-height:80px;resize:vertical}
                 <button id="recv-efetivar-btn" onclick="efetivarSelecionados('income')" style="display:none;align-items:center;gap:5px;padding:5px 14px;border-radius:8px;border:none;background:#22C55E;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">
                   ✅ Receber selecionados
                 </button>
-                <button class="btn btn-green btn-sm" onclick="openModal('receivable')">+ Adicionar</button>
+                <button id="tour-btn-receber" class="btn btn-green btn-sm" onclick="openModal('receivable')">+ Adicionar</button>
               </div>
             </div>
             <div class="tab-bar">
@@ -2282,7 +2303,7 @@ textarea.inp{min-height:80px;resize:vertical}
                 <button id="pay-efetivar-btn" onclick="efetivarSelecionados('expense')" style="display:none;align-items:center;gap:5px;padding:5px 14px;border-radius:8px;border:none;background:#ef4444;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">
                   💳 Pagar selecionados
                 </button>
-                <button class="btn btn-red btn-sm" onclick="openModal('payable')">+ Adicionar</button>
+                <button id="tour-btn-pagar" class="btn btn-red btn-sm" onclick="openModal('payable')">+ Adicionar</button>
               </div>
             </div>
             <div class="tab-bar">
@@ -2915,8 +2936,8 @@ textarea.inp{min-height:80px;resize:vertical}
           <!-- Extrato tab content -->
           <div id="extrato-tab-extrato">
             <!-- Sub-toolbar -->
-            <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid #f1f5f9">
-              <span style="font-size:13px;font-weight:700;color:#1e293b">Extrato</span>
+            <div class="extrato-subtoolbar" style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid #f1f5f9">
+              <span class="extrato-subtoolbar-title" style="font-size:13px;font-weight:700;color:#1e293b">Extrato</span>
               <div style="position:relative;display:inline-block" id="extratoExportWrap">
                 <button onclick="toggleExtratoExportMenu(event)" style="background:#fff;border:1.5px solid #e2e8f0;border-radius:7px;padding:4px 14px;font-size:12px;font-weight:600;cursor:pointer;color:#475569;font-family:inherit;display:flex;align-items:center;gap:5px">Exportar <span style="font-size:10px">▾</span></button>
                 <div id="extratoExportMenu" style="display:none;position:absolute;top:calc(100% + 4px);left:0;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:200;min-width:140px;overflow:hidden">
@@ -2930,10 +2951,10 @@ textarea.inp{min-height:80px;resize:vertical}
               <button onclick="openModal('payable')" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:0 14px;height:34px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Novo pagamento</button>
             </div>
             <!-- Table header -->
-            <div style="display:grid;grid-template-columns:110px 1fr 1fr 130px 130px 130px;padding:9px 16px;background:#f8fafc;border-bottom:1px solid #e2e8f0;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;gap:8px">
+            <div id="extrato-table-header" style="display:grid;grid-template-columns:110px 1fr 1fr 130px 130px 130px;padding:9px 16px;background:#f8fafc;border-bottom:1px solid #e2e8f0;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;gap:8px">
               <span>Data</span><span>Nome</span><span>Descrição</span>
-              <span style="display:flex;align-items:center;gap:3px;color:#22C55E">▲ Entrada</span>
-              <span style="display:flex;align-items:center;gap:3px;color:#ef4444">▼ Saída</span>
+              <span style="display:flex;align-items:center;justify-content:flex-end;gap:3px;color:#22C55E">▲ Entrada</span>
+              <span style="display:flex;align-items:center;justify-content:flex-end;gap:3px;color:#ef4444">▼ Saída</span>
               <span style="text-align:right">Saldo</span>
             </div>
             <div id="extratoTableBody"></div>
@@ -3225,6 +3246,9 @@ textarea.inp{min-height:80px;resize:vertical}
       </div>
       <button onclick="closeSettingsModal()" style="margin-top:32px;background:#0F2A44;color:#fff;border:none;border-radius:12px;padding:14px 32px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">
         Entendi
+      </button>
+      <button onclick="closeSettingsModal();try{localStorage.removeItem('monbluu-tour-done')}catch(e){}setTimeout(startTour,300)" style="margin-top:12px;background:none;border:1.5px solid #e2e8f0;border-radius:12px;padding:12px 32px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;color:#475569">
+        🗺️ Ver tour guiado
       </button>
     </div>
     <!-- Body: sidebar + content -->
@@ -3610,7 +3634,6 @@ textarea.inp{min-height:80px;resize:vertical}
         <button class="cli-tab active" onclick="switchCliTab(this,0)" style="padding:9px 16px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;color:#3b82f6;border-bottom:2px solid #3b82f6;margin-bottom:-1px;font-family:inherit">Dados</button>
         <button class="cli-tab" onclick="switchCliTab(this,1)" style="padding:9px 16px;font-size:13px;font-weight:500;border:none;background:none;cursor:pointer;color:#64748b;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:inherit">Endereço</button>
         <button class="cli-tab" onclick="switchCliTab(this,2)" style="padding:9px 16px;font-size:13px;font-weight:500;border:none;background:none;cursor:pointer;color:#64748b;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:inherit">Anotações</button>
-        <button class="cli-tab" onclick="switchCliTab(this,3)" style="padding:9px 16px;font-size:13px;font-weight:500;border:none;background:none;cursor:pointer;color:#64748b;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:inherit">Documentos</button>
       </div>
       <!-- Tab 0: Dados -->
       <div id="cli-tab-0" style="display:flex;flex-direction:column;gap:13px">
@@ -3647,10 +3670,6 @@ textarea.inp{min-height:80px;resize:vertical}
       <div id="cli-tab-2" style="display:none;flex-direction:column;gap:13px">
         <div class="form-group"><label class="fl">Anotações</label><textarea id="cliNotes" class="inp" rows="5" placeholder="Informações adicionais sobre o cliente..."></textarea></div>
       </div>
-      <!-- Tab 3: Documentos -->
-      <div id="cli-tab-3" style="display:none;text-align:center;padding:28px;color:#94a3b8;font-size:13px">
-        📎 Documentos disponíveis na versão Pro
-      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-blue btn-full" onclick="saveClient()">Adicionar</button>
@@ -3676,7 +3695,6 @@ textarea.inp{min-height:80px;resize:vertical}
         <button class="sup-tab active" onclick="switchSupTab(this,0)" style="padding:9px 16px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;color:#3b82f6;border-bottom:2px solid #3b82f6;margin-bottom:-1px;font-family:inherit">Dados</button>
         <button class="sup-tab" onclick="switchSupTab(this,1)" style="padding:9px 16px;font-size:13px;font-weight:500;border:none;background:none;cursor:pointer;color:#64748b;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:inherit">Endereço</button>
         <button class="sup-tab" onclick="switchSupTab(this,2)" style="padding:9px 16px;font-size:13px;font-weight:500;border:none;background:none;cursor:pointer;color:#64748b;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:inherit">Anotações</button>
-        <button class="sup-tab" onclick="switchSupTab(this,3)" style="padding:9px 16px;font-size:13px;font-weight:500;border:none;background:none;cursor:pointer;color:#64748b;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:inherit">Documentos</button>
       </div>
       <!-- Tab 0: Dados -->
       <div id="sup-tab-0" style="display:flex;flex-direction:column;gap:13px">
@@ -3714,9 +3732,6 @@ textarea.inp{min-height:80px;resize:vertical}
         <div class="form-group"><label class="fl">Anotações</label><textarea id="supNotes" class="inp" rows="5" placeholder="Informações adicionais sobre o fornecedor..."></textarea></div>
       </div>
       <!-- Tab 3: Documentos -->
-      <div id="sup-tab-3" style="display:none;text-align:center;padding:28px;color:#94a3b8;font-size:13px">
-        📎 Documentos disponíveis na versão Pro
-      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-blue btn-full" onclick="saveSupplier()">Adicionar</button>
@@ -7882,25 +7897,49 @@ function renderExtratoChart(acc){
   // Build daily balance for the selected month
   const yr=S.extratoYear, mo=S.extratoMonth;
   const daysInMonth = new Date(yr,mo+1,0).getDate();
-  // All transactions for this account in this month
-  const recvs = S.receivables.filter(r=>r.accountId===acc.id&&r.done&&r.doneDate);
-  const pays  = S.payables.filter(p=>p.accountId===acc.id&&p.done&&p.doneDate);
-  // Build running balance day by day starting from opening balance approximation
-  // opening = current balance minus all done transactions in/after this month
+  // All done transactions for this account
+  const recvs = S.receivables.filter(r=>r.accountId===acc.id&&r.done&&(r.doneDate||r.dueDate));
+  const pays  = S.payables.filter(p=>p.accountId===acc.id&&p.done&&(p.doneDate||p.dueDate));
+  const trans = S.transfers.filter(t=>t.date&&(t.fromId===acc.id||t.toId===acc.id));
+  // Build opening balance: current balance minus transactions that occur AFTER this month
   let openBal = acc.balance;
-  [...recvs,...S.receivables.filter(r=>r.accountId===acc.id&&r.done&&r.doneDate)].forEach(r=>{
+  recvs.forEach(r=>{
     const d=new Date((r.doneDate||r.dueDate)+'T12:00:00');
     if(d.getFullYear()>yr||(d.getFullYear()===yr&&d.getMonth()>mo)) openBal-=r.value;
   });
-  [...pays,...S.payables.filter(p=>p.accountId===acc.id&&p.done&&p.doneDate)].forEach(p=>{
+  pays.forEach(p=>{
     const d=new Date((p.doneDate||p.dueDate)+'T12:00:00');
     if(d.getFullYear()>yr||(d.getFullYear()===yr&&d.getMonth()>mo)) openBal+=p.value;
+  });
+  trans.forEach(t=>{
+    const d=new Date(t.date+'T12:00:00');
+    if(d.getFullYear()>yr||(d.getFullYear()===yr&&d.getMonth()>mo)){
+      if(t.fromId===acc.id) openBal+=t.value;
+      if(t.toId===acc.id)   openBal-=t.value;
+    }
+  });
+  // Also subtract transactions from THIS month that happened before it (shouldn't exist, but also subtract all IN this month to get start-of-month balance)
+  recvs.forEach(r=>{
+    const d=new Date((r.doneDate||r.dueDate)+'T12:00:00');
+    if(d.getFullYear()===yr&&d.getMonth()===mo) openBal-=r.value;
+  });
+  pays.forEach(p=>{
+    const d=new Date((p.doneDate||p.dueDate)+'T12:00:00');
+    if(d.getFullYear()===yr&&d.getMonth()===mo) openBal+=p.value;
+  });
+  trans.forEach(t=>{
+    const d=new Date(t.date+'T12:00:00');
+    if(d.getFullYear()===yr&&d.getMonth()===mo){
+      if(t.fromId===acc.id) openBal+=t.value;
+      if(t.toId===acc.id)   openBal-=t.value;
+    }
   });
 
   const dayBal = {};
   for(let d=1;d<=daysInMonth;d++) dayBal[d]=0;
   recvs.forEach(r=>{ const d=new Date((r.doneDate||r.dueDate)+'T12:00:00'); if(d.getFullYear()===yr&&d.getMonth()===mo) dayBal[d.getDate()]=(dayBal[d.getDate()]||0)+r.value; });
   pays.forEach(p=>{ const d=new Date((p.doneDate||p.dueDate)+'T12:00:00'); if(d.getFullYear()===yr&&d.getMonth()===mo) dayBal[d.getDate()]=(dayBal[d.getDate()]||0)-p.value; });
+  trans.forEach(t=>{ const d=new Date(t.date+'T12:00:00'); if(d.getFullYear()===yr&&d.getMonth()===mo){ if(t.fromId===acc.id) dayBal[d.getDate()]=(dayBal[d.getDate()]||0)-t.value; if(t.toId===acc.id) dayBal[d.getDate()]=(dayBal[d.getDate()]||0)+t.value; } });
 
   // Accumulate
   const points=[]; let running=openBal;
@@ -7922,14 +7961,22 @@ function renderExtratoChart(acc){
     const v=minV+(range/ySteps)*i;
     const y=H-PAD.b-((v-minV)/range)*cH;
     yLines+=`<line x1="${PAD.l}" y1="${y}" x2="${W-PAD.r}" y2="${y}" stroke="#f1f5f9" stroke-width="1"/>`;
-    yLabels+=`<text x="${PAD.l-6}" y="${y+4}" text-anchor="end" font-size="10" fill="#94a3b8">R$${(v/1000).toFixed(0)}k</text>`;
+    const lbl=Math.abs(v)>=1000?`R$${(v/1000).toFixed(1).replace(/\.0$/,'')}k`:`R$${v.toFixed(0)}`;
+    yLabels+=`<text x="${PAD.l-6}" y="${y+4}" text-anchor="end" font-size="10" fill="#94a3b8">${lbl}</text>`;
   }
 
-  // X-axis labels (every 2 days)
-  let xLabels='';
-  points.filter((_,i)=>i===0||(i+1)%2===0).forEach(({d})=>{
+  // X-axis labels — adaptive step based on available width (each label ~32px)
+  const maxXLabels = Math.max(2, Math.floor(cW / 32));
+  const xStep = Math.ceil(daysInMonth / maxXLabels);
+  let xLabels=''; let lastLabelX=-999;
+  points.forEach(({d})=>{
+    const isStep = (d-1) % xStep === 0;
+    const isLast = d === daysInMonth;
+    if(!isStep && !isLast) return;
     const x=PAD.l+(d-1)/(daysInMonth-1)*cW;
+    if(x - lastLabelX < 28) return; // skip if too close to previous
     xLabels+=`<text x="${x}" y="${H-4}" text-anchor="middle" font-size="9" fill="#94a3b8">${String(d).padStart(2,'0')}/${String(mo+1).padStart(2,'0')}</text>`;
+    lastLabelX=x;
   });
 
   // Line path
@@ -7943,7 +7990,45 @@ function renderExtratoChart(acc){
     todayLine=`<line x1="${x}" y1="${PAD.t}" x2="${x}" y2="${H-PAD.b}" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,3"/>`;
   }
 
-  el.innerHTML=`<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="overflow:visible">${yLines}${yLabels}${xLabels}${todayLine}${polyline}</svg>`;
+  // Hover elements (hidden by default)
+  const hoverLine=`<line id="ec-hline" x1="0" y1="${PAD.t}" x2="0" y2="${H-PAD.b}" stroke="#1d4ed8" stroke-width="1" stroke-dasharray="4,3" opacity="0"/>`;
+  const hoverDot=`<circle id="ec-hdot" cx="0" cy="0" r="5" fill="#1d4ed8" stroke="#fff" stroke-width="2" opacity="0"/>`;
+  // Tooltip (HTML overlay)
+  const tip=`<div id="ec-tip" style="display:none;position:absolute;background:#0F2A44;color:#fff;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:600;pointer-events:none;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.25);transform:translateX(-50%)"></div>`;
+
+  el.style.position='relative';
+  el.innerHTML=`<svg id="ec-svg" width="100%" height="${H}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="overflow:visible;display:block">${yLines}${yLabels}${xLabels}${todayLine}${polyline}${hoverLine}${hoverDot}<rect x="${PAD.l}" y="${PAD.t}" width="${cW}" height="${cH}" fill="transparent" id="ec-overlay"/></svg>${tip}`;
+
+  const svg=el.querySelector('#ec-svg');
+  const overlay=el.querySelector('#ec-overlay');
+  const hline=el.querySelector('#ec-hline');
+  const hdot=el.querySelector('#ec-hdot');
+  const tooltip=el.querySelector('#ec-tip');
+
+  function onMove(e){
+    const rect=svg.getBoundingClientRect();
+    const scaleX=W/rect.width;
+    const mx=(e.clientX-rect.left)*scaleX;
+    const idx=Math.round((mx-PAD.l)/cW*(daysInMonth-1));
+    const clamped=Math.max(0,Math.min(daysInMonth-1,idx));
+    const pt=points[clamped];
+    const px=PAD.l+clamped/(daysInMonth-1)*cW;
+    const py=H-PAD.b-((pt.v-minV)/range)*cH;
+    hline.setAttribute('x1',px); hline.setAttribute('x2',px); hline.setAttribute('opacity','1');
+    hdot.setAttribute('cx',px); hdot.setAttribute('cy',py); hdot.setAttribute('opacity','1');
+    const fmtV=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(pt.v);
+    const mo2=String(S.extratoMonth+1).padStart(2,'0');
+    tooltip.textContent=`${String(pt.d).padStart(2,'0')}/${mo2} · ${fmtV}`;
+    tooltip.style.display='block';
+    const tipX=(px/W*rect.width);
+    tooltip.style.left=tipX+'px';
+    tooltip.style.top=(py/H*rect.height-38)+'px';
+  }
+  function onLeave(){ hline.setAttribute('opacity','0'); hdot.setAttribute('opacity','0'); tooltip.style.display='none'; }
+  overlay.addEventListener('mousemove',onMove);
+  overlay.addEventListener('mouseleave',onLeave);
+  overlay.addEventListener('touchmove',e=>{ e.preventDefault(); onMove(e.touches[0]); },{passive:false});
+  overlay.addEventListener('touchend',onLeave);
 }
 
 function renderExtratoTable(acc){
@@ -7991,25 +8076,29 @@ function renderExtratoTable(acc){
   const rows = entries.map(e=>{
     if(e.isSaldo){
       const balFmt=`<span class="mono" style="font-size:12px;color:#475569">${fmt(bal)}</span>`;
-      return `<div style="display:grid;grid-template-columns:110px 1fr 1fr 130px 130px 130px;padding:11px 16px;border-bottom:1px solid #f8fafc;align-items:center;gap:8px;background:#fafbfc">
-        <span style="font-size:11px;color:#94a3b8">${e.date.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'})}</span>
-        <span></span>
-        <span style="font-size:12px;color:#64748b">Saldo Anterior</span>
+      return `<div class="extrato-row" style="display:grid;grid-template-columns:110px 1fr 1fr 130px 130px 130px;padding:11px 16px;border-bottom:1px solid #f8fafc;align-items:center;gap:8px;background:#fafbfc">
+        <span class="er-date" style="font-size:11px;color:#94a3b8">${e.date.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'})}</span>
+        <span class="er-name" style="font-size:12px;color:#64748b;font-weight:500">Saldo Anterior</span>
+        <span class="er-desc"></span>
         <span></span><span></span>
-        <div style="text-align:right">${balFmt}</div>
+        <div class="er-bal" style="text-align:right">${balFmt}</div>
+        <div class="er-amounts"><span class="er-in"></span><span class="er-out"></span></div>
       </div>`;
     }
     bal += e.entrada - e.saida;
     const entradaStr = e.entrada>0?`<span class="mono" style="color:#22C55E">${fmt(e.entrada)}</span>`:'<span style="color:#e2e8f0">—</span>';
     const saidaStr   = e.saida>0?`<span class="mono" style="color:#ef4444">${fmt(e.saida)}</span>`:'<span style="color:#e2e8f0">—</span>';
     const balColor   = bal>=0?'#1e293b':'#ef4444';
-    return `<div style="display:grid;grid-template-columns:110px 1fr 1fr 130px 130px 130px;padding:11px 16px;border-bottom:1px solid #f8fafc;align-items:center;gap:8px;transition:background .1s" onmouseenter="this.style.background='#f8fafc'" onmouseleave="this.style.background=''">
-      <span style="font-size:11px;color:#64748b">${e.date.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'})}</span>
-      <span style="font-size:13px;font-weight:500;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.label}</span>
-      <span style="font-size:12px;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.desc||'—'}</span>
+    const entradaMob = e.entrada>0?`<span class="mono" style="font-size:11px;color:#22C55E">+${fmt(e.entrada)}</span>`:'';
+    const saidaMob   = e.saida>0?`<span class="mono" style="font-size:11px;color:#ef4444">-${fmt(e.saida)}</span>`:'';
+    return `<div class="extrato-row" style="display:grid;grid-template-columns:110px 1fr 1fr 130px 130px 130px;padding:11px 16px;border-bottom:1px solid #f8fafc;align-items:center;gap:8px;transition:background .1s" onmouseenter="this.style.background='#f8fafc'" onmouseleave="this.style.background=''">
+      <span class="er-date" style="font-size:11px;color:#64748b">${e.date.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'})}</span>
+      <span class="er-name" style="font-size:13px;font-weight:500;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.label}</span>
+      <span class="er-desc" style="font-size:12px;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.desc||'—'}</span>
       <div style="text-align:right">${entradaStr}</div>
       <div style="text-align:right">${saidaStr}</div>
-      <div style="text-align:right"><span class="mono" style="font-size:12px;color:${balColor}">${fmt(bal)}</span></div>
+      <div class="er-bal" style="text-align:right"><span class="mono" style="font-size:12px;color:${balColor}">${fmt(bal)}</span></div>
+      <div class="er-amounts">${entradaMob}${saidaMob}</div>
     </div>`;
   });
 
@@ -10335,7 +10424,7 @@ renderDashboard();
 </div>
 
 <!-- FAB backdrop -->
-<div id="fab-backdrop" onclick="closeFab()" style="display:none;position:fixed;inset:0;z-index:399"></div>
+<div id="fab-backdrop" onclick="closeFab()" style="display:none;position:fixed;inset:0;z-index:399;background:rgba(0,0,0,0.35);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);transition:opacity .2s"></div>
 
 <!-- ── MOBILE BOTTOM NAV ── -->
 <nav id="mob-bottom-nav">
@@ -10797,6 +10886,8 @@ async function showApp(user) {
   // Carrega os dados do banco
   await loadUserPlan();
   await loadData();
+  // Auto-start tour on first login
+  try{ if(!localStorage.getItem('monbluu-tour-done')) setTimeout(startTour, 800); }catch(e){}
 }
 
 function showLogin() {
@@ -11292,5 +11383,164 @@ window.dismissPWABanner = function(){
 </script>
 <!-- Tooltip global — fora de qualquer elemento animado/transformado -->
 <div id="cfTooltip" style="display:none;position:fixed;background:#1E293B;color:#fff;border-radius:10px;padding:10px 14px;font-size:12px;pointer-events:none;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.2);min-width:180px"></div>
+
+<!-- ── TOUR ── -->
+<div id="tour-overlay" style="display:none;position:fixed;inset:0;z-index:10000;pointer-events:none">
+  <div id="tour-top"    style="position:absolute;left:0;right:0;top:0;background:rgba(10,20,40,.72);transition:all .3s"></div>
+  <div id="tour-bottom" style="position:absolute;left:0;right:0;bottom:0;background:rgba(10,20,40,.72);transition:all .3s"></div>
+  <div id="tour-left"   style="position:absolute;background:rgba(10,20,40,.72);transition:all .3s"></div>
+  <div id="tour-right"  style="position:absolute;background:rgba(10,20,40,.72);transition:all .3s"></div>
+  <div id="tour-highlight" style="position:absolute;border-radius:10px;box-shadow:0 0 0 3px rgba(99,179,237,.8);transition:all .3s;pointer-events:none"></div>
+</div>
+<div id="tour-card" style="display:none;position:fixed;z-index:10001;background:#fff;border-radius:18px;padding:22px 24px 18px;width:290px;box-shadow:0 20px 60px rgba(0,0,0,.35);transition:top .3s,left .3s,bottom .3s,right .3s">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <div style="display:flex;gap:5px" id="tour-dots"></div>
+    <button onclick="endTour()" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:22px;line-height:1;padding:0;margin-top:-4px">×</button>
+  </div>
+  <div id="tour-title" style="font-size:15px;font-weight:800;color:#0F2A44;margin-bottom:7px;line-height:1.3"></div>
+  <div id="tour-desc"  style="font-size:12.5px;color:#64748b;line-height:1.65;margin-bottom:18px"></div>
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <button onclick="endTour()" style="background:none;border:none;cursor:pointer;font-size:12px;color:#94a3b8;font-family:inherit;padding:0">Pular tour</button>
+    <button id="tour-next-btn" onclick="tourNext()" style="background:linear-gradient(135deg,#0F2A44,#1e4976);color:#fff;border:none;border-radius:10px;padding:10px 22px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Próximo →</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const PAD = 8; // spotlight padding around element
+  const STEPS = [
+    { title:'👋 Bem-vindo(a) à MonBluu!',       desc:'Vamos te mostrar os primeiros passos em menos de 1 minuto. Você pode pular a qualquer momento.', sel:null },
+    { title:'📊 Seu Painel',                   desc:'Aqui está a visão geral do seu negócio: saldo total, recebimentos, despesas, vencimentos e muito mais.', sel:'[data-page="dashboard"]', mob:'[data-mbn="dashboard"]' },
+    { title:'🏦 Cadastre sua conta bancária',  desc:'Clique em "+ Nova conta" para cadastrar sua conta bancária. Ela será a base para todos os seus lançamentos.', sel:'#tour-btn-nova-conta', mob:'#tour-btn-nova-conta' },
+    { title:'📈 Lance suas contas a receber',  desc:'Clique em "+ Adicionar" para registrar um recebimento. Você pode incluir valor, data de vencimento, cliente e parcelamento.', sel:'#tour-btn-receber', mob:'#tour-btn-receber' },
+    { title:'📉 Lance suas contas a pagar',    desc:'Clique em "+ Adicionar" para registrar um pagamento. Organize seus gastos por categoria para ter relatórios precisos.', sel:'#tour-btn-pagar', mob:'#tour-btn-pagar' },
+    { title:'➕ Menu de ações rápidas',         desc:'Use este botão para adicionar rapidamente contas, transferências, clientes e fornecedores sem sair de onde está.', sel:'#fab-btn', mob:'.mbn-plus-circle' },
+    { title:'📅 Filtre o período',             desc:'Use esta barra para navegar entre períodos — mês, semana, dia ou intervalo personalizado. Todos os dados se atualizam automaticamente.', sel:'#period-bar', mob:'#period-bar' },
+    { title:'📋 Lançamentos',                  desc:'Aqui você vê e gerencia todos os seus recebimentos e pagamentos em um único lugar, com filtros por status e categoria.', sel:'[data-page="lancamentos"]', mob:null },
+    { title:'📈 Relatórios',                   desc:'Visualize DRE, fluxo de caixa e relatórios gerenciais para tomar decisões com segurança e clareza.', sel:'[data-page="relatorios"]', mob:'[data-mbn="relatorios"]' },
+    { title:'🎉 Tudo pronto!',                 desc:'Você já conhece o essencial. Cadastre sua conta bancária e comece a lançar agora. Bons negócios!', sel:null }
+  ];
+
+  let cur = 0;
+  const isMob = ()=> window.innerWidth <= 768;
+
+  function getTarget(step){
+    if(!step.sel) return null;
+    const sel = isMob() && step.mob ? step.mob : step.sel;
+    return document.querySelector(sel);
+  }
+
+  function renderDots(){
+    const el = document.getElementById('tour-dots');
+    el.innerHTML = STEPS.map((_,i)=>`<div style="width:${i===cur?18:7}px;height:7px;border-radius:4px;background:${i===cur?'#0F2A44':'#e2e8f0'};transition:width .25s,background .25s"></div>`).join('');
+  }
+
+  function positionCard(target){
+    const card = document.getElementById('tour-card');
+    card.style.transform = '';
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const cw = 290, ch = card.offsetHeight || 200;
+    const margin = 16;
+    if(!target){
+      // centered
+      card.style.left = Math.round((vw-cw)/2)+'px';
+      card.style.top  = Math.round((vh-ch)/2)+'px';
+      return;
+    }
+    const r = target.getBoundingClientRect();
+    // Try right
+    if(r.right + cw + margin + 10 <= vw){
+      card.style.left = (r.right + 14)+'px';
+      card.style.top  = Math.max(margin, Math.min(vh-ch-margin, r.top + r.height/2 - ch/2))+'px';
+    }
+    // Try bottom
+    else if(r.bottom + ch + margin + 10 <= vh){
+      card.style.top  = (r.bottom + 14)+'px';
+      card.style.left = Math.max(margin, Math.min(vw-cw-margin, r.left + r.width/2 - cw/2))+'px';
+    }
+    // Try left
+    else if(r.left - cw - margin - 10 >= 0){
+      card.style.left = (r.left - cw - 14)+'px';
+      card.style.top  = Math.max(margin, Math.min(vh-ch-margin, r.top + r.height/2 - ch/2))+'px';
+    }
+    // Fallback: top
+    else {
+      card.style.top  = Math.max(margin, r.top - ch - 14)+'px';
+      card.style.left = Math.max(margin, Math.min(vw-cw-margin, r.left + r.width/2 - cw/2))+'px';
+    }
+  }
+
+  function spotlight(target){
+    const ov = document.getElementById('tour-overlay');
+    const hl = document.getElementById('tour-highlight');
+    const top = document.getElementById('tour-top');
+    const bot = document.getElementById('tour-bottom');
+    const lft = document.getElementById('tour-left');
+    const rgt = document.getElementById('tour-right');
+    if(!target){
+      top.style.height='0'; bot.style.height='0';
+      lft.style.cssText='position:absolute;background:rgba(10,20,40,.72);transition:all .3s;inset:0';
+      rgt.style.cssText='display:none';
+      hl.style.cssText='display:none';
+      return;
+    }
+    const r = target.getBoundingClientRect();
+    const x1=r.left-PAD, y1=r.top-PAD, x2=r.right+PAD, y2=r.bottom+PAD;
+    top.style.cssText=`position:absolute;left:0;right:0;top:0;height:${y1}px;background:rgba(10,20,40,.72);transition:all .3s`;
+    bot.style.cssText=`position:absolute;left:0;right:0;bottom:0;height:${window.innerHeight-y2}px;background:rgba(10,20,40,.72);transition:all .3s`;
+    lft.style.cssText=`position:absolute;left:0;top:${y1}px;width:${x1}px;height:${y2-y1}px;background:rgba(10,20,40,.72);transition:all .3s`;
+    rgt.style.cssText=`position:absolute;right:0;top:${y1}px;width:${window.innerWidth-x2}px;height:${y2-y1}px;background:rgba(10,20,40,.72);transition:all .3s;display:block`;
+    hl.style.cssText=`position:absolute;left:${x1}px;top:${y1}px;width:${x2-x1}px;height:${y2-y1}px;border-radius:10px;box-shadow:0 0 0 3px rgba(99,179,237,.9);pointer-events:none;display:block;transition:all .3s`;
+  }
+
+  function showStep(i){
+    cur = i;
+    const step = STEPS[i];
+    document.getElementById('tour-title').textContent = step.title;
+    document.getElementById('tour-desc').textContent  = step.desc;
+    const btn = document.getElementById('tour-next-btn');
+    btn.textContent = i === STEPS.length-1 ? '✓ Concluir' : 'Próximo →';
+    renderDots();
+    const target = getTarget(step);
+    // Show overlay + card (sem spotlight ainda)
+    document.getElementById('tour-overlay').style.display = 'block';
+    document.getElementById('tour-overlay').style.pointerEvents = target ? 'none' : 'auto';
+    const card = document.getElementById('tour-card');
+    card.style.display = 'block';
+    if(target){
+      // Rola primeiro, depois calcula spotlight e posição do card
+      target.scrollIntoView({block:'center',behavior:'smooth'});
+      setTimeout(()=>{
+        spotlight(target);
+        positionCard(target);
+      }, 380);
+    } else {
+      spotlight(null);
+      setTimeout(()=>positionCard(null), 30);
+    }
+  }
+
+  window.startTour = function(){
+    cur = 0;
+    showStep(0);
+  };
+  window.tourNext = function(){
+    if(cur >= STEPS.length-1){ endTour(); return; }
+    showStep(cur+1);
+  };
+  window.endTour = function(){
+    document.getElementById('tour-overlay').style.display='none';
+    document.getElementById('tour-card').style.display='none';
+    try{ localStorage.setItem('monbluu-tour-done','1'); }catch(e){}
+  };
+
+  // Auto-start on first login
+  document.addEventListener('tour:start', ()=>{
+    try{
+      if(!localStorage.getItem('monbluu-tour-done')) startTour();
+    }catch(e){}
+  });
+})();
+</script>
 </body>
 </html>
