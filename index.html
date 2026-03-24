@@ -2504,19 +2504,18 @@ textarea.inp{min-height:80px;resize:vertical}
         <!-- Toolbar -->
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
           <!-- Date range -->
-          <div style="display:flex;align-items:center;gap:6px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:6px 12px;font-size:12px;color:#475569">
-            <input type="date" id="lancDateFrom" class="inp" style="border:none;background:transparent;padding:0;font-size:12px;width:110px;outline:none" oninput="renderLancamentos()">
-            <span style="color:#94a3b8">→</span>
-            <input type="date" id="lancDateTo" class="inp" style="border:none;background:transparent;padding:0;font-size:12px;width:110px;outline:none" oninput="renderLancamentos()">
+          <div style="display:flex;align-items:center;gap:6px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:6px 12px;font-size:12px;color:#475569;flex-wrap:nowrap">
+            <input type="date" id="lancDateFrom" class="inp" style="border:none;background:transparent;padding:0;font-size:12px;min-width:0;width:130px;outline:none" oninput="renderLancamentos()">
+            <span style="color:#94a3b8;flex-shrink:0">→</span>
+            <input type="date" id="lancDateTo" class="inp" style="border:none;background:transparent;padding:0;font-size:12px;min-width:0;width:130px;outline:none" oninput="renderLancamentos()">
           </div>
-          <!-- Filter icon -->
-          <button onclick="renderLancamentos()" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:7px 11px;cursor:pointer;font-size:13px;position:relative" title="Filtrar">
-            ▼ <span id="lancFilterBadge" style="display:none;position:absolute;top:-4px;right:-4px;width:14px;height:14px;background:#ef4444;color:#fff;font-size:8px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800"></span>
-          </button>
           <!-- Columns icon -->
           <button onclick="openLancColEditor()" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:7px 11px;cursor:pointer;font-size:13px" title="Editor de colunas">|||</button>
           <!-- Filtrar button -->
-          <button onclick="renderLancamentos()" style="background:#22C55E;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Filtrar</button>
+          <button id="lancFilterBtn" onclick="openLancFilters()" style="position:relative;background:#22C55E;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px">
+            🔍 Filtros
+            <span id="lancFilterCount" style="display:none;background:#fff;color:#22C55E;font-size:9px;font-weight:800;border-radius:10px;padding:1px 5px;min-width:16px;text-align:center"></span>
+          </button>
           <!-- Export dropdown -->
           <div style="position:relative;display:inline-block" id="lancExportWrap">
             <button onclick="toggleLancExportMenu(event)" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:#475569;display:flex;align-items:center;gap:5px">Exportar <span style="font-size:10px">▾</span></button>
@@ -3854,7 +3853,8 @@ const S = {
     {id:'e42',name:'Reformas e Melhorias',          color:'#065F46',group:'Atividades de Investimento'},
     {id:'e43',name:'Venda de Equipamentos',         color:'#15803D',group:'Atividades de Investimento'}
   ] },
-  recvTab:'open', payTab:'open', currentPage:'dashboard'
+  recvTab:'open', payTab:'open', currentPage:'dashboard',
+  lancFilters:{ compFrom:'', compTo:'', valMin:'', valMax:'', status:'', desc:'', peerId:'', catId:'', ccId:'' }
 };
 
 // ─── UTILS ───────────────────────────────────────────────
@@ -5454,7 +5454,7 @@ async function exportDashboardPDF(){
   const html=`<div style="font-family:Arial,sans-serif;padding:28px 32px;color:#1e293b;max-width:860px">
     <div style="display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:14px;border-bottom:3px solid #0F2A44;margin-bottom:22px">
       <div>
-        <div style="font-size:24px;font-weight:900;color:#0F2A44;letter-spacing:-.03em">MonBluu</div>
+        ${_logoB64 ? `<img src="data:image/png;base64,${_logoB64}" style="height:38px;display:block;margin-bottom:4px">` : `<div style="font-size:24px;font-weight:900;color:#0F2A44;letter-spacing:-.03em">MonBluu</div>`}
         <div style="font-size:12px;color:#64748b">Relatório Financeiro</div>
       </div>
       <div style="text-align:right">
@@ -5482,7 +5482,7 @@ async function exportDashboardPDF(){
       tbl(['Vencimento','Descrição','Cliente/Fornec.','Conta','Valor'],listRows([...pendR,...pendP],'income'))
     )}
     <div style="margin-top:28px;padding-top:10px;border-top:1px solid #e2e8f0;text-align:center;font-size:9px;color:#94a3b8">
-      Relatório gerado pelo MonBluu • monbluu.com.br
+      Relatório gerado pela MonBluu • monbluu.com.br
     </div>
   </div>`;
 
@@ -6261,10 +6261,23 @@ function getLancItems(){
   const src=S.lancTab==='income'?S.receivables.map(r=>({...r,_type:'income'})):S.payables.map(p=>({...p,_type:'expense'}));
   const search=($('lancSearch')||{value:''}).value.toLowerCase();
   const df=$('lancDateFrom')?.value, dt=$('lancDateTo')?.value;
+  const f=S.lancFilters;
   let list=src;
   if(search)list=list.filter(x=>(x.desc||'').toLowerCase().includes(search)||(allCats().find(c=>c.id===x.categoryId)?.name||'').toLowerCase().includes(search));
   if(df)list=list.filter(x=>x.dueDate>=df);
   if(dt)list=list.filter(x=>x.dueDate<=dt);
+  // Filtros avançados
+  if(f.compFrom) list=list.filter(x=>(x.compDate||'')>=f.compFrom);
+  if(f.compTo)   list=list.filter(x=>(x.compDate||'')<=f.compTo);
+  if(f.valMin)   list=list.filter(x=>x.value>=parseFloat(f.valMin));
+  if(f.valMax)   list=list.filter(x=>x.value<=parseFloat(f.valMax));
+  if(f.status==='done')    list=list.filter(x=>x.done);
+  if(f.status==='open')    list=list.filter(x=>!x.done&&x.dueDate>=today());
+  if(f.status==='overdue') list=list.filter(x=>!x.done&&x.dueDate<today());
+  if(f.desc)     list=list.filter(x=>(x.desc||'').toLowerCase().includes(f.desc.toLowerCase())||(x.ref||'').toLowerCase().includes(f.desc.toLowerCase()));
+  if(f.peerId)   list=list.filter(x=>S.lancTab==='income'?x.clientId===f.peerId:x.supplierId===f.peerId);
+  if(f.catId)    list=list.filter(x=>x.categoryId===f.catId);
+  if(f.ccId)     list=list.filter(x=>x.costCenterId===f.ccId);
   const key=S.lancSortKey;
   list=list.sort((a,b)=>{
     let va='',vb='';
@@ -6319,6 +6332,156 @@ function renderLancamentos(){
     </div>`;
   }).join('');
 }
+
+// ─── FILTROS AVANÇADOS DE LANÇAMENTOS ────────────────────────────────────────
+function updateLancFilterBadge(){
+  const f=S.lancFilters;
+  const count=[f.compFrom,f.compTo,f.valMin,f.valMax,f.status,f.desc,f.peerId,f.catId,f.ccId].filter(Boolean).length;
+  const badge=$('lancFilterCount');
+  if(!badge)return;
+  if(count>0){badge.style.display='inline-block';badge.textContent=count;}
+  else badge.style.display='none';
+}
+
+function openLancFilters(){
+  const existing=document.getElementById('modal-lanc-filters');
+  if(existing)existing.remove();
+  const isIncome=S.lancTab==='income';
+  const f=S.lancFilters;
+  const peers=isIncome?S.clients:S.suppliers;
+  const cats=isIncome?S.cats.income:S.cats.expense;
+  const ccs=S.costCenters||[];
+  const peerLabel=isIncome?'Cliente':'Fornecedor';
+  const statusLabel=isIncome?'recebimento':'pagamento';
+
+  const peerOpts=`<option value="">Todos</option>`+peers.map(p=>`<option value="${p.id}"${f.peerId===p.id?' selected':''}>${p.name}</option>`).join('');
+  const catOpts=`<option value="">Todas</option>`+cats.map(c=>`<option value="${c.id}"${f.catId===c.id?' selected':''}>${c.name}</option>`).join('');
+  const ccOpts=`<option value="">Todos</option>`+ccs.map(c=>`<option value="${c.id}"${f.ccId===c.id?' selected':''}>${c.name}</option>`).join('');
+
+  const modal=document.createElement('div');
+  modal.id='modal-lanc-filters';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px';
+  modal.innerHTML=`
+    <div style="background:#fff;border-radius:16px;width:100%;max-width:560px;box-shadow:0 20px 60px rgba(0,0,0,.2);overflow:hidden;font-family:inherit;max-height:min(90vh,700px);display:flex;flex-direction:column">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid #e2e8f0;flex-shrink:0">
+        <div style="font-size:15px;font-weight:800;color:#0F2A44">🔍 Filtros avançados</div>
+        <button onclick="document.getElementById('modal-lanc-filters').remove()" style="background:none;border:none;font-size:22px;color:#94a3b8;cursor:pointer;line-height:1">×</button>
+      </div>
+      <div style="padding:20px 22px;display:flex;flex-direction:column;gap:14px;overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch">
+
+        <!-- Data de competência -->
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Data de competência</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="date" id="lf-comp-from" value="${f.compFrom}" class="inp" style="flex:1;font-size:12px" placeholder="De">
+            <span style="color:#94a3b8;font-size:13px">→</span>
+            <input type="date" id="lf-comp-to" value="${f.compTo}" class="inp" style="flex:1;font-size:12px" placeholder="Até">
+          </div>
+        </div>
+
+        <!-- Data de vencimento -->
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Data de vencimento</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="date" id="lf-due-from" value="${($('lancDateFrom')||{value:''}).value}" class="inp" style="flex:1;font-size:12px" placeholder="De">
+            <span style="color:#94a3b8;font-size:13px">→</span>
+            <input type="date" id="lf-due-to" value="${($('lancDateTo')||{value:''}).value}" class="inp" style="flex:1;font-size:12px" placeholder="Até">
+          </div>
+        </div>
+
+        <!-- Valor -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Valor mínimo</label>
+            <div style="display:flex;align-items:center;gap:6px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:0 10px">
+              <span style="color:#94a3b8;font-size:12px">R$</span>
+              <input type="number" id="lf-val-min" value="${f.valMin}" step="0.01" min="0" class="inp" style="border:none;background:transparent;flex:1;font-size:12px;padding:8px 0;outline:none" placeholder="0,00">
+            </div>
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Valor máximo</label>
+            <div style="display:flex;align-items:center;gap:6px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:0 10px">
+              <span style="color:#94a3b8;font-size:12px">R$</span>
+              <input type="number" id="lf-val-max" value="${f.valMax}" step="0.01" min="0" class="inp" style="border:none;background:transparent;flex:1;font-size:12px;padding:8px 0;outline:none" placeholder="0,00">
+            </div>
+          </div>
+        </div>
+
+        <!-- Situação -->
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Situação do ${statusLabel}</label>
+          <select id="lf-status" class="inp" style="font-size:12px">
+            <option value="">Todas as situações</option>
+            <option value="open"${f.status==='open'?' selected':''}>Em aberto</option>
+            <option value="done"${f.status==='done'?' selected':''}>Efetuado</option>
+            <option value="overdue"${f.status==='overdue'?' selected':''}>Vencido</option>
+          </select>
+        </div>
+
+        <!-- Descrição -->
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Descrição ou referência</label>
+          <input type="text" id="lf-desc" value="${f.desc}" class="inp" style="font-size:12px" placeholder="Informe a descrição ou referência">
+        </div>
+
+        <!-- Cliente/Fornecedor -->
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">${peerLabel}</label>
+          <select id="lf-peer" class="inp" style="font-size:12px">${peerOpts}</select>
+        </div>
+
+        <!-- Categoria -->
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Categoria</label>
+          <select id="lf-cat" class="inp" style="font-size:12px">${catOpts}</select>
+        </div>
+
+        <!-- Centro de custo -->
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Centro de custo</label>
+          <select id="lf-cc" class="inp" style="font-size:12px">${ccOpts}</select>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div style="display:flex;gap:10px;padding:16px 22px;border-top:1px solid #e2e8f0;flex-shrink:0">
+        <button onclick="clearLancFilters()" style="flex:1;background:#fff;color:#475569;border:1.5px solid #e2e8f0;border-radius:10px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Limpar</button>
+        <button onclick="applyLancFilters()" style="flex:2;background:#22C55E;color:#fff;border:none;border-radius:10px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">✓ Filtrar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+}
+
+function applyLancFilters(){
+  const dueFrom=$('lf-due-from')?.value||'';
+  const dueTo=$('lf-due-to')?.value||'';
+  // Sincroniza datas de vencimento com o toolbar
+  if($('lancDateFrom'))$('lancDateFrom').value=dueFrom;
+  if($('lancDateTo'))$('lancDateTo').value=dueTo;
+  S.lancFilters={
+    compFrom:$('lf-comp-from')?.value||'',
+    compTo:$('lf-comp-to')?.value||'',
+    valMin:$('lf-val-min')?.value||'',
+    valMax:$('lf-val-max')?.value||'',
+    status:$('lf-status')?.value||'',
+    desc:$('lf-desc')?.value||'',
+    peerId:$('lf-peer')?.value||'',
+    catId:$('lf-cat')?.value||'',
+    ccId:$('lf-cc')?.value||''
+  };
+  updateLancFilterBadge();
+  document.getElementById('modal-lanc-filters')?.remove();
+  renderLancamentos();
+}
+
+function clearLancFilters(){
+  S.lancFilters={ compFrom:'', compTo:'', valMin:'', valMax:'', status:'', desc:'', peerId:'', catId:'', ccId:'' };
+  updateLancFilterBadge();
+  document.getElementById('modal-lanc-filters')?.remove();
+  renderLancamentos();
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 function openLancColEditor(){
   const existing = document.getElementById('modal-lanc-col-editor');
@@ -7377,7 +7540,7 @@ function exportRelPDF(){
   </div>
   <div class="section-title">Lançamentos do Período &nbsp;<span style="font-size:12px;font-weight:500;color:#94a3b8">(${allItems.length} lançamento${allItems.length!==1?'s':''})</span></div>
   ${tableHtml}
-  <div style="margin-top:24px;text-align:center;font-size:11px;color:#94a3b8">Relatório gerado pelo MonBluu — ${new Date().toLocaleDateString('pt-BR')}</div>
+  <div style="margin-top:24px;text-align:center;font-size:11px;color:#94a3b8">Relatório gerado pela MonBluu — ${new Date().toLocaleDateString('pt-BR')}</div>
   <script>window.onload=()=>window.print()<\/script>
   </body></html>`);
   win.document.close();
@@ -10377,6 +10540,8 @@ function exportPrcPDF(){
 }
 
 // ── INIT ──
+let _logoB64 = '';
+fetch('logo1_b64.txt').then(r=>r.text()).then(t=>{ _logoB64 = t.trim(); }).catch(()=>{});
 renderDashboard();
 </script>
 
