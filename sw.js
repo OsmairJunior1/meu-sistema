@@ -1,4 +1,4 @@
-const CACHE = 'monbluu-v5';
+const CACHE = 'monbluu-v7';
 const SHELL = '/index.html';
 const ASSETS = [
   '/index.html',
