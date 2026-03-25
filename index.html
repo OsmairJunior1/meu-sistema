@@ -11255,6 +11255,11 @@ function showLogin() {
   S.transfers = []; S.clients = []; S.suppliers = [];
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('app').style.display = 'none';
+  // Reseta o botão para que o usuário possa logar novamente sem precisar de F5
+  const btn = document.getElementById('login-btn');
+  const errEl = document.getElementById('login-error');
+  if (btn)  { btn.disabled = false; btn.textContent = 'ACESSAR'; }
+  if (errEl) errEl.style.display = 'none';
 }
 
 async function doLogin() {
