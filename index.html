@@ -12,7 +12,7 @@
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="192x192.png">
 <link rel="manifest" href="manifest.json">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
 <style>
 /* ── LOGIN SCREEN — MonBluu Premium ── */
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800;900&display=swap');
@@ -1103,6 +1103,31 @@ textarea.inp{min-height:80px;resize:vertical}
   .lanc-desktop-row{display:none!important}
   .lanc-tbl-header{display:none!important}
 
+  /* ── Lançamentos — esconder desktop card no mobile ── */
+  #lanc-desk-card{display:none!important}
+  #lanc-mob-list{display:block!important}
+  #lanc-mob-total{display:flex!important}
+
+  /* ── Lançamentos — toolbar mobile ── */
+  .lanc-mob-toolbar{display:flex!important;gap:8px;margin-bottom:12px;align-items:center}
+  .lanc-mob-search{flex:1;display:flex;align-items:center;gap:8px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:0 14px;height:46px}
+  .lanc-mob-search input{flex:1;border:none;background:transparent;font-size:13px;outline:none;font-family:inherit;color:#0F2A44}
+  .lanc-mob-filter{display:flex;align-items:center;justify-content:center;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;height:46px;width:46px;color:#0F2A44;cursor:pointer;flex-shrink:0;position:relative}
+  .lanc-mob-filter.active{background:#0F2A44;color:#fff;border-color:#0F2A44}
+
+  /* ── Lançamentos — card item ── */
+  .lanc-mob-item{background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 4px rgba(0,0,0,.05);border:1px solid #f1f5f9;cursor:pointer;transition:background .1s}
+  .lanc-mob-item:active{background:#f8fafc}
+  .lanc-mob-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+  .lanc-mob-body{flex:1;min-width:0}
+  .lanc-mob-desc{font-size:13px;font-weight:700;color:#0F2A44;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lanc-mob-meta{font-size:11px;color:#94a3b8;margin-top:2px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .lanc-mob-cat{background:#f1f5f9;color:#475569;border-radius:6px;padding:1px 6px;font-size:10px;font-weight:700}
+  .lanc-mob-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
+  .lanc-mob-val{font-size:14px;font-weight:800;font-family:monospace}
+  .lanc-mob-cta{border:none;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}
+  .lanc-mob-done-badge{font-size:10px;font-weight:700;color:#22c55e;background:#f0fdf4;border-radius:6px;padding:3px 8px}
+
   /* ── Precificação — summary card ── */
   #prcPanel-1 .card>div{flex-direction:column!important;align-items:stretch!important}
   #prcPanel-1 .card>div>div:first-child{display:grid!important;grid-template-columns:1fr 1fr 1fr!important;gap:8px!important;align-items:start!important}
@@ -1311,6 +1336,7 @@ textarea.inp{min-height:80px;resize:vertical}
   #fab-btn{display:none!important}
   #fab-wrap{bottom:64px!important;right:0!important;left:0!important;width:100%!important;align-items:stretch!important}
   #page-area{padding-bottom:calc(90px + env(safe-area-inset-bottom, 16px))!important;padding-left:0!important;padding-right:0!important}
+  .page:not(#page-dashboard){padding-left:16px!important;padding-right:16px!important}
 
   /* ── Period bar: scroll horizontal sem quebra ── */
   #period-bar{
@@ -2493,14 +2519,26 @@ textarea.inp{min-height:80px;resize:vertical}
         <h2 style="font-size:20px;font-weight:800;letter-spacing:-.02em">Entradas e Saídas</h2>
       </div>
 
+      <!-- MOBILE toolbar: search + filtros -->
+      <div class="lanc-mob-toolbar mob-only-flex" style="display:none">
+        <div class="lanc-mob-search">
+          <svg width="15" height="15" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="6" stroke="#94a3b8" stroke-width="1.8"/><path d="M15 15l-3.5-3.5" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <input placeholder="Pesquisar lançamento..." oninput="document.getElementById('lancSearch').value=this.value;renderLancamentos()" id="lancSearchMob">
+        </div>
+        <button id="lancFilterBtnMob" class="lanc-mob-filter" onclick="openLancFilters()" style="position:relative;padding:0;width:46px;justify-content:center">
+          <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><path d="M1 3h13M3.5 7.5h8M6 12h3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          <span id="lancFilterCountMob" style="display:none;position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;font-size:9px;font-weight:800;border-radius:10px;padding:1px 5px;min-width:16px;text-align:center"></span>
+        </button>
+      </div>
+
       <!-- Entradas / Saídas tabs -->
       <div style="display:flex;border-bottom:2px solid #e2e8f0;margin-bottom:0;gap:0">
         <button id="lancTabEntradas" onclick="setLancTab('income')" style="padding:10px 20px;font-size:14px;font-weight:700;color:#3b82f6;border-bottom:2px solid #3b82f6;margin-bottom:-2px;background:none;border-top:none;border-left:none;border-right:none;cursor:pointer;font-family:inherit">Entradas</button>
         <button id="lancTabSaidas" onclick="setLancTab('expense')" style="padding:10px 20px;font-size:14px;font-weight:500;color:#64748b;border-bottom:2px solid transparent;margin-bottom:-2px;background:none;border-top:none;border-left:none;border-right:none;cursor:pointer;font-family:inherit">Saídas</button>
       </div>
 
-      <!-- Table card -->
-      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:0 0 12px 12px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.05)">
+      <!-- Table card (hidden on mobile, replaced by card list) -->
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:0 0 12px 12px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.05)" id="lanc-desk-card">
         <!-- Toolbar -->
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
           <!-- Date range -->
@@ -2548,6 +2586,14 @@ textarea.inp{min-height:80px;resize:vertical}
           <span style="color:#64748b;font-weight:600">Total</span>
           <span id="lancTotal" style="font-family:monospace;font-weight:800;font-size:15px;color:#0F2A44">R$ 0,00</span>
         </div>
+      </div>
+
+      <!-- MOBILE card list -->
+      <div id="lanc-mob-list" class="mob-only" style="display:none"></div>
+      <!-- MOBILE total -->
+      <div id="lanc-mob-total" class="mob-only" style="display:none;justify-content:space-between;align-items:center;padding:14px 16px;background:#fff;border-radius:14px;margin-top:4px;box-shadow:0 1px 4px rgba(0,0,0,.05)">
+        <span style="font-size:13px;font-weight:600;color:#64748b">Total do período</span>
+        <span id="lancTotalMob" style="font-family:monospace;font-weight:800;font-size:16px">R$ 0,00</span>
       </div>
     </div>
 
@@ -3862,6 +3908,8 @@ const fmt=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).fo
 const uid=()=>Math.random().toString(36).slice(2,9);
 const today=()=>new Date().toISOString().split('T')[0];
 const fmtD=d=>d?new Date(d+'T12:00:00').toLocaleDateString('pt-BR'):'—';
+// Escapa HTML para prevenir XSS ao injetar dados do usuário via innerHTML
+const escHtml=s=>s==null?'—':String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 const pv=v=>{let s=(v||'0').trim();if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');return parseFloat(s)||0;};
 const $=id=>document.getElementById(id);
 const allCats=()=>[...S.cats.income,...S.cats.expense];
@@ -3890,6 +3938,25 @@ const TITLES={dashboard:'Painel',lancamentos:'Lançamentos',relatorios:'Relatór
 
 // ─── CONTROLE DE PLANOS ───────────────────────────────────
 window._userModules  = [];
+
+// ── Módulos autorizados — cópia selada em closure, inacessível via window ──
+// window._userModules serve apenas para exibição de UI.
+// A verificação de acesso real usa _sealedModules, que só pode ser
+// gravado via _sealModules() chamado internamente após o loadUserPlan.
+const { canAccessModule, sealModules: _sealModules } = (() => {
+  let _sealed = [];
+  return {
+    canAccessModule: (page) => {
+      const FREE = ['dashboard','lancamentos','relatorios','contas','clientes','fornecedores','config'];
+      if (FREE.includes(page)) return true;
+      return _sealed.includes(page);
+    },
+    sealModules: (modules) => {
+      _sealed = Array.isArray(modules) ? [...modules] : [];
+    },
+  };
+})();
+
 window._userPlanName = 'Básico';
 window._userPlanPrice = 47;
 
@@ -3906,23 +3973,45 @@ const MODULE_REQUIRES = {
   'precificacao': { plan:'Profissional', price:97, icon:'🧠', title:'Precificação Inteligente' },
 };
 
-// Links Asaas por plano/período para renovação
-const RENEWAL_LINKS = {
-  basico:       { semestral: { cartao: 'https://sandbox.asaas.com/c/bycpy2sdvpvcr829', pix: 'https://sandbox.asaas.com/c/iguwsxikdnjol8s8' }, anual: { cartao: 'https://sandbox.asaas.com/c/tpmwud01ke1a71cm', pix: 'https://sandbox.asaas.com/c/k7edpeu88c77kesh' } },
-  pro:          { semestral: { cartao: 'https://sandbox.asaas.com/c/bv6m3jbzxgevy41n', pix: 'https://sandbox.asaas.com/c/zxotc6egnh81mkj2' }, anual: { cartao: 'https://sandbox.asaas.com/c/icgf2rx5fzli7kaw', pix: 'https://sandbox.asaas.com/c/6lvl41qfxvq7y7dt' } },
-  profissional: { semestral: { cartao: 'https://sandbox.asaas.com/c/k1d7edjygtmuih54', pix: 'https://sandbox.asaas.com/c/yzp15z5cqlx0vryu' }, anual: { cartao: 'https://sandbox.asaas.com/c/w9izczmjtkstu1fp', pix: 'https://sandbox.asaas.com/c/2wcja7qkjgv5t9jy' } }
-};
+// Links Asaas por plano/período para renovação — selados em closure
+// window._renewalPlanKey e window._renewalPeriod servem só para UI (exibição)
+const { doRenewal, sealRenewal: _sealRenewal } = (() => {
+  const RENEWAL_LINKS = {
+    basico:       { semestral: { cartao: 'https://sandbox.asaas.com/c/bycpy2sdvpvcr829', pix: 'https://sandbox.asaas.com/c/iguwsxikdnjol8s8' }, anual: { cartao: 'https://sandbox.asaas.com/c/tpmwud01ke1a71cm', pix: 'https://sandbox.asaas.com/c/k7edpeu88c77kesh' } },
+    pro:          { semestral: { cartao: 'https://sandbox.asaas.com/c/bv6m3jbzxgevy41n', pix: 'https://sandbox.asaas.com/c/zxotc6egnh81mkj2' }, anual: { cartao: 'https://sandbox.asaas.com/c/icgf2rx5fzli7kaw', pix: 'https://sandbox.asaas.com/c/6lvl41qfxvq7y7dt' } },
+    profissional: { semestral: { cartao: 'https://sandbox.asaas.com/c/k1d7edjygtmuih54', pix: 'https://sandbox.asaas.com/c/yzp15z5cqlx0vryu' }, anual: { cartao: 'https://sandbox.asaas.com/c/w9izczmjtkstu1fp', pix: 'https://sandbox.asaas.com/c/2wcja7qkjgv5t9jy' } }
+  };
+  const ALLOWED_HOSTS = ['sandbox.asaas.com', 'www.asaas.com', 'asaas.com'];
+  let _planKey = 'profissional';
+  let _period  = 'semestral';
+
+  return {
+    sealRenewal: (planKey, period) => {
+      _planKey = planKey || 'profissional';
+      _period  = period  || 'semestral';
+    },
+    doRenewal: (tipo) => {
+      const link = RENEWAL_LINKS[_planKey]?.[_period]?.[tipo];
+      if (!link) { toast('Link de renovação não encontrado', 'error'); return; }
+      // Valida domínio antes de abrir
+      try {
+        const host = new URL(link).hostname;
+        if (!ALLOWED_HOSTS.includes(host)) throw new Error('host inválido: ' + host);
+      } catch (e) {
+        console.error('[renewal] URL rejeitada:', e.message);
+        toast('Link de renovação inválido', 'error');
+        return;
+      }
+      window.open(link, '_blank');
+    },
+  };
+})();
+
 window._renewalPlanKey = 'profissional';
 window._renewalPeriod  = 'semestral';
 
 function showRenewalModal() {
   document.getElementById('modal-renewal').style.display = 'flex';
-}
-
-function doRenewal(tipo) {
-  const link = RENEWAL_LINKS[window._renewalPlanKey]?.[window._renewalPeriod]?.[tipo];
-  if (link) window.open(link, '_blank');
-  else toast('Link de renovação não encontrado','error');
 }
 
 async function loadUserPlan() {
@@ -3937,10 +4026,12 @@ async function loadUserPlan() {
       .maybeSingle();
     if (data?.plans?.modules) {
       window._userModules   = data.plans.modules;
+      _sealModules(data.plans.modules);
       window._userPlanName  = data.plans.name  || 'Básico';
       window._userPlanPrice = data.plans.price || 49;
     } else {
       window._userModules   = PLANS_TABLE[0].modules;
+      _sealModules(PLANS_TABLE[0].modules);
       window._userPlanName  = 'Básico';
       window._userPlanPrice = 49;
     }
@@ -3949,6 +4040,7 @@ async function loadUserPlan() {
     const nameMap = { 'Básico': 'basico', 'Pro': 'pro', 'Profissional': 'profissional' };
     window._renewalPlanKey = nameMap[data?.plans?.name] || 'profissional';
     window._renewalPeriod  = data?.period || 'semestral';
+    _sealRenewal(window._renewalPlanKey, window._renewalPeriod);
 
     // Verifica vencimento próximo (7 dias)
     if (data?.expires_at) {
@@ -3968,15 +4060,15 @@ async function loadUserPlan() {
     }
   } catch(e) {
     window._userModules   = PLANS_TABLE[0].modules;
+    _sealModules(PLANS_TABLE[0].modules);
     window._userPlanName  = 'Básico';
     window._userPlanPrice = 49;
   }
 }
 
 function canAccess(page) {
-  const free = ['dashboard','lancamentos','relatorios','contas','clientes','fornecedores','config'];
-  if (free.includes(page)) return true;
-  return window._userModules.includes(page);
+  // Usa a cópia selada em closure — imune a alterações via DevTools/console
+  return canAccessModule(page);
 }
 
 function showUpgradeModal(page) {
@@ -4035,12 +4127,9 @@ async function startUpgradePayment(billingType) {
         headers: {
           'Content-Type':  'application/json',
           'Authorization': `Bearer ${token}`,
-          'apikey':        SUPABASE_KEY,
         },
         body: JSON.stringify({
           planId:      plans.id,
-          planName:    planName,
-          planPrice:   planPrice,
           billingType: billingType,
         }),
       }
@@ -4048,7 +4137,20 @@ async function startUpgradePayment(billingType) {
 
     const data = await res.json();
     if (data?.url) {
-      window.open(data.url, '_blank');
+      // Valida que a URL pertence ao domínio Asaas antes de abrir
+      let safeUrl;
+      try {
+        const parsed = new URL(data.url);
+        if (!['www.asaas.com','asaas.com','sandbox.asaas.com'].includes(parsed.hostname)) {
+          throw new Error('Domínio inválido: ' + parsed.hostname);
+        }
+        safeUrl = parsed.href;
+      } catch(urlErr) {
+        toast('URL de pagamento inválida','error');
+        console.error('[payment] URL rejeitada:', urlErr.message);
+        return;
+      }
+      window.open(safeUrl, '_blank');
       document.getElementById('modal-upgrade').style.display = 'none';
       toast('Redirecionando para o pagamento... ✅','success');
     } else {
@@ -4114,8 +4216,12 @@ document.querySelectorAll('.nav-btn').forEach(btn=>{
   btn.addEventListener('click',()=>{ if(isMobile()) closeMobileSidebar(); });
 });
 // Fechar sidebar mobile ao redimensionar para desktop
+let _lastResizeWasMobile = window.innerWidth <= 600;
 window.addEventListener('resize',()=>{
   if(window.innerWidth > 600) closeMobileSidebar();
+  const isMobile = window.innerWidth <= 600;
+  if(isMobile && !_lastResizeWasMobile) renderDashboard();
+  _lastResizeWasMobile = isMobile;
 });
 
 // ─── MODAL ───────────────────────────────────────────────
@@ -4895,8 +5001,8 @@ function dvRow(x, peerName, color){
       <span style="width:7px;height:7px;border-radius:50%;background:${statusDot};display:inline-block;flex-shrink:0"></span>
       ${fmtD(x.dueDate)}
     </span>
-    <span style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(x.desc||'').replace(/"/g,'&quot;')}">${x.desc||'—'}</span>
-    <span style="color:#475569;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px" title="${peerName.replace(/"/g,'&quot;')}">${peerShort}</span>
+    <span style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(x.desc)}">${escHtml(x.desc)}</span>
+    <span style="color:#475569;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px" title="${escHtml(peerName)}">${escHtml(peerShort)}</span>
     <span style="font-family:monospace;font-weight:700;text-align:right;color:${color};white-space:nowrap">${fmt(x.value)}</span>
     <div style="display:flex;gap:3px;justify-content:flex-end;align-items:center">
       ${!x.done
@@ -5161,8 +5267,8 @@ function renderDashboard(){
   $('kTrans').textContent=fmt(trans);
   updatePeriodLabel();
   setDashView(S.dashView);
-  // Renderizar mobile dashboard
-  if(window.innerWidth<=600) renderMobDash(totalBal,saldoPrevisto,totalInc,totalExp,over,pendInc,pendExp);
+  // Renderizar mobile dashboard (sempre, independente da largura atual)
+  renderMobDash(totalBal,saldoPrevisto,totalInc,totalExp,over,pendInc,pendExp);
 }
 
 // ── MOBILE DASHBOARD RENDERER ─────────────────────────────
@@ -5414,6 +5520,8 @@ async function exportDashboardPDF(){
     await new Promise((res,rej)=>{
       const s=document.createElement('script');
       s.src='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+      s.integrity='sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==';
+      s.crossOrigin='anonymous';
       s.onload=res; s.onerror=rej; document.head.appendChild(s);
     });
   }
@@ -6226,16 +6334,16 @@ function renderLancHeader(){
 function getLancCellHtml(colId, x, cat, acc, peer, color){
   switch(colId){
     case 'date':     return `<span style="color:#64748b;font-size:11px">${fmtD(x.dueDate)}</span>`;
-    case 'desc':     return `<span style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${x.desc||''}">${x.desc||'—'}</span>`;
-    case 'client':   return `<span style="color:#475569;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${peer?.name||'—'}</span>`;
-    case 'account':  return `<span style="color:#475569;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${acc?.name||'—'}</span>`;
-    case 'cat':      return cat ? `<span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:${cat.color};flex-shrink:0"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cat.name}</span></span>` : '<span style="color:#94a3b8">—</span>';
+    case 'desc':     return `<span style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(x.desc)}">${escHtml(x.desc)}</span>`;
+    case 'client':   return `<span style="color:#475569;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(peer?.name)}</span>`;
+    case 'account':  return `<span style="color:#475569;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(acc?.name)}</span>`;
+    case 'cat':      return cat ? `<span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:${cat.color};flex-shrink:0"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(cat.name)}</span></span>` : '<span style="color:#94a3b8">—</span>';
     case 'cc':       return `<span style="color:#94a3b8;font-size:11px">—</span>`;
     case 'value':    return `<span style="font-family:monospace;font-weight:700;color:${color};display:block;text-align:right">${fmt(x.value)}</span>`;
     case 'compDate': return `<span style="color:#64748b;font-size:11px">${x.doneDate ? fmtD(x.doneDate) : '—'}</span>`;
     case 'dueDate2': return `<span style="color:#64748b;font-size:11px">${fmtD(x.dueDate)}</span>`;
-    case 'ref':      return `<span style="color:#64748b;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${x.ref||'—'}</span>`;
-    case 'notes':    return `<span style="color:#64748b;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${x.notes||'—'}</span>`;
+    case 'ref':      return `<span style="color:#64748b;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(x.ref)}</span>`;
+    case 'notes':    return `<span style="color:#64748b;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(x.notes)}</span>`;
     default: return '<span style="color:#94a3b8">—</span>';
   }
 }
@@ -6278,6 +6386,7 @@ function getLancItems(){
   if(f.peerId)   list=list.filter(x=>S.lancTab==='income'?x.clientId===f.peerId:x.supplierId===f.peerId);
   if(f.catId)    list=list.filter(x=>x.categoryId===f.catId);
   if(f.ccId)     list=list.filter(x=>x.costCenterId===f.ccId);
+  if(f.accId)    list=list.filter(x=>x.accountId===f.accId);
   const key=S.lancSortKey;
   list=list.sort((a,b)=>{
     let va='',vb='';
@@ -6304,12 +6413,55 @@ function renderLancamentos(){
   if($('lancTotal'))$('lancTotal').style.color=S.lancTab==='income'?'#22C55E':'#ef4444';
 
   const color=S.lancTab==='income'?'#22C55E':'#ef4444';
+  const mobList = document.getElementById('lanc-mob-list');
+  const mobTotal = document.getElementById('lancTotalMob');
+  const isMobView = window.innerWidth <= 600;
+
+  if(isMobView && mobTotal){ mobTotal.textContent=fmt(total); mobTotal.style.color=color; }
+  // Sync badge no mobile
+  const mbadge=document.getElementById('lancFilterCountMob');
+  if(mbadge){ const b=$('lancFilterCount'); if(b){ mbadge.textContent=b.textContent; mbadge.style.display=b.style.display; } }
 
   if(!list.length){
-    $('lancList').innerHTML=`<div class="empty" style="padding:50px"><div style="font-size:36px;margin-bottom:10px">📭</div><p style="font-size:13px;color:#64748b;font-weight:600">Não há dados</p><span style="font-size:12px;color:#94a3b8">Adicione um lançamento usando o botão acima</span></div>`;
+    const emptyHtml=`<div class="empty" style="padding:50px;text-align:center"><div style="font-size:36px;margin-bottom:10px">📭</div><p style="font-size:13px;color:#64748b;font-weight:600">Não há dados</p><span style="font-size:12px;color:#94a3b8">Adicione um lançamento usando o botão acima</span></div>`;
+    if(isMobView && mobList){ mobList.innerHTML=emptyHtml; return; }
+    $('lancList').innerHTML=emptyHtml;
     return;
   }
 
+  // ── MOBILE: renderiza cards ────────────────────────────────
+  if(isMobView && mobList){
+    mobList.innerHTML=list.map(x=>{
+      const cat=allCats().find(c=>c.id===x.categoryId);
+      const isOver=!x.done&&x.dueDate<today();
+      const status=x.done?'done':isOver?'overdue':'open';
+      const dotColor=status==='done'?'#22c55e':status==='overdue'?'#ef4444':'#f97316';
+      const peer=S.lancTab==='income'?S.clients.find(c=>c.id===x.clientId):S.suppliers.find(s=>s.id===x.supplierId);
+      const acc=S.accounts.find(a=>a.id===x.accountId);
+      const ctaLabel=S.lancTab==='income'?'Receber':'Pagar';
+      const metaParts=[fmtDate(x.dueDate||x.doneDate), peer?.name, acc?.name].filter(Boolean);
+      return `<div class="lanc-mob-item" onclick="openEditLanc('${x.id}','${x._type}')">
+        <div class="lanc-mob-dot" style="background:${dotColor}"></div>
+        <div class="lanc-mob-body">
+          <div class="lanc-mob-desc">${x.desc||x.description||'Sem descrição'}</div>
+          <div class="lanc-mob-meta">
+            ${metaParts.join(' · ')}
+            ${cat?`<span class="lanc-mob-cat">${cat.name}</span>`:''}
+          </div>
+        </div>
+        <div class="lanc-mob-right">
+          <div class="lanc-mob-val" style="color:${color}">${fmt(x.value)}</div>
+          ${status==='done'
+            ? `<span class="lanc-mob-done-badge">✓ Pago</span>`
+            : `<button class="lanc-mob-cta" style="background:${color}15;color:${color};border:1px solid ${color}40" onclick="event.stopPropagation();openEfetivar('${x.id}','${x._type}')">${ctaLabel}</button>`
+          }
+        </div>
+      </div>`;
+    }).join('');
+    return;
+  }
+
+  // ── DESKTOP: renderiza tabela ──────────────────────────────
   renderLancHeader();
   const tpl = getLancGridTemplate();
   $('lancList').innerHTML=list.map(x=>{
@@ -6336,7 +6488,7 @@ function renderLancamentos(){
 // ─── FILTROS AVANÇADOS DE LANÇAMENTOS ────────────────────────────────────────
 function updateLancFilterBadge(){
   const f=S.lancFilters;
-  const count=[f.compFrom,f.compTo,f.valMin,f.valMax,f.status,f.desc,f.peerId,f.catId,f.ccId].filter(Boolean).length;
+  const count=[f.compFrom,f.compTo,f.valMin,f.valMax,f.status,f.desc,f.peerId,f.catId,f.ccId,f.accId].filter(Boolean).length;
   const badge=$('lancFilterCount');
   if(!badge)return;
   if(count>0){badge.style.display='inline-block';badge.textContent=count;}
@@ -6358,34 +6510,38 @@ function openLancFilters(){
   const catOpts=`<option value="">Todas</option>`+cats.map(c=>`<option value="${c.id}"${f.catId===c.id?' selected':''}>${c.name}</option>`).join('');
   const ccOpts=`<option value="">Todos</option>`+ccs.map(c=>`<option value="${c.id}"${f.ccId===c.id?' selected':''}>${c.name}</option>`).join('');
 
+  const mob = window.innerWidth <= 600;
   const modal=document.createElement('div');
   modal.id='modal-lanc-filters';
-  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px';
+  modal.style.cssText=`position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;${mob?'align-items:flex-end;padding:0':'align-items:center;justify-content:center;padding:20px'};z-index:10000`;
+  const dateFs = mob ? '16px' : '12px';
+  const fieldFs = mob ? '15px' : '12px';
   modal.innerHTML=`
-    <div style="background:#fff;border-radius:16px;width:100%;max-width:560px;box-shadow:0 20px 60px rgba(0,0,0,.2);overflow:hidden;font-family:inherit;max-height:min(90vh,700px);display:flex;flex-direction:column">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid #e2e8f0;flex-shrink:0">
-        <div style="font-size:15px;font-weight:800;color:#0F2A44">🔍 Filtros avançados</div>
+    <div style="background:#fff;${mob?'border-radius:22px 22px 0 0;width:100%;max-height:92vh':'border-radius:16px;width:100%;max-width:560px;max-height:min(90vh,700px)'};box-shadow:0 -8px 40px rgba(0,0,0,.18);overflow:hidden;font-family:inherit;display:flex;flex-direction:column">
+      ${mob?'<div style="width:36px;height:4px;background:#e2e8f0;border-radius:2px;margin:12px auto 4px"></div>':''}
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:${mob?'12px 20px 14px':'18px 22px'};border-bottom:1px solid #e2e8f0;flex-shrink:0">
+        <div style="font-size:${mob?'16':'15'}px;font-weight:800;color:#0F2A44">🔍 Filtros avançados</div>
         <button onclick="document.getElementById('modal-lanc-filters').remove()" style="background:none;border:none;font-size:22px;color:#94a3b8;cursor:pointer;line-height:1">×</button>
       </div>
-      <div style="padding:20px 22px;display:flex;flex-direction:column;gap:14px;overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch">
+      <div style="padding:${mob?'16px 20px':'20px 22px'};display:flex;flex-direction:column;gap:${mob?'16':'14'}px;overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch">
 
         <!-- Data de competência -->
         <div>
-          <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Data de competência</label>
-          <div style="display:flex;align-items:center;gap:8px">
-            <input type="date" id="lf-comp-from" value="${f.compFrom}" class="inp" style="flex:1;font-size:12px" placeholder="De">
-            <span style="color:#94a3b8;font-size:13px">→</span>
-            <input type="date" id="lf-comp-to" value="${f.compTo}" class="inp" style="flex:1;font-size:12px" placeholder="Até">
+          <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:8px">Data de competência</label>
+          <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px">
+            <input type="date" id="lf-comp-from" value="${f.compFrom}" class="inp" style="font-size:${dateFs};width:100%" placeholder="De">
+            <span style="color:#94a3b8;font-size:13px;flex-shrink:0">→</span>
+            <input type="date" id="lf-comp-to" value="${f.compTo}" class="inp" style="font-size:${dateFs};width:100%" placeholder="Até">
           </div>
         </div>
 
         <!-- Data de vencimento -->
         <div>
-          <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Data de vencimento</label>
-          <div style="display:flex;align-items:center;gap:8px">
-            <input type="date" id="lf-due-from" value="${($('lancDateFrom')||{value:''}).value}" class="inp" style="flex:1;font-size:12px" placeholder="De">
-            <span style="color:#94a3b8;font-size:13px">→</span>
-            <input type="date" id="lf-due-to" value="${($('lancDateTo')||{value:''}).value}" class="inp" style="flex:1;font-size:12px" placeholder="Até">
+          <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:8px">Data de vencimento</label>
+          <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px">
+            <input type="date" id="lf-due-from" value="${($('lancDateFrom')||{value:''}).value}" class="inp" style="font-size:${dateFs};width:100%" placeholder="De">
+            <span style="color:#94a3b8;font-size:13px;flex-shrink:0">→</span>
+            <input type="date" id="lf-due-to" value="${($('lancDateTo')||{value:''}).value}" class="inp" style="font-size:${dateFs};width:100%" placeholder="Até">
           </div>
         </div>
 
@@ -6410,7 +6566,7 @@ function openLancFilters(){
         <!-- Situação -->
         <div>
           <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Situação do ${statusLabel}</label>
-          <select id="lf-status" class="inp" style="font-size:12px">
+          <select id="lf-status" class="inp" style="font-size:${fieldFs}">
             <option value="">Todas as situações</option>
             <option value="open"${f.status==='open'?' selected':''}>Em aberto</option>
             <option value="done"${f.status==='done'?' selected':''}>Efetuado</option>
@@ -6421,32 +6577,41 @@ function openLancFilters(){
         <!-- Descrição -->
         <div>
           <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Descrição ou referência</label>
-          <input type="text" id="lf-desc" value="${f.desc}" class="inp" style="font-size:12px" placeholder="Informe a descrição ou referência">
+          <input type="text" id="lf-desc" value="${f.desc}" class="inp" style="font-size:${fieldFs}" placeholder="Informe a descrição ou referência">
         </div>
 
         <!-- Cliente/Fornecedor -->
         <div>
           <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">${peerLabel}</label>
-          <select id="lf-peer" class="inp" style="font-size:12px">${peerOpts}</select>
+          <select id="lf-peer" class="inp" style="font-size:${fieldFs}">${peerOpts}</select>
         </div>
 
         <!-- Categoria -->
         <div>
           <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Categoria</label>
-          <select id="lf-cat" class="inp" style="font-size:12px">${catOpts}</select>
+          <select id="lf-cat" class="inp" style="font-size:${fieldFs}">${catOpts}</select>
         </div>
 
         <!-- Centro de custo -->
         <div>
           <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Centro de custo</label>
-          <select id="lf-cc" class="inp" style="font-size:12px">${ccOpts}</select>
+          <select id="lf-cc" class="inp" style="font-size:${fieldFs}">${ccOpts}</select>
+        </div>
+
+        <!-- Conta bancária -->
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Conta bancária</label>
+          <select id="lf-acc" class="inp" style="font-size:${fieldFs}">
+            <option value="">Todas as contas</option>
+            ${S.accounts.filter(a=>a.active!==false).map(a=>`<option value="${a.id}"${f.accId===a.id?' selected':''}>${a.name}</option>`).join('')}
+          </select>
         </div>
       </div>
 
       <!-- Footer -->
-      <div style="display:flex;gap:10px;padding:16px 22px;border-top:1px solid #e2e8f0;flex-shrink:0">
-        <button onclick="clearLancFilters()" style="flex:1;background:#fff;color:#475569;border:1.5px solid #e2e8f0;border-radius:10px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Limpar</button>
-        <button onclick="applyLancFilters()" style="flex:2;background:#22C55E;color:#fff;border:none;border-radius:10px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">✓ Filtrar</button>
+      <div style="display:flex;gap:10px;padding:${mob?'16px 20px calc(16px + env(safe-area-inset-bottom,0px))':'16px 22px'};border-top:1px solid #e2e8f0;flex-shrink:0">
+        <button onclick="clearLancFilters()" style="flex:1;background:#fff;color:#475569;border:1.5px solid #e2e8f0;border-radius:12px;padding:${mob?'14':'11'}px;font-size:${mob?'14':'13'}px;font-weight:700;cursor:pointer;font-family:inherit">Limpar</button>
+        <button onclick="applyLancFilters()" style="flex:2;background:#22C55E;color:#fff;border:none;border-radius:12px;padding:${mob?'14':'11'}px;font-size:${mob?'14':'13'}px;font-weight:700;cursor:pointer;font-family:inherit">✓ Filtrar</button>
       </div>
     </div>`;
   document.body.appendChild(modal);
@@ -6468,7 +6633,8 @@ function applyLancFilters(){
     desc:$('lf-desc')?.value||'',
     peerId:$('lf-peer')?.value||'',
     catId:$('lf-cat')?.value||'',
-    ccId:$('lf-cc')?.value||''
+    ccId:$('lf-cc')?.value||'',
+    accId:$('lf-acc')?.value||''
   };
   updateLancFilterBadge();
   document.getElementById('modal-lanc-filters')?.remove();
@@ -6476,7 +6642,7 @@ function applyLancFilters(){
 }
 
 function clearLancFilters(){
-  S.lancFilters={ compFrom:'', compTo:'', valMin:'', valMax:'', status:'', desc:'', peerId:'', catId:'', ccId:'' };
+  S.lancFilters={ compFrom:'', compTo:'', valMin:'', valMax:'', status:'', desc:'', peerId:'', catId:'', ccId:'', accId:'' };
   updateLancFilterBadge();
   document.getElementById('modal-lanc-filters')?.remove();
   renderLancamentos();
@@ -8881,7 +9047,7 @@ function showDeleteBlockedModal(nomeConta){
 
 // ── CONFIRMAÇÃO DUPLA CENTRALIZADA ─────────────────────
 function confirmDelete({ icon='🗑️', title='Excluir?', desc='', onConfirm, showScopes=false }){
-  $('confirm-delete-desc').innerHTML = desc;
+  $('confirm-delete-desc').textContent = desc;
   $('confirm-delete-title').textContent = title;
   $('confirm-delete-icon').textContent  = icon;
   $('delete-scope-wrap').style.display  = showScopes ? 'flex' : 'none';
@@ -10624,18 +10790,46 @@ renderDashboard();
     </svg>
     <span>Preços</span>
   </button>
-  <!-- Logout -->
-  <button class="mbn-btn" onclick="doLogout()">
+  <!-- Mais opções -->
+  <button class="mbn-btn" id="mbn-more-btn" onclick="openMobMore()">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-      <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M16 17l5-5-5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      <circle cx="5" cy="12" r="1.5" fill="currentColor"/>
+      <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+      <circle cx="19" cy="12" r="1.5" fill="currentColor"/>
     </svg>
-    <span>Sair</span>
+    <span>Mais</span>
   </button>
 </nav>
 
+<!-- Sheet "Mais opções" -->
+<div id="mob-more-sheet" style="display:none;position:fixed;inset:0;z-index:9100;flex-direction:column;justify-content:flex-end" onclick="closeMobMore()">
+  <div style="position:absolute;inset:0;background:rgba(10,20,40,.55);backdrop-filter:blur(2px)"></div>
+  <div style="position:relative;background:#fff;border-radius:22px 22px 0 0;padding:12px 0 32px;box-shadow:0 -8px 40px rgba(0,0,0,.18)" onclick="event.stopPropagation()">
+    <div style="width:36px;height:4px;background:#e2e8f0;border-radius:2px;margin:0 auto 18px"></div>
+    <button onclick="closeMobMore();localStorage.removeItem('monbluu-tour-done');startTour();" style="width:100%;display:flex;align-items:center;gap:14px;padding:16px 24px;background:none;border:none;cursor:pointer;font-family:inherit;font-size:15px;font-weight:600;color:#0F2A44;text-align:left">
+      <span style="width:38px;height:38px;border-radius:12px;background:#eef2ff;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🗺️</span>
+      Rever tour guiado
+    </button>
+    <div style="height:1px;background:#f1f5f9;margin:0 24px"></div>
+    <button onclick="closeMobMore();doLogout();" style="width:100%;display:flex;align-items:center;gap:14px;padding:16px 24px;background:none;border:none;cursor:pointer;font-family:inherit;font-size:15px;font-weight:600;color:#ef4444;text-align:left">
+      <span style="width:38px;height:38px;border-radius:12px;background:#fef2f2;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 17l5-5-5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </span>
+      Sair do sistema
+    </button>
+  </div>
+</div>
+
 <script>
+function openMobMore(){
+  const sh=document.getElementById('mob-more-sheet');
+  if(sh){ sh.style.display='flex'; }
+}
+function closeMobMore(){
+  const sh=document.getElementById('mob-more-sheet');
+  if(sh){ sh.style.display='none'; }
+}
+
 function toggleFab(){
   const menu=$('fab-menu'), icon=$('fab-icon'), bd=$('fab-backdrop');
   const pc=document.getElementById('mbn-plus-circle');
@@ -11573,31 +11767,46 @@ window.dismissPWABanner = function(){
 <script>
 (function(){
   const PAD = 8; // spotlight padding around element
-  const STEPS = [
+
+  // Steps para desktop
+  const DESK_STEPS = [
     { title:'👋 Bem-vindo(a) à MonBluu!',       desc:'Vamos te mostrar os primeiros passos em menos de 1 minuto. Você pode pular a qualquer momento.', sel:null },
-    { title:'📊 Seu Painel',                   desc:'Aqui está a visão geral do seu negócio: saldo total, recebimentos, despesas, vencimentos e muito mais.', sel:'[data-page="dashboard"]', mob:'[data-mbn="dashboard"]' },
-    { title:'🏦 Cadastre sua conta bancária',  desc:'Clique em "+ Nova conta" para cadastrar sua conta bancária. Ela será a base para todos os seus lançamentos.', sel:'#tour-btn-nova-conta', mob:'#tour-btn-nova-conta' },
-    { title:'📈 Lance suas contas a receber',  desc:'Clique em "+ Adicionar" para registrar um recebimento. Você pode incluir valor, data de vencimento, cliente e parcelamento.', sel:'#tour-btn-receber', mob:'#tour-btn-receber' },
-    { title:'📉 Lance suas contas a pagar',    desc:'Clique em "+ Adicionar" para registrar um pagamento. Organize seus gastos por categoria para ter relatórios precisos.', sel:'#tour-btn-pagar', mob:'#tour-btn-pagar' },
-    { title:'➕ Menu de ações rápidas',         desc:'Use este botão para adicionar rapidamente contas, transferências, clientes e fornecedores sem sair de onde está.', sel:'#fab-btn', mob:'.mbn-plus-circle' },
-    { title:'📅 Filtre o período',             desc:'Use esta barra para navegar entre períodos — mês, semana, dia ou intervalo personalizado. Todos os dados se atualizam automaticamente.', sel:'#period-bar', mob:'#period-bar' },
-    { title:'📋 Lançamentos',                  desc:'Aqui você vê e gerencia todos os seus recebimentos e pagamentos em um único lugar, com filtros por status e categoria.', sel:'[data-page="lancamentos"]', mob:null },
-    { title:'📈 Relatórios',                   desc:'Visualize DRE, fluxo de caixa e relatórios gerenciais para tomar decisões com segurança e clareza.', sel:'[data-page="relatorios"]', mob:'[data-mbn="relatorios"]' },
+    { title:'📊 Seu Painel',                   desc:'Aqui está a visão geral do seu negócio: saldo total, recebimentos, despesas, vencimentos e muito mais.', sel:'[data-page="dashboard"]' },
+    { title:'🏦 Cadastre sua conta bancária',  desc:'Clique em "+ Nova conta" para cadastrar sua conta bancária. Ela será a base para todos os seus lançamentos.', sel:'#tour-btn-nova-conta' },
+    { title:'📈 Lance suas contas a receber',  desc:'Clique em "+ Adicionar" para registrar um recebimento. Você pode incluir valor, data de vencimento, cliente e parcelamento.', sel:'#tour-btn-receber' },
+    { title:'📉 Lance suas contas a pagar',    desc:'Clique em "+ Adicionar" para registrar um pagamento. Organize seus gastos por categoria para ter relatórios precisos.', sel:'#tour-btn-pagar' },
+    { title:'➕ Menu de ações rápidas',         desc:'Use este botão para adicionar rapidamente contas, transferências, clientes e fornecedores sem sair de onde está.', sel:'#fab-btn' },
+    { title:'📅 Filtre o período',             desc:'Use esta barra para navegar entre períodos — mês, semana, dia ou intervalo personalizado. Todos os dados se atualizam automaticamente.', sel:'#period-bar' },
+    { title:'📋 Lançamentos',                  desc:'Aqui você vê e gerencia todos os seus recebimentos e pagamentos em um único lugar, com filtros por status e categoria.', sel:'[data-page="lancamentos"]' },
+    { title:'📈 Relatórios',                   desc:'Visualize DRE, fluxo de caixa e relatórios gerenciais para tomar decisões com segurança e clareza.', sel:'[data-page="relatorios"]' },
     { title:'🎉 Tudo pronto!',                 desc:'Você já conhece o essencial. Cadastre sua conta bancária e comece a lançar agora. Bons negócios!', sel:null }
+  ];
+
+  // Steps exclusivos para mobile
+  const MOB_STEPS = [
+    { title:'👋 Bem-vindo(a) à MonBluu!',       desc:'Vamos te mostrar os principais recursos em menos de 1 minuto. Você pode pular a qualquer momento.', sel:null },
+    { title:'📊 Painel',                        desc:'Aqui você acompanha tudo do seu negócio: saldo, entradas, saídas e alertas de vencimento — tudo em uma tela só.', sel:'[data-mbn="dashboard"]' },
+    { title:'📅 Filtre por período',            desc:'Toque aqui para navegar entre meses ou escolher um período personalizado. Todos os valores se atualizam na hora.', sel:'.mhc-period-center' },
+    { title:'⚡ Ações rápidas',                 desc:'Com esses botões você lança um recebimento, registra um pagamento, faz uma transferência ou acessa o extrato completo — sem sair do painel.', sel:'.mhc-actions' },
+    { title:'📈 Relatórios',                    desc:'Veja o DRE, fluxo de caixa e relatórios gerenciais para tomar decisões com segurança e clareza total sobre seu negócio.', sel:'[data-mbn="relatorios"]' },
+    { title:'➕ Adicionar',                     desc:'Use este botão central para criar rapidamente contas a receber, a pagar, transferências, clientes e fornecedores.', sel:'#mbn-plus-circle' },
+    { title:'🏷️ Precificação inteligente',      desc:'Descubra o preço ideal para seus produtos e serviços. A MonBluu calcula o ponto de equilíbrio e a margem de lucro para você.', sel:'[data-mbn="precificacao"]' },
+    { title:'⋯ Mais opções',                   desc:'Aqui você acessa o tour guiado novamente quando quiser, ou sai do sistema com segurança.', sel:'#mbn-more-btn' },
+    { title:'🎉 Tudo pronto!',                  desc:'Você já conhece o essencial. Comece cadastrando sua conta bancária e lançando suas movimentações. Bons negócios!', sel:null }
   ];
 
   let cur = 0;
   const isMob = ()=> window.innerWidth <= 768;
+  const STEPS = ()=> isMob() ? MOB_STEPS : DESK_STEPS;
 
   function getTarget(step){
     if(!step.sel) return null;
-    const sel = isMob() && step.mob ? step.mob : step.sel;
-    return document.querySelector(sel);
+    return document.querySelector(step.sel);
   }
 
   function renderDots(){
     const el = document.getElementById('tour-dots');
-    el.innerHTML = STEPS.map((_,i)=>`<div style="width:${i===cur?18:7}px;height:7px;border-radius:4px;background:${i===cur?'#0F2A44':'#e2e8f0'};transition:width .25s,background .25s"></div>`).join('');
+    el.innerHTML = STEPS().map((_,i)=>`<div style="width:${i===cur?18:7}px;height:7px;border-radius:4px;background:${i===cur?'#0F2A44':'#e2e8f0'};transition:width .25s,background .25s"></div>`).join('');
   }
 
   function positionCard(target){
@@ -11660,11 +11869,11 @@ window.dismissPWABanner = function(){
 
   function showStep(i){
     cur = i;
-    const step = STEPS[i];
+    const step = STEPS()[i];
     document.getElementById('tour-title').textContent = step.title;
     document.getElementById('tour-desc').textContent  = step.desc;
     const btn = document.getElementById('tour-next-btn');
-    btn.textContent = i === STEPS.length-1 ? '✓ Concluir' : 'Próximo →';
+    btn.textContent = i === STEPS().length-1 ? '✓ Concluir' : 'Próximo →';
     renderDots();
     const target = getTarget(step);
     // Show overlay + card (sem spotlight ainda)
@@ -11673,8 +11882,12 @@ window.dismissPWABanner = function(){
     const card = document.getElementById('tour-card');
     card.style.display = 'block';
     if(target){
-      // Rola primeiro, depois calcula spotlight e posição do card
-      target.scrollIntoView({block:'center',behavior:'smooth'});
+      // Rola para o elemento compensando o header fixo
+      const rect = target.getBoundingClientRect();
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const headerH = isMob() ? 56 : 70;
+      const targetCenter = scrollTop + rect.top - headerH - (window.innerHeight / 2 - rect.height / 2);
+      window.scrollTo({ top: Math.max(0, targetCenter), behavior: 'smooth' });
       setTimeout(()=>{
         spotlight(target);
         positionCard(target);
@@ -11690,7 +11903,7 @@ window.dismissPWABanner = function(){
     showStep(0);
   };
   window.tourNext = function(){
-    if(cur >= STEPS.length-1){ endTour(); return; }
+    if(cur >= STEPS().length-1){ endTour(); return; }
     showStep(cur+1);
   };
   window.endTour = function(){
