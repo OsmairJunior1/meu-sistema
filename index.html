@@ -1158,6 +1158,7 @@ textarea.inp{min-height:80px;resize:vertical}
   #mob-rel{display:block!important}
 
   /* mob-rel layout */
+  #mob-rel .mob-section{padding-left:0!important;padding-right:0!important}
   .mob-rel-filterbar{display:flex;gap:8px;margin-bottom:14px;align-items:center}
   .mob-rel-filter-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;color:#0F2A44;cursor:pointer;font-family:inherit}
   .mob-rel-export-btn{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border:none;border-radius:12px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}
@@ -1171,7 +1172,7 @@ textarea.inp{min-height:80px;resize:vertical}
   .mob-rel-kpi .kpi-sub{font-size:11px;color:#94a3b8;margin-top:1px}
   .mob-rel-kpi .kpi-val{font-size:15px;font-weight:800;letter-spacing:-.02em;text-align:right;flex-shrink:0}
   .mob-rel-kpi .kpi-chevron{color:#cbd5e1;font-size:18px;margin-left:2px;flex-shrink:0;font-weight:300}
-  .mob-rel-list-item{background:#fff;border-radius:14px;padding:13px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+  .mob-rel-list-item{background:#fff;border-radius:14px;padding:13px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 4px rgba(0,0,0,.05);width:100%;box-sizing:border-box}
   .mob-rel-list-dot{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
   .mob-rel-list-main{flex:1;min-width:0}
   .mob-rel-list-desc{font-size:13px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1264,12 +1265,16 @@ textarea.inp{min-height:80px;resize:vertical}
   /* FAB menu vira bottom sheet no mobile */
   #fab-wrap{bottom:0!important;right:0!important;left:0!important;width:100%!important;align-items:stretch!important;z-index:500!important}
   #fab-menu{
-    position:fixed!important;bottom:calc(64px + env(safe-area-inset-bottom, 0px))!important;left:0!important;right:0!important;
+    position:fixed!important;bottom:0!important;left:0!important;right:0!important;
     width:100%!important;min-width:unset!important;margin-bottom:0!important;
     border-radius:20px 20px 0 0!important;border:none!important;
-    max-height:calc(80vh - 64px);overflow-y:auto;
+    background:#fff!important;
+    max-height:92vh!important;
+    overflow:hidden!important;
+    overflow-y:auto!important;
     box-shadow:0 -8px 40px rgba(0,0,0,.22)!important;
-    padding-bottom:calc(12px + env(safe-area-inset-bottom, 0px))
+    z-index:502!important;
+    padding-bottom:calc(74px + env(safe-area-inset-bottom, 0px))!important
   }
   #fab-btn{position:fixed!important;bottom:20px!important;right:20px!important;width:58px!important;height:58px!important;z-index:501!important}
 }
@@ -2633,7 +2638,7 @@ textarea.inp{min-height:80px;resize:vertical}
           <!-- Evolução mensal -->
           <div class="mob-section" style="margin-bottom:12px">
             <div class="mob-section-header"><span class="mob-section-title">Evolução Mensal</span></div>
-            <div style="background:#fff;border-radius:16px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.05);height:200px" id="mob-monthly-chart"></div>
+            <div style="background:#fff;border-radius:16px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.05);height:200px;width:100%;box-sizing:border-box" id="mob-monthly-chart"></div>
           </div>
           <!-- Lançamentos -->
           <div class="mob-section">
@@ -2641,7 +2646,7 @@ textarea.inp{min-height:80px;resize:vertical}
               <span class="mob-section-title">Lançamentos</span>
               <span id="mob-rel-count" style="font-size:11px;color:#94a3b8;font-weight:600"></span>
             </div>
-            <div id="mob-rel-list"></div>
+            <div id="mob-rel-list" style="width:100%"></div>
           </div>
         </div>
 
@@ -2765,7 +2770,13 @@ textarea.inp{min-height:80px;resize:vertical}
               <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
                 <input type="radio" name="cfVisao" value="agendado" onchange="renderCashflow()" style="accent-color:#3b82f6"> Realizado x Agendado
               </label>
-              <button onclick="exportCashflow()" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:7px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:#475569">Exportar</button>
+              <div style="position:relative;display:inline-block" id="cfExportWrap">
+                <button onclick="toggleCfExportMenu(event)" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:7px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:#475569;display:flex;align-items:center;gap:5px">Exportar <span style="font-size:10px">▾</span></button>
+                <div id="cfExportMenu" style="display:none;position:absolute;top:calc(100% + 4px);left:0;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:200;min-width:140px;overflow:hidden">
+                  <button onclick="exportCashflowXLS();document.getElementById('cfExportMenu').style.display='none'" style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 16px;border:none;background:none;font-size:12px;font-weight:600;color:#475569;cursor:pointer;font-family:inherit;text-align:left" onmouseenter="this.style.background='#f8fafc'" onmouseleave="this.style.background='none'">📊 Excel (.xls)</button>
+                  <button onclick="exportCashflowPDF();document.getElementById('cfExportMenu').style.display='none'" style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 16px;border:none;background:none;font-size:12px;font-weight:600;color:#475569;cursor:pointer;font-family:inherit;text-align:left" onmouseenter="this.style.background='#f8fafc'" onmouseleave="this.style.background='none'">📄 PDF</button>
+                </div>
+              </div>
             </div>
             <div style="display:flex;align-items:center;gap:10px">
               <button onclick="cfYear(-1)" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:14px">‹</button>
@@ -6294,42 +6305,42 @@ S.lancSortKey='dueDate';
 S.lancSortDir=1;
 S.selectedLancs=new Set();
 S.lancCols = S.lancCols || {
-  visible: ['date','desc','client','account','cat','cc','value'],
-  hidden:  ['compDate','dueDate2','ref','notes']
+  visible: ['date','desc','client','account','cat','value'],
+  hidden:  ['cc','compDate','dueDate2','ref','notes']
 };
 
 const LANC_COL_DEF = {
-  date:     { label:'Data',                 width:'72px',             sort:'rec'    },
-  desc:     { label:'Descrição',            width:'160px',            sort:'desc'   },
-  client:   { label:'Cliente/Fornecedor',   width:'minmax(90px,1fr)', sort:'client' },
-  account:  { label:'Conta',               width:'90px',             sort:'account'},
-  cat:      { label:'Categoria',           width:'95px',             sort:'cat'    },
-  cc:       { label:'Centro de Custo',     width:'95px',             sort:'cc'     },
-  value:    { label:'Valor',               width:'92px',             sort:'value', alignRight:true },
-  compDate: { label:'Data de Competência', width:'96px',             sort:''       },
-  dueDate2: { label:'Data de Vencimento',  width:'96px',             sort:''       },
-  ref:      { label:'Ref.',               width:'80px',             sort:''       },
-  notes:    { label:'Anotações',          width:'120px',            sort:''       },
+  date:     { label:'Data',                 width:'80px',                sort:'rec'    },
+  desc:     { label:'Descrição',            width:'minmax(100px,2fr)',   sort:'desc'   },
+  client:   { label:'Cliente/Fornecedor',   width:'minmax(130px,3fr)',   sort:'client' },
+  account:  { label:'Conta',               width:'minmax(80px,1.5fr)',  sort:'account'},
+  cat:      { label:'Categoria',           width:'minmax(80px,1.5fr)',  sort:'cat'    },
+  cc:       { label:'Centro de Custo',     width:'minmax(80px,1fr)',    sort:'cc'     },
+  value:    { label:'Valor',               width:'95px',                sort:'value', alignRight:true },
+  compDate: { label:'Data de Competência', width:'96px',                sort:''       },
+  dueDate2: { label:'Data de Vencimento',  width:'96px',                sort:''       },
+  ref:      { label:'Ref.',               width:'80px',                sort:''       },
+  notes:    { label:'Anotações',          width:'minmax(80px,1.5fr)',  sort:''       },
 };
 
 function getLancGridTemplate(){
-  const narrow = window.innerWidth < 1200;
-  const cols = narrow ? S.lancCols.visible.filter(c => c !== 'cc') : S.lancCols.visible;
-  const widths = cols.map(c => LANC_COL_DEF[c]?.width || '100px');
+  const widths = S.lancCols.visible.map(c => LANC_COL_DEF[c]?.width || '100px');
   return `28px ${widths.join(' ')} 105px`;
 }
-function _lancNarrow(){ return window.innerWidth < 1200; }
+function _lancNarrow(){ return false; }
 
 function renderLancHeader(){
   const el = document.getElementById('lancTblHeader');
   if(!el) return;
   el.style.gridTemplateColumns = getLancGridTemplate();
-  const cells = S.lancCols.visible.map(c => {
+  const visCols = _lancNarrow() ? S.lancCols.visible.filter(c => c !== 'cc') : S.lancCols.visible;
+  const cells = visCols.map(c => {
     const def = LANC_COL_DEF[c] || {};
+    const label = c === 'client' ? (S.lancTab === 'income' ? 'Cliente' : 'Fornecedor') : def.label;
     const align = def.alignRight ? ';justify-content:flex-end' : '';
     return def.sort
-      ? `<div style="cursor:pointer;display:flex;align-items:center;gap:3px${align}" onclick="lancSort('${def.sort}')">${def.label} <span style="font-size:9px;color:#cbd5e1">⇅</span></div>`
-      : `<div>${def.label}</div>`;
+      ? `<div style="cursor:pointer;display:flex;align-items:center;gap:3px${align}" onclick="lancSort('${def.sort}')">${label} <span style="font-size:9px;color:#cbd5e1">⇅</span></div>`
+      : `<div>${label}</div>`;
   }).join('');
   el.innerHTML = `<div><input type="checkbox" id="lancCheckAll" onchange="toggleAllLanc(this)" style="cursor:pointer;width:14px;height:14px"></div>${cells}<div style="text-align:center">Ações</div>`;
 }
@@ -8025,7 +8036,149 @@ function renderCashflow(){
   if(tbl) tbl.innerHTML=html;
 }
 
-function exportCashflow(){ toast('Exportação do fluxo disponível na versão Pro','info'); }
+function toggleCfExportMenu(e){
+  e.stopPropagation();
+  const menu = document.getElementById('cfExportMenu');
+  const open = menu.style.display === 'none';
+  menu.style.display = open ? 'block' : 'none';
+  if(open){ const close=()=>{menu.style.display='none';document.removeEventListener('click',close);}; setTimeout(()=>document.addEventListener('click',close),0); }
+}
+
+function _cfBuildRows(yr){
+  // Retorna array de { label, indent, bold, isPercent, vals:[12], yearTotal }
+  const rows = [];
+  for(const row of CF_STRUCTURE){
+    if(row.type==='group'){
+      const mv = MONTHS_PT.map((_,i)=>cfGroupTotal(row,i,yr));
+      rows.push({ label:row.label, indent:0, bold:true, vals:mv, yearTotal:mv.reduce((s,v)=>s+v,0) });
+      for(const ch of (row.children||[])){
+        const cv = MONTHS_PT.map((_,i)=>cfGetVal(ch.id,i,yr));
+        rows.push({ label:ch.label, indent:1, bold:false, vals:cv, yearTotal:cv.reduce((s,v)=>s+v,0) });
+      }
+    } else if(row.type==='percent'){
+      const totInc  = MONTHS_PT.map((_,i)=>cfGroupTotal(CF_STRUCTURE[0],i,yr));
+      const totCost = MONTHS_PT.map((_,i)=>cfGroupTotal(CF_STRUCTURE[1],i,yr));
+      const pcts = totInc.map((inc,i)=>{ const m=inc-totCost[i]; return inc>0?(m/inc*100).toFixed(1)+'%':'—'; });
+      const tiy=totInc.reduce((s,v)=>s+v,0), tcy=totCost.reduce((s,v)=>s+v,0);
+      rows.push({ label:row.label, indent:0, bold:false, isPercent:true, vals:pcts, yearTotal:tiy>0?((tiy-tcy)/tiy*100).toFixed(1)+'%':'—' });
+    } else {
+      const g=(idx)=>CF_STRUCTURE[idx]||{children:[]};
+      let vals;
+      if(row.id==='margem_rs'){
+        const inc=MONTHS_PT.map((_,i)=>cfGroupTotal(g(0),i,yr));
+        const cst=MONTHS_PT.map((_,i)=>cfGroupTotal(g(1),i,yr));
+        vals=inc.map((v,i)=>v-cst[i]);
+      } else if(row.id==='res_op'){
+        const inc=MONTHS_PT.map((_,i)=>cfGroupTotal(g(0),i,yr));
+        const cst=MONTHS_PT.map((_,i)=>cfGroupTotal(g(1),i,yr));
+        const dop=MONTHS_PT.map((_,i)=>cfGroupTotal(g(4),i,yr));
+        const orc=MONTHS_PT.map((_,i)=>cfGroupTotal(g(5),i,yr));
+        vals=inc.map((v,i)=>v-cst[i]-dop[i]+orc[i]);
+      } else if(row.id==='var_caixa'){
+        vals=MONTHS_PT.map((_,i)=>{
+          const inc=cfGroupTotal(g(0),i,yr)+cfGroupTotal(g(5),i,yr)+cfGroupTotal(g(7),i,yr);
+          const exp=cfGroupTotal(g(1),i,yr)+cfGroupTotal(g(4),i,yr)+cfGroupTotal(g(6),i,yr);
+          return inc-exp;
+        });
+      } else { vals=MONTHS_PT.map(()=>0); }
+      rows.push({ label:row.label, indent:0, bold:true, vals, yearTotal:vals.reduce((s,v)=>s+v,0) });
+    }
+  }
+  return rows;
+}
+
+function exportCashflowXLS(){
+  const yr = S.cfYear;
+  const visao = document.querySelector('input[name="cfVisao"]:checked')?.value || 'realizado';
+  const rows = _cfBuildRows(yr);
+  const headers = ['Resultado', ...MONTHS_PT.map(m=>m+'/'+yr), String(yr)+' Total'];
+  const dataRows = rows.map(r => {
+    const indent = '  '.repeat(r.indent);
+    const vals = r.isPercent
+      ? r.vals.map(v=>`"${v}"`)
+      : r.vals.map(v=>typeof v==='number'?v:`"${v}"`);
+    const yt = r.isPercent ? `"${r.yearTotal}"` : (typeof r.yearTotal==='number'?r.yearTotal:`"${r.yearTotal}"`);
+    return [`"${indent}${r.label.replace(/"/g,'""')}"`, ...vals, yt];
+  });
+  const csv = [headers.map(h=>`"${h}"`).join(';'), ...dataRows.map(r=>r.join(';'))].join('\n');
+  const label = visao==='realizado'?'Realizado':'Realizado_x_Agendado';
+  const a = document.createElement('a');
+  a.href = 'data:application/vnd.ms-excel;charset=utf-8,\uFEFF' + encodeURIComponent(csv);
+  a.download = `FluxoCaixa_${label}_${yr}.xls`;
+  a.click();
+  toast('Excel exportado! 📊');
+}
+
+function exportCashflowPDF(){
+  const yr = S.cfYear;
+  const visao = document.querySelector('input[name="cfVisao"]:checked')?.value || 'realizado';
+  const visaoLabel = visao==='realizado' ? 'Realizado' : 'Realizado x Agendado';
+  const emp = S.empresa?.nome || 'MonBluu';
+  const cnpj = S.empresa?.doc || '';
+  const rows = _cfBuildRows(yr);
+
+  const fmtCell = (v, isPercent) => {
+    if(isPercent) return `<span style="color:#64748b">${v}</span>`;
+    if(typeof v !== 'number') return `<span style="color:#94a3b8">—</span>`;
+    const c = v>0?'#16a34a':v<0?'#ef4444':'#94a3b8';
+    return `<span style="color:${c};font-family:monospace">${v===0?'—':fmt(v)}</span>`;
+  };
+
+  const tableRows = rows.map(r => {
+    const indent = r.indent * 20;
+    const bgRow = r.bold ? (r.indent===0 ? '#eef2ff' : '#f8fafc') : '#fff';
+    const fw = r.bold ? '700' : '400';
+    const cells = r.vals.map(v=>
+      `<td style="padding:6px 8px;text-align:right;font-size:11px;font-weight:${fw};background:${bgRow};border-bottom:1px solid #f1f5f9;white-space:nowrap">${fmtCell(v,r.isPercent)}</td>`
+    ).join('');
+    const ytd = `<td style="padding:6px 8px;text-align:right;font-size:11px;font-weight:700;background:${bgRow};border-bottom:1px solid #f1f5f9;white-space:nowrap">${fmtCell(r.yearTotal,r.isPercent)}</td>`;
+    return `<tr>
+      <td style="padding:6px 8px 6px ${8+indent}px;font-size:11px;font-weight:${fw};background:${bgRow};border-bottom:1px solid #f1f5f9;white-space:nowrap;min-width:200px">${r.label}</td>
+      ${cells}${ytd}
+    </tr>`;
+  }).join('');
+
+  const monthHeaders = MONTHS_PT.map(m=>`<th style="padding:8px 6px;text-align:right;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;border-bottom:2px solid #e2e8f0;white-space:nowrap">${m}</th>`).join('');
+
+  const win = window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
+  <title>Fluxo de Caixa ${yr} — ${emp}</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Segoe UI',sans-serif;background:#f8fafc;color:#1e293b;padding:28px}
+    .header{background:linear-gradient(135deg,#0F2A44,#1a3a5c);color:#fff;border-radius:16px;padding:24px 28px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-start}
+    .header h1{font-size:18px;font-weight:800;margin-bottom:6px}
+    .header .emp{font-size:14px;font-weight:700;margin-bottom:2px}
+    .header .doc{font-size:11px;opacity:.7}
+    .header-right{text-align:right;font-size:11px;opacity:.85}
+    .badge{background:rgba(255,255,255,.18);border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;margin-top:6px;display:inline-block}
+    .wrap{overflow-x:auto;border-radius:12px;border:1px solid #e2e8f0}
+    table{width:100%;border-collapse:collapse;background:#fff}
+    th{background:#f8fafc;padding:8px 6px;text-align:left;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;border-bottom:2px solid #e2e8f0}
+    @media print{body{padding:12px}.wrap{overflow:visible}}
+  </style></head><body>
+  <div class="header">
+    <div>
+      <h1>📊 Fluxo de Caixa — ${yr}</h1>
+      <div class="emp">${emp}</div>
+      ${cnpj?`<div class="doc">CNPJ: ${cnpj}</div>`:''}
+    </div>
+    <div class="header-right">
+      <div>Gerado em ${new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})}</div>
+      <div class="badge">📅 ${visaoLabel}</div>
+    </div>
+  </div>
+  <div class="wrap">
+    <table><thead><tr>
+      <th style="min-width:200px;position:sticky;left:0;z-index:2;background:#f8fafc">Resultado</th>
+      ${monthHeaders}
+      <th style="padding:8px 6px;text-align:right;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;border-bottom:2px solid #e2e8f0">${yr}</th>
+    </tr></thead><tbody>${tableRows}</tbody></table>
+  </div>
+  <script>window.onload=()=>{window.print();}<\/script>
+  </body></html>`);
+  win.document.close();
+}
 
 function contactRow(x, accentColor, deleteType){
   const pessoa = x.pessoa==='juridica' ? 'Pessoa Jurídica' : 'Pessoa Física';
