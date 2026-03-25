@@ -6299,23 +6299,26 @@ S.lancCols = S.lancCols || {
 };
 
 const LANC_COL_DEF = {
-  date:     { label:'Data',                 width:'80px',             sort:'rec'    },
-  desc:     { label:'Descrição',            width:'180px',            sort:'desc'   },
-  client:   { label:'Cliente/Fornecedor',   width:'minmax(100px,1fr)',sort:'client' },
-  account:  { label:'Conta',               width:'100px',            sort:'account'},
-  cat:      { label:'Categoria',           width:'110px',            sort:'cat'    },
-  cc:       { label:'Centro de Custo',     width:'100px',            sort:'cc'     },
-  value:    { label:'Valor',               width:'100px',            sort:'value', alignRight:true },
-  compDate: { label:'Data de Competência', width:'100px',            sort:''       },
-  dueDate2: { label:'Data de Vencimento',  width:'100px',            sort:''       },
-  ref:      { label:'Ref.',               width:'85px',             sort:''       },
-  notes:    { label:'Anotações',          width:'130px',            sort:''       },
+  date:     { label:'Data',                 width:'72px',             sort:'rec'    },
+  desc:     { label:'Descrição',            width:'160px',            sort:'desc'   },
+  client:   { label:'Cliente/Fornecedor',   width:'minmax(90px,1fr)', sort:'client' },
+  account:  { label:'Conta',               width:'90px',             sort:'account'},
+  cat:      { label:'Categoria',           width:'95px',             sort:'cat'    },
+  cc:       { label:'Centro de Custo',     width:'95px',             sort:'cc'     },
+  value:    { label:'Valor',               width:'92px',             sort:'value', alignRight:true },
+  compDate: { label:'Data de Competência', width:'96px',             sort:''       },
+  dueDate2: { label:'Data de Vencimento',  width:'96px',             sort:''       },
+  ref:      { label:'Ref.',               width:'80px',             sort:''       },
+  notes:    { label:'Anotações',          width:'120px',            sort:''       },
 };
 
 function getLancGridTemplate(){
-  const widths = S.lancCols.visible.map(c => LANC_COL_DEF[c]?.width || '100px');
-  return `32px ${widths.join(' ')} 110px`;
+  const narrow = window.innerWidth < 1200;
+  const cols = narrow ? S.lancCols.visible.filter(c => c !== 'cc') : S.lancCols.visible;
+  const widths = cols.map(c => LANC_COL_DEF[c]?.width || '100px');
+  return `28px ${widths.join(' ')} 105px`;
 }
+function _lancNarrow(){ return window.innerWidth < 1200; }
 
 function renderLancHeader(){
   const el = document.getElementById('lancTblHeader');
@@ -6334,16 +6337,16 @@ function renderLancHeader(){
 function getLancCellHtml(colId, x, cat, acc, peer, color){
   switch(colId){
     case 'date':     return `<span style="color:#64748b;font-size:11px">${fmtD(x.dueDate)}</span>`;
-    case 'desc':     return `<span style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(x.desc)}">${escHtml(x.desc)}</span>`;
-    case 'client':   return `<span style="color:#475569;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(peer?.name)}</span>`;
-    case 'account':  return `<span style="color:#475569;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(acc?.name)}</span>`;
-    case 'cat':      return cat ? `<span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:${cat.color};flex-shrink:0"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(cat.name)}</span></span>` : '<span style="color:#94a3b8">—</span>';
+    case 'desc':     return `<span style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block" title="${escHtml(x.desc)}">${escHtml(x.desc)}</span>`;
+    case 'client':   return `<span style="color:#475569;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block" title="${escHtml(peer?.name)}">${escHtml(peer?.name)}</span>`;
+    case 'account':  return `<span style="color:#475569;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block" title="${escHtml(acc?.name)}">${escHtml(acc?.name)}</span>`;
+    case 'cat':      return cat ? `<span style="display:flex;align-items:center;gap:4px;overflow:hidden" title="${escHtml(cat.name)}"><span style="width:7px;height:7px;border-radius:50%;background:${cat.color};flex-shrink:0"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(cat.name)}</span></span>` : '<span style="color:#94a3b8">—</span>';
     case 'cc':       return `<span style="color:#94a3b8;font-size:11px">—</span>`;
     case 'value':    return `<span style="font-family:monospace;font-weight:700;color:${color};display:block;text-align:right">${fmt(x.value)}</span>`;
     case 'compDate': return `<span style="color:#64748b;font-size:11px">${x.doneDate ? fmtD(x.doneDate) : '—'}</span>`;
     case 'dueDate2': return `<span style="color:#64748b;font-size:11px">${fmtD(x.dueDate)}</span>`;
-    case 'ref':      return `<span style="color:#64748b;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(x.ref)}</span>`;
-    case 'notes':    return `<span style="color:#64748b;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(x.notes)}</span>`;
+    case 'ref':      return `<span style="color:#64748b;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block" title="${escHtml(x.ref)}">${escHtml(x.ref)}</span>`;
+    case 'notes':    return `<span style="color:#64748b;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block" title="${escHtml(x.notes)}">${escHtml(x.notes)}</span>`;
     default: return '<span style="color:#94a3b8">—</span>';
   }
 }
@@ -6471,7 +6474,8 @@ function renderLancamentos(){
     const peer=S.lancTab==='income'?S.clients.find(c=>c.id===x.clientId):S.suppliers.find(s=>s.id===x.supplierId);
     const acc=S.accounts.find(a=>a.id===x.accountId);
     const chk=S.selectedLancs.has(x.id);
-    const cells=S.lancCols.visible.map(c=>getLancCellHtml(c,x,cat,acc,peer,color)).join('');
+    const visCols = _lancNarrow() ? S.lancCols.visible.filter(c=>c!=='cc') : S.lancCols.visible;
+    const cells=visCols.map(c=>getLancCellHtml(c,x,cat,acc,peer,color)).join('');
     return `<div class="lanc-row" style="grid-template-columns:${tpl};padding:11px 6px;border-bottom:1px solid #f8fafc;font-size:12px;align-items:center;background:${chk?'#f0f9ff':'transparent'};transition:background .1s" onmouseenter="this.style.background=this.style.background||'#fafafa'" onmouseleave="this.style.background='${chk?'#f0f9ff':'transparent'}'">
       <div><input type="checkbox" ${chk?'checked':''} onchange="toggleLancCheck('${x.id}')" style="cursor:pointer;width:14px;height:14px;accent-color:${color}"></div>
       ${cells}
