@@ -2,12 +2,11 @@
   "name": "MonBluu - Controle Financeiro",
   "short_name": "MonBluu",
   "description": "Controle financeiro para pequenas empresas",
-  "start_url": "/index.html",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#0F2A44",
   "theme_color": "#0F2A44",
-  "orientation": "portrait-primary",
   "icons": [
     {
       "src": "192x192.png",
