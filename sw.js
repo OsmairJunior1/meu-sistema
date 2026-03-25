@@ -47,7 +47,13 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // For other resources: network-first, cache fallback
+  // Nunca cacheia HTML diretamente — força sempre a versão mais recente
+  if (url.pathname.endsWith('.html') || url.pathname === '/') {
+    e.respondWith(fetch(e.request));
+    return;
+  }
+
+  // Para outros recursos estáticos (css, js, png): network-first, cache fallback
   e.respondWith(
     fetch(e.request)
       .then(resp => {
