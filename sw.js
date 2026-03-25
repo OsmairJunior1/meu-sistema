@@ -1,16 +1,11 @@
-const CACHE = 'monbluu-v10';
+const CACHE = 'monbluu-v11';
 const SHELL = '/index.html';
-const ASSETS = [
-  '/index.html',
-  '/manifest.json'
-];
+const ASSETS = ['/index.html', '/manifest.json'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE).then(c =>
-      Promise.all(ASSETS.map(url =>
-        c.add(url).catch(() => { /* ignore individual failures */ })
-      ))
+      Promise.all(ASSETS.map(url => c.add(url).catch(() => {})))
     ).then(() => self.skipWaiting())
   );
 });
@@ -27,38 +22,26 @@ self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
 
-  // Let Supabase API calls go through network-only
-  if (url.hostname.includes('supabase')) return;
+  // Supabase e fontes externas — sempre via rede
+  if (url.hostname.includes('supabase') ||
+      url.hostname.includes('googleapis') ||
+      url.hostname.includes('gstatic') ||
+      url.hostname.includes('jsdelivr') ||
+      url.hostname.includes('cdnjs')) return;
 
-  // For navigation requests (opening the PWA), always serve sistema.html
-  if (e.request.mode === 'navigate') {
-    e.respondWith(
-      fetch(e.request)
-        .then(resp => {
-          if (resp && resp.ok) {
-            caches.open(CACHE).then(c => c.put(e.request, resp.clone()));
-            return resp;
-          }
-          // Network returned error — serve cached shell
-          return caches.match(SHELL);
-        })
-        .catch(() => caches.match(SHELL))
-    );
-    return;
-  }
-
-  // Nunca cacheia HTML diretamente — força sempre a versão mais recente
+  // HTML — nunca cacheia, sempre busca versão mais recente
   if (url.pathname.endsWith('.html') || url.pathname === '/') {
-    e.respondWith(fetch(e.request));
+    e.respondWith(fetch(e.request).catch(() => caches.match(SHELL)));
     return;
   }
 
-  // Para outros recursos estáticos (css, js, png): network-first, cache fallback
+  // Outros recursos estáticos: network-first, cache fallback
   e.respondWith(
     fetch(e.request)
       .then(resp => {
         if (resp && resp.status === 200 && resp.type === 'basic') {
-          caches.open(CACHE).then(c => c.put(e.request, resp.clone()));
+          const clone = resp.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
         }
         return resp;
       })
