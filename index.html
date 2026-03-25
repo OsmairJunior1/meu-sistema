@@ -11245,6 +11245,9 @@ async function showApp(user) {
   // Carrega os dados do banco
   await loadUserPlan();
   await loadData();
+  // Sempre abre no Painel ao entrar
+  navigate('dashboard');
+
   // Auto-start tour on first login
   try{ if(!localStorage.getItem('monbluu-tour-done')) setTimeout(startTour, 800); }catch(e){}
 }
