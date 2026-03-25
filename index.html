@@ -2386,10 +2386,9 @@ textarea.inp{min-height:80px;resize:vertical}
             <div style="height:220px" id="dvRecvChart"></div>
           </div>
         </div>
-        <div class="grid-3" style="gap:14px">
+        <div class="grid-2" style="gap:14px">
           <div class="card"><div class="card-title" style="margin-bottom:12px;font-size:13px">Faturamento por Cliente</div><div id="dvRecvByClient"></div></div>
           <div class="card"><div class="card-title" style="margin-bottom:12px;font-size:13px">Faturamento por Categoria</div><div id="dvRecvByCat"></div></div>
-          <div class="card"><div class="card-title" style="margin-bottom:12px;font-size:13px">Faturamento por Centro de Custo</div><div style="color:#94a3b8;font-size:12px;padding:20px 0;text-align:center">Sem dados</div></div>
         </div>
       </div>
 
@@ -2416,15 +2415,11 @@ textarea.inp{min-height:80px;resize:vertical}
               <span style="color:#475569">Total</span><span id="dvPayTotal" class="mono" style="color:#ef4444">R$ 0,00</span>
             </div>
           </div>
-          <div class="card">
-            <div class="card-header"><span class="card-title">Despesas por Dia</span></div>
-            <div style="height:220px" id="dvPayChart"></div>
-          </div>
+          <div class="card"><div class="card-title" style="margin-bottom:12px;font-size:13px">Despesas por Centro de Custo</div><div id="dvPayByCc"></div></div>
         </div>
-        <div class="grid-3" style="gap:14px">
+        <div class="grid-2" style="gap:14px">
           <div class="card"><div class="card-title" style="margin-bottom:12px;font-size:13px">Despesas por Fornecedor</div><div id="dvPayBySupplier"></div></div>
           <div class="card"><div class="card-title" style="margin-bottom:12px;font-size:13px">Despesas por Categoria</div><div id="dvPayByCat"></div></div>
-          <div class="card"><div class="card-title" style="margin-bottom:12px;font-size:13px">Despesas por Centro de Custo</div><div style="color:#94a3b8;font-size:12px;padding:20px 0;text-align:center">Sem dados</div></div>
         </div>
       </div>
 
@@ -5043,7 +5038,7 @@ function renderDvPay(){
   if($('dvPayList')) $('dvPayList').innerHTML = list.length ? list.map(p=>{ const s2=S.suppliers.find(s=>s.id===p.supplierId); return dvRow(p,s2?.name||'—','#ef4444'); }).join('') : emptyHTML('Nenhum registro');
   renderSimpleBar('dvPayBySupplier', S.suppliers.map(s=>({ label:s.name, value:S.payables.filter(p=>p.supplierId===s.id&&p.done).reduce((s2,p)=>s2+p.value,0) })).filter(x=>x.value>0), '#ef4444');
   renderSimpleBar('dvPayByCat', S.cats.expense.map(c=>({ label:c.name, value:S.payables.filter(p=>p.categoryId===c.id).reduce((s,p)=>s+p.value,0) })).filter(x=>x.value>0), '#ef4444');
-  renderDayChart('dvPayChart', S.payables, '#ef4444');
+  renderSimpleBar('dvPayByCc', S.costCenters.map(cc=>({ label:cc.name, value:S.payables.filter(p=>p.costCenterId===cc.id).reduce((s,p)=>s+p.value,0) })).filter(x=>x.value>0), '#ef4444');
 }
 
 function renderDvVencidos(){
@@ -5208,9 +5203,9 @@ function renderSimpleBar(elId, data, color){
   const max=Math.max(...data.map(d=>d.value),1);
   el.innerHTML=data.map(d=>`
     <div style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12px">
-      <span style="width:100px;color:#475569;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0">${d.label}</span>
+      <span title="${d.label}" style="width:130px;color:#475569;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0">${d.label}</span>
       <div style="flex:1;background:#F5F7FA;border-radius:4px;height:8px"><div style="width:${(d.value/max)*100}%;background:${color};border-radius:4px;height:8px"></div></div>
-      <span style="font-family:monospace;font-size:11px;font-weight:700;color:${color};min-width:70px;text-align:right">${fmt(d.value)}</span>
+      <span style="font-family:monospace;font-size:11px;font-weight:700;color:${color};min-width:75px;text-align:right;flex-shrink:0">${fmt(d.value)}</span>
     </div>`).join('');
 }
 
