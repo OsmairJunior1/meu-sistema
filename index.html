@@ -12,7 +12,7 @@
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="192x192.png">
 <link rel="manifest" href="manifest.json">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" ></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 /* ── LOGIN SCREEN — MonBluu Premium ── */
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800;900&display=swap');
@@ -6299,22 +6299,22 @@ S.lancCols = S.lancCols || {
 };
 
 const LANC_COL_DEF = {
-  date:     { label:'Data',                 width:'82px',  sort:'rec'    },
-  desc:     { label:'Descrição',            width:'1fr',   sort:'desc'   },
-  client:   { label:'Cliente/Fornecedor',   width:'140px', sort:'client' },
-  account:  { label:'Conta',               width:'100px', sort:'account'},
-  cat:      { label:'Categoria',           width:'130px', sort:'cat'    },
-  cc:       { label:'Centro de Custo',     width:'110px', sort:'cc'     },
-  value:    { label:'Valor',               width:'105px', sort:'value', alignRight:true },
-  compDate: { label:'Data de Competência', width:'100px', sort:''       },
-  dueDate2: { label:'Data de Vencimento',  width:'100px', sort:''       },
-  ref:      { label:'Ref.',               width:'90px',  sort:''       },
-  notes:    { label:'Anotações',          width:'150px', sort:''       },
+  date:     { label:'Data',                 width:'80px',             sort:'rec'    },
+  desc:     { label:'Descrição',            width:'minmax(100px,1fr)',sort:'desc'   },
+  client:   { label:'Cliente/Fornecedor',   width:'120px',            sort:'client' },
+  account:  { label:'Conta',               width:'100px',            sort:'account'},
+  cat:      { label:'Categoria',           width:'110px',            sort:'cat'    },
+  cc:       { label:'Centro de Custo',     width:'100px',            sort:'cc'     },
+  value:    { label:'Valor',               width:'100px',            sort:'value', alignRight:true },
+  compDate: { label:'Data de Competência', width:'100px',            sort:''       },
+  dueDate2: { label:'Data de Vencimento',  width:'100px',            sort:''       },
+  ref:      { label:'Ref.',               width:'85px',             sort:''       },
+  notes:    { label:'Anotações',          width:'130px',            sort:''       },
 };
 
 function getLancGridTemplate(){
   const widths = S.lancCols.visible.map(c => LANC_COL_DEF[c]?.width || '100px');
-  return `36px ${widths.join(' ')} 126px`;
+  return `32px ${widths.join(' ')} 110px`;
 }
 
 function renderLancHeader(){
@@ -11247,7 +11247,6 @@ async function showApp(user) {
   await loadData();
   // Sempre abre no Painel ao entrar
   navigate('dashboard');
-
   // Auto-start tour on first login
   try{ if(!localStorage.getItem('monbluu-tour-done')) setTimeout(startTour, 800); }catch(e){}
 }
