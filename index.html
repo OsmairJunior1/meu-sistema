@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -12,7 +12,9 @@
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="192x192.png">
 <link rel="manifest" href="manifest.json">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.101.1/dist/umd/supabase.js"
+        integrity="sha256-nemRIwEQKZy7uoOYcUFEnleZl6kKX8B3zf4KpR6NVT0="
+        crossorigin="anonymous"></script>
 <style>
 /* ── LOGIN SCREEN — MonBluu Premium ── */
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800;900&display=swap');
@@ -4107,6 +4109,10 @@ async function startUpgradePayment(billingType) {
   const planPrice = window._upgradePlanPrice;
   if (!planName || !planPrice) return;
 
+  // Abre a janela de forma síncrona antes de qualquer await para não ser
+  // bloqueada por popup blockers (navegadores bloqueiam window.open após async)
+  const payWin = window.open('about:blank', '_blank');
+
   // Busca o plan_id no banco
   const { data: plans } = await window._sb
     .from('plans')
@@ -4114,7 +4120,11 @@ async function startUpgradePayment(billingType) {
     .eq('name', planName)
     .single();
 
-  if (!plans?.id) { toast('Plano não encontrado','error'); return; }
+  if (!plans?.id) {
+    if (payWin && !payWin.closed) payWin.close();
+    toast('Plano não encontrado','error');
+    return;
+  }
 
   // Desabilita botões durante carregamento
   const btnPix  = document.getElementById('btn-upgrade-pix');
@@ -4143,7 +4153,7 @@ async function startUpgradePayment(billingType) {
 
     const data = await res.json();
     if (data?.url) {
-      // Valida que a URL pertence ao domínio Asaas antes de abrir
+      // Valida que a URL pertence ao domínio Asaas antes de navegar
       let safeUrl;
       try {
         const parsed = new URL(data.url);
@@ -4152,17 +4162,21 @@ async function startUpgradePayment(billingType) {
         }
         safeUrl = parsed.href;
       } catch(urlErr) {
+        if (payWin && !payWin.closed) payWin.close();
         toast('URL de pagamento inválida','error');
         console.error('[payment] URL rejeitada:', urlErr.message);
         return;
       }
-      window.open(safeUrl, '_blank');
+      if (payWin && !payWin.closed) payWin.location.href = safeUrl;
+      else window.open(safeUrl, '_blank');
       document.getElementById('modal-upgrade').style.display = 'none';
       toast('Redirecionando para o pagamento... ✅','success');
     } else {
+      if (payWin && !payWin.closed) payWin.close();
       toast('Erro ao gerar link de pagamento','error');
     }
   } catch(e) {
+    if (payWin && !payWin.closed) payWin.close();
     toast('Erro ao conectar com o serviço de pagamento','error');
   } finally {
     if (btnPix)  { btnPix.disabled  = false; btnPix.textContent  = '💚 Pagar via PIX (à vista)'; }
@@ -5677,7 +5691,7 @@ function renderAccountsList(){
     <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f8fafc;font-size:13px">
       <div style="display:flex;align-items:center;gap:7px">
         <div style="width:8px;height:8px;border-radius:50%;background:${a.balance>=0?'#22C55E':'#ef4444'}"></div>
-        <button onclick="navigate('contas');setTimeout(()=>openExtrato('${a.id}'),80)" style="background:none;border:none;cursor:pointer;color:#1e293b;font-weight:500;font-size:13px;font-family:inherit;padding:0;text-align:left;transition:color .15s" onmouseenter="this.style.color='#2F80ED';this.style.textDecoration='underline'" onmouseleave="this.style.color='#1e293b';this.style.textDecoration='none'">${a.name}</button>
+        <button onclick="navigate('contas');setTimeout(()=>openExtrato('${a.id}'),80)" style="background:none;border:none;cursor:pointer;color:#1e293b;font-weight:500;font-size:13px;font-family:inherit;padding:0;text-align:left;transition:color .15s" onmouseenter="this.style.color='#2F80ED';this.style.textDecoration='underline'" onmouseleave="this.style.color='#1e293b';this.style.textDecoration='none'">${escHtml(a.name)}</button>
       </div>
       <span class="mono" style="color:${a.balance>=0?'#22C55E':'#ef4444'}">${fmt(a.balance)}</span>
     </div>`).join('');
@@ -6587,7 +6601,7 @@ function openLancFilters(){
         <!-- Descrição -->
         <div>
           <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Descrição ou referência</label>
-          <input type="text" id="lf-desc" value="${f.desc}" class="inp" style="font-size:${fieldFs}" placeholder="Informe a descrição ou referência">
+          <input type="text" id="lf-desc" value="${escHtml(f.desc)}" class="inp" style="font-size:${fieldFs}" placeholder="Informe a descrição ou referência">
         </div>
 
         <!-- Cliente/Fornecedor -->
@@ -6954,7 +6968,7 @@ async function estornarLanc(id, type){
   confirmDelete({
     icon:'↩️',
     title:`Estornar ${label}?`,
-    desc:`O ${label} de <strong>${fmt(item.value)}</strong> — <em>${item.desc}</em> — voltará para pendente e o saldo da conta será ajustado.`,
+    desc:`O ${label} de <strong>${fmt(item.value)}</strong> — <em>${escHtml(item.desc)}</em> — voltará para pendente e o saldo da conta será ajustado.`,
     onConfirm: async ()=>{
       const accId = item.accountId;
       item.done=false; item.doneDate=null; item.accountId=null;
@@ -7128,8 +7142,8 @@ function exportLancXLS(){
 function exportLancPDF(){
   const list=getLancItems();
   if(!list.length){toast('Nenhum dado para exportar','info');return;}
-  const emp=S.empresa?.nome||'MonBluu';
-  const cnpj=S.empresa?.doc||'';
+  const emp=escHtml(S.empresa?.nome||'MonBluu');
+  const cnpj=escHtml(S.empresa?.doc||'');
   const isInc=S.lancTab==='income';
   const tabLabel=isInc?'Contas a Receber':'Contas a Pagar';
   const df=$('lancDateFrom')?.value||'', dt=$('lancDateTo')?.value||'';
@@ -7148,10 +7162,10 @@ function exportLancPDF(){
     const sBg=x.done?'#f0fdf4':x.dueDate<today()?'#fff1f2':'#eff6ff';
     return `<tr>
       <td>${fmtD(x.dueDate)}</td>
-      <td style="font-weight:500;color:#1e293b">${x.desc||'—'}</td>
-      <td style="color:#64748b">${peer?.name||'—'}</td>
-      <td>${cat?`<span style="background:${cat.color}22;color:${cat.color};padding:2px 7px;border-radius:8px;font-size:10px;font-weight:600">${cat.name}</span>`:'—'}</td>
-      <td style="color:#64748b">${acc?.name||'—'}</td>
+      <td style="font-weight:500;color:#1e293b">${escHtml(x.desc||'—')}</td>
+      <td style="color:#64748b">${escHtml(peer?.name||'—')}</td>
+      <td>${cat?`<span style="background:${cat.color}22;color:${cat.color};padding:2px 7px;border-radius:8px;font-size:10px;font-weight:600">${escHtml(cat.name)}</span>`:'—'}</td>
+      <td style="color:#64748b">${escHtml(acc?.name||'—')}</td>
       <td style="text-align:center"><span style="background:${sBg};color:${sColor};padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700">${status}</span></td>
       <td style="text-align:right;font-weight:700;color:${color};font-family:monospace">${fmt(x.value)}</td>
     </tr>`;
@@ -7594,8 +7608,8 @@ function renderCashflowChartMonthlyFiltered(recv, pay){
 }
 
 function exportRelPDF(){
-  const emp  = S.empresa?.nome || 'MonBluu';
-  const cnpj = S.empresa?.doc  || '';
+  const emp  = escHtml(S.empresa?.nome || 'MonBluu');
+  const cnpj = escHtml(S.empresa?.doc  || '');
   const fFrom = $('relFilterFrom')?.value || '';
   const fTo   = $('relFilterTo')?.value   || '';
   const fType   = $('relFilterType')?.value   || '';
@@ -7652,9 +7666,9 @@ function exportRelPDF(){
     const statusBg    = x.done ? '#f0fdf4'  : isOverdue(x) ? '#fff1f2' : '#eff6ff';
     return `<tr>
       <td>${fmtDate(x.dueDate||x.doneDate)}</td>
-      <td style="font-weight:500;color:#1e293b">${x.desc||'—'}</td>
-      <td>${cat?`<span style="background:${cat.color}22;color:${cat.color};padding:2px 7px;border-radius:8px;font-size:10px;font-weight:600">${cat.name}</span>`:'—'}</td>
-      <td style="color:#64748b">${acc?.name||'—'}</td>
+      <td style="font-weight:500;color:#1e293b">${escHtml(x.desc||'—')}</td>
+      <td>${cat?`<span style="background:${cat.color}22;color:${cat.color};padding:2px 7px;border-radius:8px;font-size:10px;font-weight:600">${escHtml(cat.name)}</span>`:'—'}</td>
+      <td style="color:#64748b">${escHtml(acc?.name||'—')}</td>
       <td style="text-align:center"><span style="background:${statusBg};color:${statusColor};padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700">${statusLabel}</span></td>
       <td style="text-align:right;font-weight:700;color:${isInc?'#22C55E':'#ef4444'};font-family:monospace">${isInc?'+':'-'} ${fmt(x.value)}</td>
     </tr>`;
@@ -8108,8 +8122,8 @@ function exportCashflowPDF(){
   const yr = S.cfYear;
   const visao = document.querySelector('input[name="cfVisao"]:checked')?.value || 'realizado';
   const visaoLabel = visao==='realizado' ? 'Realizado' : 'Realizado x Agendado';
-  const emp = S.empresa?.nome || 'MonBluu';
-  const cnpj = S.empresa?.doc || '';
+  const emp = escHtml(S.empresa?.nome || 'MonBluu');
+  const cnpj = escHtml(S.empresa?.doc || '');
   const rows = _cfBuildRows(yr);
 
   const fmtCell = (v, isPercent) => {
@@ -8191,11 +8205,11 @@ function contactRow(x, accentColor, deleteType){
   const desktopRow = `<div class="contact-desktop-row" style="display:grid;grid-template-columns:1fr 220px 160px 160px 120px 76px;padding:12px 16px;border-bottom:1px solid #f1f5f9;align-items:center;font-size:13px;transition:background .1s;opacity:${isActive?1:.7}" onmouseenter="this.style.background='#f8fafc'" onmouseleave="this.style.background=''">
     <div style="display:flex;align-items:center;gap:10px">
       <div style="width:34px;height:34px;border-radius:50%;background:${avatarBg};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:${avatarColor};flex-shrink:0">${(x.name||'?')[0].toUpperCase()}</div>
-      <div><div style="font-weight:600;color:${nameColor}">${x.name}${inactiveBadge}</div>${x.doc?`<div style="font-size:11px;color:#94a3b8">${x.doc}</div>`:''}</div>
+      <div><div style="font-weight:600;color:${nameColor}">${escHtml(x.name)}${inactiveBadge}</div>${x.doc?`<div style="font-size:11px;color:#94a3b8">${escHtml(x.doc)}</div>`:''}</div>
     </div>
-    <span style="color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${x.email||'—'}</span>
-    <span style="color:#64748b">${x.phone||'—'}</span>
-    <span style="color:#64748b;font-size:11px">${x.doc||'—'}</span>
+    <span style="color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(x.email||'—')}</span>
+    <span style="color:#64748b">${escHtml(x.phone||'—')}</span>
+    <span style="color:#64748b;font-size:11px">${escHtml(x.doc||'—')}</span>
     <span style="background:${badgeColor.bg};color:${badgeColor.text};border:1px solid ${badgeColor.border};border-radius:20px;padding:3px 10px;font-size:10px;font-weight:700;white-space:nowrap;display:inline-block">${pessoa}</span>
     <div style="display:flex;align-items:center;gap:4px">
       <button onclick="toggleContactActive('${deleteType}','${x.id}')" style="background:none;border:none;cursor:pointer;color:${toggleColor};font-size:13px;padding:4px;border-radius:6px;transition:.1s" title="${toggleTitle}">${toggleIcon}</button>
@@ -8207,11 +8221,11 @@ function contactRow(x, accentColor, deleteType){
     <div class="ccm-avatar" style="background:${avatarBg};color:${avatarColor}">${(x.name||'?')[0].toUpperCase()}</div>
     <div class="ccm-info">
       <div class="ccm-name" style="color:${nameColor}">
-        ${x.name}
+        ${escHtml(x.name)}
         ${inactiveBadge}
         <span class="ccm-badge" style="background:${badgeColor.bg};color:${badgeColor.text}">${pessoa}</span>
       </div>
-      <div class="ccm-sub">${subLine}</div>
+      <div class="ccm-sub">${escHtml(subLine)}</div>
     </div>
     <div class="ccm-actions">
       <button class="ccm-action-btn" onclick="toggleContactActive('${deleteType}','${x.id}')" style="color:${toggleColor}" title="${toggleTitle}">${toggleIcon}</button>
@@ -8649,8 +8663,9 @@ function exportExtratoXLS(){
 function exportExtratoPDF(){
   const acc=S.accounts.find(a=>a.id===S.extratoAccountId);
   if(!acc){toast('Nenhuma conta selecionada','error');return;}
-  const emp=S.empresa?.nome||'MonBluu';
-  const cnpj=S.empresa?.doc||'';
+  const emp=escHtml(S.empresa?.nome||'MonBluu');
+  const cnpj=escHtml(S.empresa?.doc||'');
+  const accNameSafe=escHtml(acc.name);
   const yr=S.extratoYear, mo=S.extratoMonth;
   const mesLabel=new Date(yr,mo,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
   const {entries,bal:startBal}=_getExtratoEntries(acc);
@@ -8663,8 +8678,8 @@ function exportExtratoPDF(){
     const balColor=running>=0?'#1e293b':'#ef4444';
     return `<tr>
       <td>${e.date.toLocaleDateString('pt-BR')}</td>
-      <td style="font-weight:500;color:#1e293b">${e.label}</td>
-      <td style="color:#64748b">${e.desc||'—'}</td>
+      <td style="font-weight:500;color:#1e293b">${escHtml(e.label||'—')}</td>
+      <td style="color:#64748b">${escHtml(e.desc||'—')}</td>
       <td style="text-align:right;color:#22C55E;font-family:monospace;font-weight:600">${e.entrada>0?fmt(e.entrada):''}</td>
       <td style="text-align:right;color:#ef4444;font-family:monospace;font-weight:600">${e.saida>0?fmt(e.saida):''}</td>
       <td style="text-align:right;font-family:monospace;font-weight:700;color:${balColor}">${fmt(running)}</td>
@@ -8674,7 +8689,7 @@ function exportExtratoPDF(){
   const totalSaidas=entries.filter(e=>!e.isSaldo).reduce((s,e)=>s+e.saida,0);
   const win=window.open('','_blank');
   win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
-  <title>Extrato — ${acc.name}</title>
+  <title>Extrato — ${accNameSafe}</title>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:'Segoe UI',sans-serif;background:#f8fafc;color:#1e293b;padding:32px}
@@ -8708,7 +8723,7 @@ function exportExtratoPDF(){
     <div class="header-right">
       <div class="gen-date">Gerado em ${new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})}</div>
       <div class="periodo-label">Conta / Período</div>
-      <div class="periodo-box">${acc.name} — ${mesLabel}</div>
+      <div class="periodo-box">${accNameSafe} — ${mesLabel}</div>
     </div>
   </div>
   <div class="kpis">
@@ -8818,7 +8833,7 @@ function renderConciliacoesList(){
     const nm=c.name.length>14?c.name.substring(0,14)+'…':c.name;
     return `<div style="display:grid;grid-template-columns:22px 1fr 72px 72px 28px;align-items:center;padding:8px 0;border-bottom:1px solid #f8fafc;gap:4px;font-size:12px">
       <input type="radio" name="concRadio" style="accent-color:#3b82f6;cursor:pointer" onclick="openConciliacao('${c.id}')">
-      <button onclick="openConciliacao('${c.id}')" style="background:none;border:none;cursor:pointer;color:#3b82f6;font-weight:600;font-size:11px;font-family:inherit;padding:0;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.name}">${nm}</button>
+      <button onclick="openConciliacao('${c.id}')" style="background:none;border:none;cursor:pointer;color:#3b82f6;font-weight:600;font-size:11px;font-family:inherit;padding:0;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(c.name)}">${escHtml(nm)}</button>
       <span style="color:#64748b;font-size:10px">${ds}</span>
       <span style="color:#64748b;font-size:10px">${de}</span>
       <button onclick="deleteConc('${c.id}')" style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:15px;padding:0" title="Excluir">🗑</button>
@@ -9086,7 +9101,7 @@ function showContactBlockedModal(type, id){
       <div style="font-size:40px;margin-bottom:12px">⚠️</div>
       <div style="font-size:17px;font-weight:700;color:#f1f5f9;margin-bottom:10px">Não é possível excluir</div>
       <div style="font-size:13px;color:#94a3b8;margin-bottom:16px">
-        O ${label} <strong style="color:#e2e8f0">${nome}</strong> possui <strong style="color:#e2e8f0">${lancLabel}</strong> vinculados e não pode ser excluído.
+        O ${label} <strong style="color:#e2e8f0">${escHtml(nome)}</strong> possui <strong style="color:#e2e8f0">${lancLabel}</strong> vinculados e não pode ser excluído.
       </div>
       <div style="background:#0f172a;border-radius:10px;padding:14px 16px;margin-bottom:20px;text-align:left;font-size:12px;color:#64748b">
         Você pode <strong style="color:#e2e8f0">inativar</strong> este ${label} para que ele não apareça nos relatórios e seleções, mas os lançamentos vinculados serão mantidos.
@@ -9491,7 +9506,7 @@ function confirmDeleteCat(type, id, name){
         </div>
         <div>
           <div style="font-size:15px;font-weight:700;color:#1E293B">Excluir categoria de ${typeLabel}?</div>
-          <div style="font-size:13px;color:#64748b;margin-top:4px">Você está prestes a excluir <strong style="color:#1E293B">"${name}"</strong>.</div>
+          <div style="font-size:13px;color:#64748b;margin-top:4px">Você está prestes a excluir <strong style="color:#1E293B">"${escHtml(name)}"</strong>.</div>
         </div>
       </div>
       <!-- Warning box -->
@@ -11331,7 +11346,7 @@ async function loadData() {
     refresh();
     populateSelects();
   } catch(e) {
-    console.error('Erro ao carregar dados:', e);
+    console.error('Erro ao carregar dados:', e?.message || e?.code || 'erro desconhecido');
     refresh();
   }
 }
@@ -11341,30 +11356,30 @@ async function sbSaveProfile(data) {
   if (!_currentUser) return;
   const { error } = await _sb.from('profiles')
     .upsert({ user_id: _currentUser.id, ...data }, { onConflict: 'user_id' });
-  if (error) console.error('Erro ao salvar perfil:', error);
+  if (error) console.error('Erro ao salvar perfil:', error?.message || error?.code);
 }
 async function sbLoadProfile() {
   if (!_currentUser) return null;
   const { data, error } = await _sb.from('profiles')
     .select('*').eq('user_id', _currentUser.id).single();
-  if (error && error.code !== 'PGRST116') console.error('Erro ao carregar perfil:', error);
+  if (error && error.code !== 'PGRST116') console.error('Erro ao carregar perfil:', error?.message || error?.code);
   return data || null;
 }
 async function sbInsert(table, row) {
   if (!_currentUser) return null;
   const { data, error } = await _sb.from(table).insert({ ...row, user_id: _currentUser.id }).select().single();
-  if (error) { console.error('Erro ao salvar:', error); toast('Erro ao salvar no banco', 'error'); return null; }
+  if (error) { console.error('Erro ao salvar:', error?.message || error?.code); toast('Erro ao salvar no banco', 'error'); return null; }
   return data;
 }
 async function sbUpdate(table, id, changes) {
   if (!_currentUser) return;
   const { error } = await _sb.from(table).update(changes).eq('id', id).eq('user_id', _currentUser.id);
-  if (error) console.error('Erro ao atualizar:', error);
+  if (error) console.error('Erro ao atualizar:', error?.message || error?.code);
 }
 async function sbDelete(table, id) {
   if (!_currentUser) return { success: false, error: 'Sem usuário' };
   const { error } = await _sb.from(table).delete().eq('id', id).eq('user_id', _currentUser.id);
-  if (error) { console.error('Erro ao excluir:', error); return { success: false, error }; }
+  if (error) { console.error('Erro ao excluir:', error?.message || error?.code); return { success: false, error }; }
   return { success: true };
 }
 
