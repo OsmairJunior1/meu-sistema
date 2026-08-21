@@ -11599,7 +11599,7 @@ async function sbDelete(table, id) {
 async function showApp(user) {
   _currentUser = user;
   document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('app').style.display = 'flex';
+  // App só aparece depois de dados carregados e navegação decidida (evita flash de tela errada)
   // Sempre inicia no mês atual ao entrar no sistema
   (function(){
     const now = new Date();
@@ -11631,6 +11631,7 @@ async function showApp(user) {
   }catch(e){}
   S._lastCfgSection = lastCfg;
   navigate(lastPage);
+  document.getElementById('app').style.display = 'flex';
   // Auto-start tour on first login
   try{ if(!localStorage.getItem('monbluu-tour-done')) setTimeout(startTour, 800); }catch(e){}
 }
