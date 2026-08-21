@@ -3322,6 +3322,10 @@ textarea.inp{min-height:80px;resize:vertical}
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="3.5" width="12" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M1 6.5h12" stroke="currentColor" stroke-width="1.4"/><circle cx="4" cy="9" r=".9" fill="currentColor"/></svg>
           Contas Bancárias
         </button>
+        <button class="cfg-nav" id="cfgNav-cartoes" onclick="setCfgSection('cartoes')">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1.5" y="3" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 6h12" stroke="currentColor" stroke-width="1.3"/></svg>
+          Operadoras de Cartão
+        </button>
         <button class="cfg-nav" id="cfgNav-centros" onclick="setCfgSection('centros')">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.4"/><path d="M7 4v3l2 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
           Centros de Custo
@@ -9265,6 +9269,7 @@ function setCfgSection(sec){
   if(sec==='categorias') { c.innerHTML = cfgCategoriasHTML(); bindCfgCatSearch(); }
   if(sec==='contas')    { c.innerHTML = cfgContasHTML(); }
   if(sec==='centros')   { c.innerHTML = cfgCentrosHTML(); }
+  if(sec==='cartoes')   { c.innerHTML = cfgCartoesHTML(); }
 }
 
 function cfgEmpresaHTML(){
@@ -9578,6 +9583,130 @@ function cfgContasHTML(){
     </div>
     ${rows}
   </div>`;
+}
+
+function cfgCartoesHTML(){
+  const ops = S.operadoras||[];
+  const rows = ops.length ? ops.map(o=>{
+    const acc = S.accounts.find(a=>a.id===o.conta_destino_id);
+    return `
+    <div style="display:grid;grid-template-columns:1fr 80px 80px 90px 1fr 90px;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f4f6f9;font-size:12px">
+      <span style="font-weight:600;color:var(--text)">${o.nome}</span>
+      <span>${o.taxa_debito||0}%</span>
+      <span>${o.taxa_credito||0}%</span>
+      <span>D+${o.prazo_credito_dias||0}</span>
+      <span style="color:#64748b">${acc?acc.name:'—'}</span>
+      <span style="display:flex;gap:4px;align-items:center;justify-content:flex-end">
+        ${o.padrao_debito?'<span title="Padrão Débito" style="font-size:10px;font-weight:700;background:#EFF6FF;color:#2563EB;padding:2px 6px;border-radius:10px">Déb</span>':''}
+        ${o.padrao_credito?'<span title="Padrão Crédito" style="font-size:10px;font-weight:700;background:#F0FDF4;color:#15803D;padding:2px 6px;border-radius:10px">Créd</span>':''}
+        <button onclick="openOperadoraModal('${o.id}')" style="background:none;border:none;cursor:pointer;color:#94a3b8;padding:4px" title="Editar">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M9 1.5l2.5 2.5L4 11.5H1.5V9L9 1.5z" stroke="currentColor" stroke-width="1.2"/></svg>
+        </button>
+        <button onclick="deleteOperadora('${o.id}')" style="background:none;border:none;cursor:pointer;color:#94a3b8;padding:4px" title="Excluir">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 3h9M5 3V2h3v1M3.5 3l.5 8h5l.5-8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </span>
+    </div>`;
+  }).join('')
+  : `<div style="padding:32px 0;text-align:center;color:#94a3b8;font-size:12px">Nenhuma operadora cadastrada</div>`;
+  return `
+  <div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div>
+        <div style="font-size:14px;font-weight:700;color:var(--text)">Operadoras de Cartão</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">Cadastre suas maquininhas com taxas e prazos de recebimento</div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="openOperadoraModal()">+ Adicionar</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 80px 80px 90px 1fr 90px;gap:10px;padding:4px 0;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;border-bottom:1px solid var(--border);margin-bottom:2px">
+      <span>Operadora</span><span>Taxa Déb.</span><span>Taxa Créd.</span><span>Prazo</span><span>Conta destino</span><span></span>
+    </div>
+    ${rows}
+  </div>
+  <div id="modal-operadora" class="modal-overlay" style="display:none">
+    <div class="modal-box" style="max-width:420px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div style="font-size:15px;font-weight:800;color:var(--text)" id="opModalTitle">Nova Operadora</div>
+        <button onclick="closeOperadoraModal()" style="background:none;border:none;cursor:pointer;color:#94a3b8">✕</button>
+      </div>
+      <input type="hidden" id="opId">
+      <div style="display:flex;flex-direction:column;gap:13px">
+        <div class="form-group"><label class="fl">Nome da operadora</label><input id="opNome" class="inp" placeholder="Ex: Stone, Cielo, Rede..."></div>
+        <div class="form-row">
+          <div class="form-group"><label class="fl">Taxa Débito (%)</label><input id="opTaxaDeb" class="inp" type="number" step="0.01" placeholder="0,00"></div>
+          <div class="form-group"><label class="fl">Taxa Crédito (%)</label><input id="opTaxaCred" class="inp" type="number" step="0.01" placeholder="0,00"></div>
+        </div>
+        <div class="form-group"><label class="fl">Prazo de recebimento no crédito (dias)</label><input id="opPrazo" class="inp" type="number" placeholder="Ex: 30"></div>
+        <div class="form-group"><label class="fl">Conta de destino</label><select id="opConta" class="inp">${opts(S.accounts,'Selecione a conta...')}</select></div>
+        <div style="display:flex;gap:20px;padding-top:4px">
+          <label style="display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--text);cursor:pointer"><input type="checkbox" id="opPadraoDeb" style="width:15px;height:15px"> Padrão para Débito</label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--text);cursor:pointer"><input type="checkbox" id="opPadraoCred" style="width:15px;height:15px"> Padrão para Crédito</label>
+        </div>
+        <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="saveOperadora()">Salvar Operadora</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function openOperadoraModal(id){
+  const o = id ? (S.operadoras||[]).find(x=>x.id===id) : null;
+  $('opModalTitle').textContent = o ? 'Editar Operadora' : 'Nova Operadora';
+  $('opId').value = o?.id||'';
+  $('opNome').value = o?.nome||'';
+  $('opTaxaDeb').value = o?.taxa_debito||'';
+  $('opTaxaCred').value = o?.taxa_credito||'';
+  $('opPrazo').value = o?.prazo_credito_dias||'';
+  $('opConta').value = o?.conta_destino_id||'';
+  $('opPadraoDeb').checked = !!o?.padrao_debito;
+  $('opPadraoCred').checked = !!o?.padrao_credito;
+  $('modal-operadora').style.display='flex';
+}
+function closeOperadoraModal(){ $('modal-operadora').style.display='none'; }
+
+async function saveOperadora(){
+  const nome = $('opNome').value.trim();
+  if(!nome){ toast('Informe o nome da operadora','error'); return; }
+  const id = $('opId').value;
+  const payload = {
+    nome,
+    taxa_debito: parseFloat($('opTaxaDeb').value)||0,
+    taxa_credito: parseFloat($('opTaxaCred').value)||0,
+    prazo_credito_dias: parseInt($('opPrazo').value)||0,
+    conta_destino_id: $('opConta').value||null,
+    padrao_debito: $('opPadraoDeb').checked,
+    padrao_credito: $('opPadraoCred').checked
+  };
+  S.operadoras = S.operadoras||[];
+  // Only one operadora can be default per type — unset others locally, then persist
+  if(payload.padrao_debito) S.operadoras.forEach(o=>{ if(o.id!==id) o.padrao_debito=false; });
+  if(payload.padrao_credito) S.operadoras.forEach(o=>{ if(o.id!==id) o.padrao_credito=false; });
+
+  if(id){
+    await sbUpdate('operadoras_cartao', id, payload);
+    S.operadoras = S.operadoras.map(o=>o.id===id?{...o,...payload}:o);
+  } else {
+    const saved = await sbInsert('operadoras_cartao', payload);
+    if(!saved) return;
+    S.operadoras.push({id:saved.id, ...payload});
+  }
+  // Persist "unset default" for any other operadora that lost its default flag
+  for(const o of S.operadoras){
+    if(o.id!==id && ((payload.padrao_debito&&o.padrao_debito===false)||(payload.padrao_credito&&o.padrao_credito===false))){
+      await sbUpdate('operadoras_cartao', o.id, {padrao_debito:o.padrao_debito, padrao_credito:o.padrao_credito});
+    }
+  }
+  toast('Operadora salva! 💳');
+  closeOperadoraModal();
+  setCfgSection('cartoes');
+}
+
+async function deleteOperadora(id){
+  if(!confirm('Excluir esta operadora?')) return;
+  const res = await sbDelete('operadoras_cartao', id);
+  if(!res.success){ toast('Erro ao excluir','error'); return; }
+  S.operadoras = (S.operadoras||[]).filter(o=>o.id!==id);
+  toast('Operadora excluída');
+  setCfgSection('cartoes');
 }
 
 function cfgCentrosHTML(){
@@ -11269,13 +11398,25 @@ async function loadData() {
   if (!_currentUser) return;
   const uid = _currentUser.id;
   try {
-    const [accRes, txRes, trRes, ctRes, profileRes] = await Promise.all([
+    const [accRes, txRes, trRes, ctRes, profileRes, opRes] = await Promise.all([
       _sb.from('accounts').select('*').eq('user_id', uid),
       _sb.from('transactions').select('*').eq('user_id', uid),
       _sb.from('transfers').select('*').eq('user_id', uid),
       _sb.from('contacts').select('*').eq('user_id', uid),
       _sb.from('profiles').select('*').eq('user_id', uid).limit(1).maybeSingle(),
+      _sb.from('operadoras_cartao').select('*').eq('user_id', uid),
     ]);
+
+    // Operadoras de cartão
+    S.operadoras = (opRes.data || []).map(o => ({
+      id: o.id, nome: o.nome,
+      taxa_debito: parseFloat(o.taxa_debito)||0,
+      taxa_credito: parseFloat(o.taxa_credito)||0,
+      prazo_credito_dias: o.prazo_credito_dias||0,
+      conta_destino_id: o.conta_destino_id,
+      padrao_debito: !!o.padrao_debito,
+      padrao_credito: !!o.padrao_credito
+    }));
 
     // Contas bancárias
     S.accounts = (accRes.data || []).map(a => ({
