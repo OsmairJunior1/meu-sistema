@@ -3340,6 +3340,34 @@ textarea.inp{min-height:80px;resize:vertical}
 <!-- ═══ MODALS ═══ -->
 
 <!-- Account Modal -->
+<div id="modal-operadora" class="modal-overlay" style="display:none;z-index:700">
+  <div class="modal-box" style="max-width:420px;padding:24px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div style="font-size:15px;font-weight:800;color:var(--text)" id="opModalTitle">Nova Operadora</div>
+      <button onclick="closeOperadoraModal()" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:16px">✕</button>
+    </div>
+    <input type="hidden" id="opId">
+    <div style="display:flex;flex-direction:column;gap:13px">
+      <div class="form-group"><label class="fl">Nome da operadora</label><input id="opNome" class="inp" placeholder="Ex: Stone, Cielo, Rede..."></div>
+      <div class="form-row">
+        <div class="form-group"><label class="fl">Taxa Débito (%)</label><input id="opTaxaDeb" class="inp" type="number" step="0.01" placeholder="0,00"></div>
+        <div class="form-group"><label class="fl">Taxa Crédito (%)</label><input id="opTaxaCred" class="inp" type="number" step="0.01" placeholder="0,00"></div>
+      </div>
+      <div class="form-group"><label class="fl">Prazo de recebimento no crédito (dias)</label><input id="opPrazo" class="inp" type="number" placeholder="Ex: 30"></div>
+      <div class="form-group"><label class="fl">Conta de destino</label><select id="opConta" class="inp"><option value="">Selecione a conta...</option></select></div>
+      <div style="display:flex;gap:20px;padding-top:4px">
+        <label style="display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--text);cursor:pointer"><input type="checkbox" id="opPadraoDeb" style="width:15px;height:15px"> Padrão para Débito</label>
+        <label style="display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--text);cursor:pointer"><input type="checkbox" id="opPadraoCred" style="width:15px;height:15px"> Padrão para Crédito</label>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn" style="flex:1;background:none;border:1px solid var(--border);color:var(--text)" onclick="closeOperadoraModal()">Cancelar</button>
+        <button class="btn" style="flex:1;background:#EFF6FF;color:var(--primary);border:1px solid #DBEAFE" onclick="saveOperadora(true)">Salvar e continuar</button>
+        <button class="btn btn-primary" style="flex:1" onclick="saveOperadora(false)">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="modal-account" class="modal-overlay" style="display:none">
   <div class="modal-box modal-narrow">
     <div class="modal-header" style="border-bottom:3px solid #3b82f6">
@@ -9622,35 +9650,13 @@ function cfgCartoesHTML(){
       <span>Operadora</span><span>Taxa Déb.</span><span>Taxa Créd.</span><span>Prazo</span><span>Conta destino</span><span></span>
     </div>
     ${rows}
-  </div>
-  <div id="modal-operadora" class="modal-overlay" style="display:none">
-    <div class="modal-box" style="max-width:420px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-        <div style="font-size:15px;font-weight:800;color:var(--text)" id="opModalTitle">Nova Operadora</div>
-        <button onclick="closeOperadoraModal()" style="background:none;border:none;cursor:pointer;color:#94a3b8">✕</button>
-      </div>
-      <input type="hidden" id="opId">
-      <div style="display:flex;flex-direction:column;gap:13px">
-        <div class="form-group"><label class="fl">Nome da operadora</label><input id="opNome" class="inp" placeholder="Ex: Stone, Cielo, Rede..."></div>
-        <div class="form-row">
-          <div class="form-group"><label class="fl">Taxa Débito (%)</label><input id="opTaxaDeb" class="inp" type="number" step="0.01" placeholder="0,00"></div>
-          <div class="form-group"><label class="fl">Taxa Crédito (%)</label><input id="opTaxaCred" class="inp" type="number" step="0.01" placeholder="0,00"></div>
-        </div>
-        <div class="form-group"><label class="fl">Prazo de recebimento no crédito (dias)</label><input id="opPrazo" class="inp" type="number" placeholder="Ex: 30"></div>
-        <div class="form-group"><label class="fl">Conta de destino</label><select id="opConta" class="inp"><option value="">Selecione a conta...</option>${S.accounts.map(a=>`<option value="${a.id}">${a.name}</option>`).join('')}</select></div>
-        <div style="display:flex;gap:20px;padding-top:4px">
-          <label style="display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--text);cursor:pointer"><input type="checkbox" id="opPadraoDeb" style="width:15px;height:15px"> Padrão para Débito</label>
-          <label style="display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--text);cursor:pointer"><input type="checkbox" id="opPadraoCred" style="width:15px;height:15px"> Padrão para Crédito</label>
-        </div>
-        <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="saveOperadora()">Salvar Operadora</button>
-      </div>
-    </div>
   </div>`;
 }
 
 function openOperadoraModal(id){
   const o = id ? (S.operadoras||[]).find(x=>x.id===id) : null;
   $('opModalTitle').textContent = o ? 'Editar Operadora' : 'Nova Operadora';
+  $('opConta').innerHTML = '<option value="">Selecione a conta...</option>'+S.accounts.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
   $('opId').value = o?.id||'';
   $('opNome').value = o?.nome||'';
   $('opTaxaDeb').value = o?.taxa_debito||'';
@@ -9663,7 +9669,7 @@ function openOperadoraModal(id){
 }
 function closeOperadoraModal(){ $('modal-operadora').style.display='none'; }
 
-async function saveOperadora(){
+async function saveOperadora(keepOpen){
   const nome = $('opNome').value.trim();
   if(!nome){ toast('Informe o nome da operadora','error'); return; }
   const id = $('opId').value;
@@ -9696,8 +9702,16 @@ async function saveOperadora(){
     }
   }
   toast('Operadora salva! 💳');
-  closeOperadoraModal();
-  setCfgSection('cartoes');
+  if(keepOpen){
+    // Limpa o formulário para incluir a próxima, sem fechar o modal
+    $('opId').value=''; $('opNome').value=''; $('opTaxaDeb').value=''; $('opTaxaCred').value='';
+    $('opPrazo').value=''; $('opConta').value=''; $('opPadraoDeb').checked=false; $('opPadraoCred').checked=false;
+    $('opModalTitle').textContent='Nova Operadora';
+    $('opNome').focus();
+  } else {
+    closeOperadoraModal();
+  }
+  if(S.currentPage==='configuracoes' || document.getElementById('cfgContent')) setCfgSection('cartoes');
 }
 
 async function deleteOperadora(id){
