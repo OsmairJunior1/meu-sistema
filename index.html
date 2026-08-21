@@ -4300,7 +4300,7 @@ function closeModal(name){
   if(!document.querySelector('.modal-overlay[style*="flex"]')) document.body.classList.remove('modal-open');
 }
 document.querySelectorAll('.modal-overlay').forEach(m=>{
-  m.addEventListener('click',e=>{ if(e.target===m){ const name=m.id.replace('modal-',''); closeModal(name); } });
+  m.addEventListener('click',e=>{ if(e.target===m && m.id!=='modal-operadora'){ const name=m.id.replace('modal-',''); closeModal(name); } });
 });
 
 // ─── MODAL TABS ───────────────────────────────────────────
