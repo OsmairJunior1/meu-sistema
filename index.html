@@ -4251,6 +4251,7 @@ function navigate(page){
   if(page==='orcamento')initOrcamento();
   if(page==='precificacao')initPrecificacao();
   if(page==='config'){ setCfgSection(S._lastCfgSection||'empresa'); if(isMobile()){$('cfg-mobile-warn').style.display='flex';$('cfg-desktop-body').style.display='none';}else{$('cfg-mobile-warn').style.display='none';$('cfg-desktop-body').style.display='flex';} }
+  try{ localStorage.setItem('monbluu-lastpage', page); }catch(e){}
 }
 
 function isMobile(){ return window.innerWidth <= 600; }
@@ -9294,6 +9295,7 @@ function closeSettingsModal(){ navigate('dashboard'); }
 
 function setCfgSection(sec){
   S._lastCfgSection = sec;
+  try{ localStorage.setItem('monbluu-lastcfg', sec); }catch(e){}
   document.querySelectorAll('.cfg-nav').forEach(b=>b.classList.remove('active'));
   const btn = $('cfgNav-'+sec);
   if(btn) btn.classList.add('active');
@@ -11621,8 +11623,14 @@ async function showApp(user) {
   // Carrega os dados do banco
   await loadUserPlan();
   await loadData();
-  // Sempre abre no Painel ao entrar
-  navigate('dashboard');
+  // Volta para a última página visitada (sobrevive a F5); só vai ao Painel se não houver histórico
+  let lastPage='dashboard', lastCfg='empresa';
+  try{
+    lastPage = localStorage.getItem('monbluu-lastpage') || 'dashboard';
+    lastCfg  = localStorage.getItem('monbluu-lastcfg') || 'empresa';
+  }catch(e){}
+  S._lastCfgSection = lastCfg;
+  navigate(lastPage);
   // Auto-start tour on first login
   try{ if(!localStorage.getItem('monbluu-tour-done')) setTimeout(startTour, 800); }catch(e){}
 }
