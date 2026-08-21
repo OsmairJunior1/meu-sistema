@@ -4300,7 +4300,7 @@ function closeModal(name){
   if(!document.querySelector('.modal-overlay[style*="flex"]')) document.body.classList.remove('modal-open');
 }
 document.querySelectorAll('.modal-overlay').forEach(m=>{
-  m.addEventListener('click',e=>{ if(e.target===m && m.id!=='modal-operadora'){ const name=m.id.replace('modal-',''); closeModal(name); } });
+  m.addEventListener('click',e=>{ /* clique fora não fecha mais o modal — só os botões próprios fecham */ });
 });
 
 // ─── MODAL TABS ───────────────────────────────────────────
@@ -6671,7 +6671,7 @@ function openLancFilters(){
       </div>
     </div>`;
   document.body.appendChild(modal);
-  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+  modal.addEventListener('click',e=>{ /* clique fora não fecha mais */ });
 }
 
 function applyLancFilters(){
@@ -6751,7 +6751,7 @@ function openLancColEditor(){
       </div>
     </div>`;
   document.body.appendChild(modal);
-  modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
+  modal.addEventListener('click', e => { /* clique fora não fecha mais */ });
   modal._visible = visible;
   modal._hidden  = hidden;
   lcolRenderLists();
@@ -6864,7 +6864,7 @@ function deleteLanc(id, type){
       </div>`;
 
     document.body.appendChild(overlay);
-    overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
+    overlay.addEventListener('click', e=>{ /* clique fora não fecha mais */ });
 
     // Realçar opção selecionada ao trocar
     overlay.querySelectorAll('input[name="delrec-scope"]').forEach(r=>{
@@ -9151,7 +9151,7 @@ function showContactBlockedModal(type, id){
     </div>
   `;
   document.body.appendChild(modal);
-  modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
+  modal.addEventListener('click', e => { /* clique fora não fecha mais */ });
 }
 
 async function deleteItem(key, id){
@@ -9241,7 +9241,7 @@ function showDeleteBlockedModal(nomeConta){
     </div>
   `;
   document.body.appendChild(modal);
-  modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
+  modal.addEventListener('click', e => { /* clique fora não fecha mais */ });
 }
 
 // ── CONFIRMAÇÃO DUPLA CENTRALIZADA ─────────────────────
@@ -9286,7 +9286,7 @@ function openSettingsModal(){
 function closeSettingsModal(){
   $('modal-settings').style.display='none';
 }
-$('modal-settings').addEventListener('click', e=>{ if(e.target===$('modal-settings')) closeSettingsModal(); });
+$('modal-settings').addEventListener('click', e=>{ /* clique fora não fecha mais */ });
 
 function setCfgSection(sec){
   document.querySelectorAll('.cfg-nav').forEach(b=>b.classList.remove('active'));
@@ -9565,7 +9565,7 @@ function confirmDeleteCat(type, id, name){
     </div>`;
 
   document.body.appendChild(overlay);
-  overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
+  overlay.addEventListener('click', e=>{ /* clique fora não fecha mais */ });
   setTimeout(()=>{ const inp=document.getElementById('cfgDeleteCatConfirmInput'); if(inp) inp.focus(); }, 50);
 }
 
