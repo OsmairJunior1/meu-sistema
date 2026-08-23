@@ -3496,6 +3496,18 @@ textarea.inp{min-height:80px;resize:vertical}
               <label class="fl">Operadora</label>
               <select id="recvOperadora" class="inp" onchange="recvCalcNet()"></select>
             </div>
+            <div id="recvCredParcWrap" style="display:none;margin-bottom:8px">
+              <div class="form-row">
+                <div class="form-group"><label class="fl">Nº de parcelas</label><input id="recvCredParcelas" type="number" class="inp" min="1" max="24" value="1" oninput="recvCalcNet()"></div>
+                <div class="form-group">
+                  <label class="fl">Recebimento</label>
+                  <div style="display:flex;gap:6px">
+                    <button type="button" id="recvAntecipaNao" onclick="recvSetAntecipa(false)" style="flex:1;padding:8px 4px;border-radius:7px;border:1.5px solid #e2e8f0;background:#fff;font-size:11px;font-weight:600;color:#64748b;cursor:pointer;font-family:inherit">Por parcela</button>
+                    <button type="button" id="recvAntecipaSim" onclick="recvSetAntecipa(true)" style="flex:1;padding:8px 4px;border-radius:7px;border:1.5px solid #e2e8f0;background:#fff;font-size:11px;font-weight:600;color:#64748b;cursor:pointer;font-family:inherit">Antecipar</button>
+                  </div>
+                </div>
+              </div>
+            </div>
             <div id="recvNetInfo" style="background:#EFF6FF;border:1px solid #DBEAFE;border-radius:9px;padding:9px 11px;font-size:11.5px;color:#1E3A5F;line-height:1.5"></div>
           </div>
           <div id="recvAccWrap" class="form-group">
@@ -3539,7 +3551,6 @@ textarea.inp{min-height:80px;resize:vertical}
             </div>
             <select id="recvCC" class="inp"><option value="">Selecione...</option></select>
           </div>
-          <div class="form-group"><label class="fl">Data competência</label><input type="date" id="recvComp" class="inp"></div>
           <div class="form-group"><label class="fl">Referência</label><input id="recvRef" class="inp" placeholder="Referência do recebimento..."></div>
           <div class="form-group"><label class="fl">Anotações</label><textarea id="recvNotes" class="inp" style="min-height:44px" placeholder="Anotações adicionais..."></textarea></div>
         </div>
@@ -3608,7 +3619,6 @@ textarea.inp{min-height:80px;resize:vertical}
             <button class="modal-tab" onclick="switchMTab(this,'pay',2)">Adicionais</button>
           </div>
           <div id="pay-tab-0" class="modal-tab-content active" style="display:flex">
-            <div class="form-group"><label class="fl">Data competência</label><input type="date" id="payComp" class="inp"></div>
             <!-- Supplier with + new -->
             <div class="form-group">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
@@ -4361,9 +4371,9 @@ function recvCalcNet(){
 
 function openModal(name, preserveState){
   const t=today();
-  if(name==='receivable' && !preserveState){ populateSelects(); $('recvDue').value=t; $('recvComp').value=t; $('recvVal').value=''; $('recvDesc').value=''; $('recvRef').value=''; $('recvNotes').value=''; $('recvForma').value='dinheiro'; S._recvBoletoParcelas=null; recvFormaChanged(); setRec('recv','no'); }
+  if(name==='receivable' && !preserveState){ populateSelects(); $('recvDue').value=t; $('recvVal').value=''; $('recvDesc').value=''; $('recvRef').value=''; $('recvNotes').value=''; $('recvForma').value='dinheiro'; S._recvBoletoParcelas=null; recvFormaChanged(); setRec('recv','no'); }
   if(name==='receivable' && preserveState){ populateSelects(); }
-  if(name==='payable'){ populateSelects(); $('payDue').value=t; $('payComp').value=t; $('payVal').value=''; $('payDesc').value=''; $('payDone').checked=false; if($('payRef')) $('payRef').value=''; if($('payNotes')) $('payNotes').value=''; }
+  if(name==='payable'){ populateSelects(); $('payDue').value=t; $('payVal').value=''; $('payDesc').value=''; $('payDone').checked=false; if($('payRef')) $('payRef').value=''; if($('payNotes')) $('payNotes').value=''; }
   if(name==='transfer'){ populateSelects(); $('transDate').value=t; $('transVal').value=''; $('transDesc').value=''; }
   if(name==='account'){ $('accName').value=''; $('accBal').value=''; $('accBalDate').value=t; $('accNum').value=''; $('accAgency').value=''; $('accPixKey').value=''; }
   $('modal-'+name).style.display='flex';
@@ -4792,7 +4802,6 @@ function quickNewClient(returnModal){
   if(returnModal==='receivable'){
     S._savedRecv={
       val:$('recvVal').value, desc:$('recvDesc').value, due:$('recvDue').value,
-      comp:$('recvComp').value,
       cat:$('recvCat').value, client:$('recvClient').value, cc:$('recvCC').value,
       ref:$('recvRef').value, notes:$('recvNotes').value,
       period:$('recvPeriod').value, parcelas:$('recvParcelas').value,
@@ -4890,7 +4899,7 @@ async function saveReceivable(keepOpen=false){
   if(done && !accId) { toast('Selecione a conta para registrar o recebimento','error'); return; }
 
   const baseDue   = cardDueDate || $('recvDue').value || today();
-  const baseComp  = $('recvComp').value || today();
+  const baseComp  = baseDue;
   const doneDate  = done ? today() : null;
   const clientId  = $('recvClient').value;
   const ccId      = $('recvCC').value;
@@ -4935,7 +4944,7 @@ async function saveReceivable(keepOpen=false){
     const parcelDesc = total>1 ? `${desc} (${i+1}/${total})` : desc;
     const parcelValue= isBoletoCustom ? parcelas[i].value : value;
     const dueDate    = parcelas[i].dueDate;
-    const compDate   = i===0 ? baseComp : addPeriod(baseComp, 'monthly', i);
+    const compDate   = dueDate;
     const isDone     = done && i===0; // só a 1ª pode estar paga de imediato
     const pDoneDate  = isDone ? doneDate : null;
     const parcelFee  = isBoletoCustom ? 0 : fee/total;
@@ -4997,7 +5006,7 @@ async function savePayable(keepOpen=false){
   if(done && !accId) { toast('Selecione a conta para registrar o pagamento','error'); return; }
 
   const baseDue    = $('payDue').value || today();
-  const baseComp   = $('payComp').value || today();
+  const baseComp   = baseDue;
   const doneDate   = done && $('payDoneDate').value ? $('payDoneDate').value : (done ? today() : null);
   const supplierId = $('paySupplier').value;
   const ccId       = $('payCC').value;
@@ -5013,7 +5022,7 @@ async function savePayable(keepOpen=false){
   for(let i=0; i<total; i++){
     const parcelDesc = total>1 ? `${desc} (${i+1}/${total})` : desc;
     const dueDate    = i===0 ? baseDue : addPeriod(baseDue, period, i);
-    const compDate   = i===0 ? baseComp : addPeriod(baseComp, period, i);
+    const compDate   = dueDate;
     const isDone     = done && i===0;
     const pDoneDate  = isDone ? doneDate : null;
 
@@ -5118,7 +5127,6 @@ async function saveClient(){
       if(sv.val)    $('recvVal').value=sv.val;
       if(sv.desc)   $('recvDesc').value=sv.desc;
       if(sv.due)    $('recvDue').value=sv.due;
-      if(sv.comp)   $('recvComp').value=sv.comp;
       if(sv.cat)    $('recvCat').value=sv.cat;
       if(sv.cc)     $('recvCC').value=sv.cc;
       if(sv.ref)    $('recvRef').value=sv.ref;
@@ -6608,7 +6616,7 @@ function getLancCellHtml(colId, x, cat, acc, peer, color){
     case 'cat':      return cat ? `<span style="display:flex;align-items:center;gap:4px;overflow:hidden" title="${escHtml(cat.name)}"><span style="width:7px;height:7px;border-radius:50%;background:${cat.color};flex-shrink:0"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(cat.name)}</span></span>` : '<span style="color:#94a3b8">—</span>';
     case 'cc':       return `<span style="color:#94a3b8;font-size:11px">—</span>`;
     case 'value':    return `<span style="font-family:monospace;font-weight:700;color:${color};display:block;text-align:right">${fmt(x.value)}</span>`;
-    case 'compDate': return `<span style="color:#64748b;font-size:11px">${x.doneDate ? fmtD(x.doneDate) : '—'}</span>`;
+    case 'compDate': return `<span style="color:#64748b;font-size:11px">${x.compDate ? fmtD(x.compDate) : '—'}</span>`;
     case 'dueDate2': return `<span style="color:#64748b;font-size:11px">${fmtD(x.dueDate)}</span>`;
     case 'ref':      return `<span style="color:#64748b;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block" title="${escHtml(x.ref)}">${escHtml(x.ref)}</span>`;
     case 'notes':    return `<span style="color:#64748b;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block" title="${escHtml(x.notes)}">${escHtml(x.notes)}</span>`;
