@@ -1021,6 +1021,7 @@ textarea.inp{min-height:80px;resize:vertical}
   .kpi-grid{grid-template-columns:repeat(2,1fr)}
   .grid-accounts-chart,.grid-2,.grid-3{grid-template-columns:1fr}
   .modal-split{grid-template-columns:1fr}
+  .modal-3col{grid-template-columns:1fr!important}
   .modal-left{border-right:none;border-bottom:1px solid var(--border);padding-right:0;padding-bottom:18px}
   .modal-right{padding-left:0;padding-top:14px}
   .prc-cost-row{grid-template-columns:1fr 120px 32px}
@@ -3415,20 +3416,19 @@ textarea.inp{min-height:80px;resize:vertical}
 
 <!-- Receivable Modal -->
 <div id="modal-receivable" class="modal-overlay" style="display:none">
-  <div class="modal-box modal-wide">
+  <div class="modal-box" style="max-width:980px">
     <div class="modal-header" style="border-bottom:3px solid #22C55E">
       <span class="modal-title">💚 Conta a Receber</span>
       <button class="modal-close" onclick="closeModal('receivable')">✕</button>
     </div>
     <div class="modal-body">
-      <div class="modal-split">
-        <div class="modal-left">
-          <!-- Value -->
+      <div class="modal-3col" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;align-items:start">
+        <!-- Coluna 1: Valor e forma de recebimento -->
+        <div style="display:flex;flex-direction:column;gap:13px">
           <div class="form-group">
             <label class="fl">Valor do recebimento <span class="req">*</span></label>
             <div class="big-value"><span>R$</span><input id="recvVal" placeholder="0,00" oninput="if($('recvOperadoraWrap').style.display!=='none')recvCalcNet()"></div>
           </div>
-          <!-- Forma de recebimento -->
           <div class="form-group">
             <label class="fl">Forma de recebimento</label>
             <select id="recvForma" class="inp" onchange="recvFormaChanged()">
@@ -3440,18 +3440,27 @@ textarea.inp{min-height:80px;resize:vertical}
             </select>
           </div>
           <div id="recvOperadoraWrap" style="display:none">
-            <div class="form-group">
+            <div class="form-group" style="margin-bottom:8px">
               <label class="fl">Operadora</label>
               <select id="recvOperadora" class="inp" onchange="recvCalcNet()"></select>
             </div>
-            <div id="recvNetInfo" style="background:#EFF6FF;border:1px solid #DBEAFE;border-radius:9px;padding:10px 12px;margin-bottom:13px;font-size:12px;color:#1E3A5F"></div>
+            <div id="recvNetInfo" style="background:#EFF6FF;border:1px solid #DBEAFE;border-radius:9px;padding:9px 11px;font-size:11.5px;color:#1E3A5F;line-height:1.5"></div>
           </div>
-          <!-- Data do lançamento sempre visível -->
+          <div id="recvAccWrap" class="form-group">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <label class="fl">Conta Bancária</label>
+              <button onclick="quickNewAccount('receivable')" style="font-size:10px;color:#3b82f6;background:none;border:none;cursor:pointer;font-weight:700;padding:0">+ Conta Bancária</button>
+            </div>
+            <select id="recvAcc" class="inp"><option value="">Selecione a conta...</option></select>
+          </div>
+        </div>
+
+        <!-- Coluna 2: Datas, descrição, categoria, cliente -->
+        <div style="display:flex;flex-direction:column;gap:13px">
           <div class="form-group">
             <label class="fl">Data de vencimento</label>
             <input type="date" id="recvDue" class="inp">
           </div>
-          <!-- Done + date -->
           <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:10px 12px">
             <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;font-weight:600">
               <input type="checkbox" id="recvDone" style="accent-color:#22C55E;width:15px;height:15px" onchange="toggleRecvDoneDate()"> Já foi recebido
@@ -3460,9 +3469,7 @@ textarea.inp{min-height:80px;resize:vertical}
               <div class="form-group"><label class="fl">Data do recebimento</label><input type="date" id="recvDoneDate" class="inp"></div>
             </div>
           </div>
-          <!-- Description -->
           <div class="form-group"><label class="fl">Descrição</label><input id="recvDesc" class="inp" placeholder="Breve descrição..."></div>
-          <!-- Category with + new -->
           <div class="form-group">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
               <label class="fl">Categoria <span class="req">*</span></label>
@@ -3472,65 +3479,47 @@ textarea.inp{min-height:80px;resize:vertical}
             <div id="recvCatWrap"></div>
             <div id="recvCatInfo" style="display:none;margin-top:4px;font-size:11px;color:#64748b;padding:4px 8px;background:#f0fdf4;border-radius:6px;border-left:3px solid #22C55E"></div>
           </div>
-          <!-- Account with + new -->
+        </div>
+
+        <!-- Coluna 3: Competência, cliente, centro de custo, recorrência, adicionais -->
+        <div style="display:flex;flex-direction:column;gap:13px">
+          <div class="form-group"><label class="fl">Data competência</label><input type="date" id="recvComp" class="inp"></div>
           <div class="form-group">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-              <label class="fl">Conta Bancária</label>
-              <button onclick="quickNewAccount('receivable')" style="font-size:10px;color:#3b82f6;background:none;border:none;cursor:pointer;font-weight:700;padding:0">+ Conta Bancária</button>
+              <label class="fl">Cliente</label>
+              <button onclick="quickNewClient('receivable')" style="font-size:10px;color:#f59e0b;background:none;border:none;cursor:pointer;font-weight:700;padding:0">+ Novo cliente</button>
             </div>
-            <select id="recvAcc" class="inp"><option value="">Selecione a conta...</option></select>
+            <select id="recvClient" class="inp"><option value="">Selecione o cliente...</option></select>
           </div>
-        </div>
-        <div class="modal-right">
-          <div class="modal-tabs">
-            <button class="modal-tab active" style="color:#22C55E;border-bottom-color:#22C55E" onclick="switchMTab(this,'recv',0)">Dados do Lançamento</button>
-            <button class="modal-tab" onclick="switchMTab(this,'recv',1)">Recorrência</button>
-            <button class="modal-tab" onclick="switchMTab(this,'recv',2)">Adicionais</button>
+          <div class="form-group">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <label class="fl">Centro de custo</label>
+              <button onclick="quickNewCC('receivable')" style="font-size:10px;color:#8b5cf6;background:none;border:none;cursor:pointer;font-weight:700;padding:0">+ Novo centro</button>
+            </div>
+            <select id="recvCC" class="inp"><option value="">Selecione...</option></select>
           </div>
-          <div id="recv-tab-0" class="modal-tab-content active" style="display:flex">
-            <div class="form-group"><label class="fl">Data competência</label><input type="date" id="recvComp" class="inp"></div>
-            <!-- Client with + new -->
-            <div class="form-group">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-                <label class="fl">Cliente</label>
-                <button onclick="quickNewClient('receivable')" style="font-size:10px;color:#f59e0b;background:none;border:none;cursor:pointer;font-weight:700;padding:0">+ Novo cliente</button>
-              </div>
-              <select id="recvClient" class="inp"><option value="">Selecione o cliente...</option></select>
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:10px 12px">
+            <p style="font-size:11.5px;font-weight:700;margin-bottom:8px;color:var(--text)">Recorrência/Parcelamento?</p>
+            <div style="display:flex;gap:6px">
+              <button id="recvRecNo"  onclick="setRec('recv','no')"  style="flex:1;padding:6px;border-radius:7px;border:1.5px solid #e2e8f0;background:#fff;font-size:12px;font-weight:600;color:#64748b;cursor:pointer;font-family:inherit;transition:all .15s">✕ Não</button>
+              <button id="recvRecYes" onclick="setRec('recv','yes')" style="flex:1;padding:6px;border-radius:7px;border:1.5px solid #e2e8f0;background:#fff;font-size:12px;font-weight:600;color:#64748b;cursor:pointer;font-family:inherit;transition:all .15s">✓ Sim</button>
             </div>
-            <!-- Cost center with + new -->
-            <div class="form-group">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-                <label class="fl">Centro de custo</label>
-                <button onclick="quickNewCC('receivable')" style="font-size:10px;color:#8b5cf6;background:none;border:none;cursor:pointer;font-weight:700;padding:0">+ Novo centro</button>
-              </div>
-              <select id="recvCC" class="inp"><option value="">Selecione...</option></select>
-            </div>
-          </div>
-          <div id="recv-tab-1" class="modal-tab-content">
-            <div style="padding:10px 0;border-bottom:1px solid var(--border)">
-              <p style="font-size:13px;font-weight:500;margin-bottom:10px">Recorrência/Parcelamento?</p>
-              <div style="display:flex;gap:8px">
-                <button id="recvRecNo"  onclick="setRec('recv','no')"  style="flex:1;padding:8px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:13px;font-weight:600;color:#64748b;cursor:pointer;font-family:inherit;transition:all .15s">✕ Não</button>
-                <button id="recvRecYes" onclick="setRec('recv','yes')" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:13px;font-weight:600;color:#64748b;cursor:pointer;font-family:inherit;transition:all .15s">✓ Sim</button>
-              </div>
-            </div>
-            <div id="recvRecFields" style="display:none;flex-direction:column;gap:13px;margin-top:4px">
+            <div id="recvRecFields" style="display:none;flex-direction:column;gap:10px;margin-top:10px">
               <div class="form-row">
                 <div class="form-group"><label class="fl">Período</label><select id="recvPeriod" class="inp"><option value="monthly">Mensal</option><option value="weekly">Semanal</option><option value="biweekly">Quinzenal</option><option value="yearly">Anual</option></select></div>
                 <div class="form-group"><label class="fl">Parcelas</label><input id="recvParcelas" type="number" class="inp" placeholder="Qtd..." min="1" max="120"></div>
               </div>
             </div>
           </div>
-          <div id="recv-tab-2" class="modal-tab-content">
-            <div class="form-group"><label class="fl">Referência</label><input id="recvRef" class="inp" placeholder="Referência do recebimento..."></div>
-            <div class="form-group"><label class="fl">Anotações</label><textarea id="recvNotes" class="inp" placeholder="Anotações adicionais..."></textarea></div>
-          </div>
+          <div class="form-group"><label class="fl">Referência</label><input id="recvRef" class="inp" placeholder="Referência do recebimento..."></div>
+          <div class="form-group"><label class="fl">Anotações</label><textarea id="recvNotes" class="inp" style="min-height:44px" placeholder="Anotações adicionais..."></textarea></div>
         </div>
       </div>
     </div>
     <div class="modal-footer" style="display:flex;gap:10px">
-      <button class="btn btn-outline" style="flex:1;justify-content:center" onclick="saveReceivable(true)">Adicionar e continuar</button>
-      <button class="btn btn-green" style="flex:1;justify-content:center" onclick="saveReceivable()">Adicionar</button>
+      <button class="btn btn-green" style="flex:1;justify-content:center" onclick="saveReceivable()">Salvar</button>
+      <button class="btn btn-outline" style="flex:1;justify-content:center" onclick="saveReceivable(true)">Salvar e continuar</button>
+      <button class="btn" style="flex:1;justify-content:center;background:none;border:1px solid var(--border);color:var(--text)" onclick="closeModal('receivable')">Cancelar</button>
     </div>
   </div>
 </div>
@@ -4307,6 +4296,7 @@ function recvFormaChanged(){
   const forma = $('recvForma').value;
   const isCard = forma==='debito' || forma==='credito';
   $('recvOperadoraWrap').style.display = isCard ? 'block' : 'none';
+  $('recvAccWrap').style.display = isCard ? 'none' : 'block';
   const doneWrap = $('recvDone');
   if(forma==='debito'){
     // Débito: recebido na hora
@@ -4339,9 +4329,10 @@ function recvCalcNet(){
   info.innerHTML = `Taxa ${op.nome} (${taxaPct}%): <b>-${fmt(fee)}</b> · Valor líquido: <b>${fmt(net)}</b><br>Cai em <b>${acc?acc.name:'conta não definida'}</b>, ${prazoTxt}`;
 }
 
-function openModal(name){
+function openModal(name, preserveState){
   const t=today();
-  if(name==='receivable'){ populateSelects(); $('recvDue').value=t; $('recvComp').value=t; $('recvVal').value=''; $('recvDesc').value=''; $('recvDone').checked=false; $('recvRef').value=''; $('recvNotes').value=''; $('recvForma').value='dinheiro'; recvFormaChanged(); }
+  if(name==='receivable' && !preserveState){ populateSelects(); $('recvDue').value=t; $('recvComp').value=t; $('recvVal').value=''; $('recvDesc').value=''; $('recvDone').checked=false; $('recvRef').value=''; $('recvNotes').value=''; $('recvForma').value='dinheiro'; recvFormaChanged(); }
+  if(name==='receivable' && preserveState){ populateSelects(); }
   if(name==='payable'){ populateSelects(); $('payDue').value=t; $('payComp').value=t; $('payVal').value=''; $('payDesc').value=''; $('payDone').checked=false; if($('payRef')) $('payRef').value=''; if($('payNotes')) $('payNotes').value=''; }
   if(name==='transfer'){ populateSelects(); $('transDate').value=t; $('transVal').value=''; $('transDesc').value=''; }
   if(name==='account'){ $('accName').value=''; $('accBal').value=''; $('accBalDate').value=t; $('accNum').value=''; $('accAgency').value=''; $('accPixKey').value=''; }
@@ -4713,7 +4704,8 @@ function quickNewClient(returnModal){
       comp:$('recvComp').value, done:$('recvDone').checked, doneDate:$('recvDoneDate').value,
       cat:$('recvCat').value, client:$('recvClient').value, cc:$('recvCC').value,
       ref:$('recvRef').value, notes:$('recvNotes').value,
-      period:$('recvPeriod').value, parcelas:$('recvParcelas').value
+      period:$('recvPeriod').value, parcelas:$('recvParcelas').value,
+      forma:$('recvForma').value, operadora:$('recvOperadora')?.value||'', acc:$('recvAcc').value
     };
   }
   openModal('client');
@@ -4756,7 +4748,7 @@ async function saveAccount(){
   // If came from receivable/payable, reopen that modal and pre-select the new account
   if(S._returnModal==='receivable'||S._returnModal==='payable'){
     const ret=S._returnModal; S._returnModal=null;
-    openModal(ret);
+    openModal(ret, true);
     setTimeout(()=>{ populateSelects(); const sel=$(ret==='receivable'?'recvAcc':'payAcc'); if(sel)sel.value=acc.id; },50);
   } else if(S._returnCfgSection){
     const sec=S._returnCfgSection; S._returnCfgSection=null;
@@ -5001,7 +4993,7 @@ async function saveClient(){
   S.clients.push(cli);
   toast('Cliente adicionado! 👤'); closeModal('client');
   if(S._returnModal==='receivable'){
-    S._returnModal=null; openModal('receivable');
+    S._returnModal=null; openModal('receivable', true);
     setTimeout(()=>{
       populateSelects();
       const sv=S._savedRecv||{};
@@ -5016,6 +5008,8 @@ async function saveClient(){
       if(sv.notes)  $('recvNotes').value=sv.notes;
       if(sv.period) $('recvPeriod').value=sv.period;
       if(sv.parcelas) $('recvParcelas').value=sv.parcelas;
+      if(sv.forma){ $('recvForma').value=sv.forma; recvFormaChanged(); if(sv.operadora){ $('recvOperadora').value=sv.operadora; recvCalcNet(); } }
+      if(sv.acc)    $('recvAcc').value=sv.acc;
       $('recvClient').value=cli.id;
       S._savedRecv=null;
     },50);
