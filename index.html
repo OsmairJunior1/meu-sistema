@@ -4452,6 +4452,16 @@ function openBoletoParcModal(){
 }
 function cancelBoletoParcModal(){ $('modal-boleto-parc').style.display='none'; }
 
+function bpDiasToDate(dias){
+  const d = new Date(); d.setDate(d.getDate()+(parseInt(dias)||0));
+  return d.toISOString().split('T')[0];
+}
+function bpUpdateRowDateHint(idx){
+  const row = $('bpRows').querySelector(`[data-row="${idx}"]`);
+  const dias = row.querySelector('.bp-dias').value;
+  row.querySelector('.bp-date-hint').textContent = fmtD(bpDiasToDate(dias));
+}
+
 function bpRenderRows(){
   const qtd = Math.max(1, parseInt($('bpQtd').value)||1);
   const modo = $('bpModo').value;
@@ -4462,9 +4472,16 @@ function bpRenderRows(){
   let html='';
   for(let i=0;i<qtd;i++){
     const p = prev && prev[i];
-    const dueInput = modo==='dias'
-      ? `<input class="inp bp-dias" type="number" min="0" placeholder="dias" style="width:75px" value="${p?.dias ?? ((i+1)*10)}">`
-      : `<input class="inp bp-data" type="date" style="width:135px" value="${p?.data ?? ''}">`;
+    const defaultDias = (i+1)*30;
+    let dueInput;
+    if(modo==='dias'){
+      const dias = p?.dias ?? defaultDias;
+      dueInput = `<input class="inp bp-dias" type="number" min="0" placeholder="dias" style="width:65px" value="${dias}" oninput="bpUpdateRowDateHint(${i})">
+        <span class="bp-date-hint" style="font-size:11px;color:#64748b;white-space:nowrap;min-width:70px">${fmtD(bpDiasToDate(dias))}</span>`;
+    } else {
+      const dataVal = p?.data ?? bpDiasToDate(defaultDias);
+      dueInput = `<input class="inp bp-data" type="date" style="width:140px" value="${dataVal}">`;
+    }
     const valorVal = p?.value ? String(p.value).toFixed(2).replace('.',',') : equalVal.toFixed(2).replace('.',',');
     html += `<div data-row="${i}" style="display:flex;gap:6px;align-items:center">
       <span style="font-size:11px;color:#94a3b8;width:18px">${i+1}ª</span>
