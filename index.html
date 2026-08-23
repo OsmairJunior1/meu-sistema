@@ -3436,7 +3436,7 @@ textarea.inp{min-height:80px;resize:vertical}
           </div>
           <div class="form-group">
             <label class="fl">Valor do recebimento <span class="req">*</span></label>
-            <div class="big-value"><span>R$</span><input id="recvVal" placeholder="0,00" oninput="if($('recvOperadoraWrap').style.display!=='none')recvCalcNet()"></div>
+            <div class="big-value"><span>R$</span><input id="recvVal" placeholder="0,00" oninput="if($('recvOperadoraWrap').style.display!=='none')recvCalcNet(); if($('recvBoletoParc').style.display!=='none')recvBoletoUpdateSum();"></div>
           </div>
           <div class="form-group"><label class="fl">Descrição</label><input id="recvDesc" class="inp" placeholder="Breve descrição..."></div>
           <div class="form-group">
@@ -3486,6 +3486,34 @@ textarea.inp{min-height:80px;resize:vertical}
               <div class="form-group"><label class="fl">Data do recebimento</label><input type="date" id="recvDoneDate" class="inp"></div>
             </div>
           </div>
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:10px 12px">
+            <p style="font-size:11.5px;font-weight:700;margin-bottom:8px;color:var(--text)">Recorrência/Parcelamento?</p>
+            <div style="display:flex;gap:6px">
+              <button id="recvRecNo"  onclick="setRec('recv','no')"  style="flex:1;padding:6px;border-radius:7px;border:1.5px solid #e2e8f0;background:#fff;font-size:12px;font-weight:600;color:#64748b;cursor:pointer;font-family:inherit;transition:all .15s">✕ Não</button>
+              <button id="recvRecYes" onclick="setRec('recv','yes')" style="flex:1;padding:6px;border-radius:7px;border:1.5px solid #e2e8f0;background:#fff;font-size:12px;font-weight:600;color:#64748b;cursor:pointer;font-family:inherit;transition:all .15s">✓ Sim</button>
+            </div>
+            <!-- Recorrência padrão (mesmo intervalo todo período) — usado quando NÃO é boleto -->
+            <div id="recvRecFields" style="display:none;flex-direction:column;gap:10px;margin-top:10px">
+              <div class="form-row">
+                <div class="form-group"><label class="fl">Período</label><select id="recvPeriod" class="inp"><option value="monthly">Mensal</option><option value="weekly">Semanal</option><option value="biweekly">Quinzenal</option><option value="yearly">Anual</option></select></div>
+                <div class="form-group"><label class="fl">Parcelas</label><input id="recvParcelas" type="number" class="inp" placeholder="Qtd..." min="1" max="120" oninput="recvBoletoSync()"></div>
+              </div>
+            </div>
+            <!-- Parcelamento customizado — só para Boleto: cada parcela com seu próprio prazo/data e valor -->
+            <div id="recvBoletoParc" style="display:none;flex-direction:column;gap:8px;margin-top:10px">
+              <div class="form-row">
+                <div class="form-group"><label class="fl">Definir vencimento por</label>
+                  <select id="recvBoletoModo" class="inp" onchange="recvBoletoRenderRows()">
+                    <option value="dias">Dias a partir de hoje</option>
+                    <option value="data">Data fixa</option>
+                  </select>
+                </div>
+                <div class="form-group"><label class="fl">Nº de parcelas</label><input id="recvBoletoQtd" type="number" class="inp" min="1" max="60" value="1" oninput="recvBoletoRenderRows()"></div>
+              </div>
+              <div id="recvBoletoRows" style="display:flex;flex-direction:column;gap:6px"></div>
+              <div id="recvBoletoSum" style="font-size:11px;color:#64748b;padding:2px 2px"></div>
+            </div>
+          </div>
         </div>
 
         <!-- Coluna 3: Complementares -->
@@ -3498,19 +3526,6 @@ textarea.inp{min-height:80px;resize:vertical}
             <select id="recvCC" class="inp"><option value="">Selecione...</option></select>
           </div>
           <div class="form-group"><label class="fl">Data competência</label><input type="date" id="recvComp" class="inp"></div>
-          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:10px 12px">
-            <p style="font-size:11.5px;font-weight:700;margin-bottom:8px;color:var(--text)">Recorrência/Parcelamento?</p>
-            <div style="display:flex;gap:6px">
-              <button id="recvRecNo"  onclick="setRec('recv','no')"  style="flex:1;padding:6px;border-radius:7px;border:1.5px solid #e2e8f0;background:#fff;font-size:12px;font-weight:600;color:#64748b;cursor:pointer;font-family:inherit;transition:all .15s">✕ Não</button>
-              <button id="recvRecYes" onclick="setRec('recv','yes')" style="flex:1;padding:6px;border-radius:7px;border:1.5px solid #e2e8f0;background:#fff;font-size:12px;font-weight:600;color:#64748b;cursor:pointer;font-family:inherit;transition:all .15s">✓ Sim</button>
-            </div>
-            <div id="recvRecFields" style="display:none;flex-direction:column;gap:10px;margin-top:10px">
-              <div class="form-row">
-                <div class="form-group"><label class="fl">Período</label><select id="recvPeriod" class="inp"><option value="monthly">Mensal</option><option value="weekly">Semanal</option><option value="biweekly">Quinzenal</option><option value="yearly">Anual</option></select></div>
-                <div class="form-group"><label class="fl">Parcelas</label><input id="recvParcelas" type="number" class="inp" placeholder="Qtd..." min="1" max="120"></div>
-              </div>
-            </div>
-          </div>
           <div class="form-group"><label class="fl">Referência</label><input id="recvRef" class="inp" placeholder="Referência do recebimento..."></div>
           <div class="form-group"><label class="fl">Anotações</label><textarea id="recvNotes" class="inp" style="min-height:44px" placeholder="Anotações adicionais..."></textarea></div>
         </div>
@@ -4313,6 +4328,7 @@ function recvFormaChanged(){
     if(padrao) sel.value = padrao.id;
     recvCalcNet();
   }
+  recvBoletoSync();
 }
 
 function recvCalcNet(){
@@ -4331,7 +4347,7 @@ function recvCalcNet(){
 
 function openModal(name, preserveState){
   const t=today();
-  if(name==='receivable' && !preserveState){ populateSelects(); $('recvDue').value=t; $('recvComp').value=t; $('recvVal').value=''; $('recvDesc').value=''; $('recvDone').checked=false; $('recvRef').value=''; $('recvNotes').value=''; $('recvForma').value='dinheiro'; recvFormaChanged(); }
+  if(name==='receivable' && !preserveState){ populateSelects(); $('recvDue').value=t; $('recvComp').value=t; $('recvVal').value=''; $('recvDesc').value=''; $('recvDone').checked=false; $('recvRef').value=''; $('recvNotes').value=''; $('recvForma').value='dinheiro'; recvFormaChanged(); setRec('recv','no'); }
   if(name==='receivable' && preserveState){ populateSelects(); }
   if(name==='payable'){ populateSelects(); $('payDue').value=t; $('payComp').value=t; $('payVal').value=''; $('payDesc').value=''; $('payDone').checked=false; if($('payRef')) $('payRef').value=''; if($('payNotes')) $('payNotes').value=''; }
   if(name==='transfer'){ populateSelects(); $('transDate').value=t; $('transVal').value=''; $('transDesc').value=''; }
@@ -4398,6 +4414,57 @@ function setRec(prefix, val){
     noBtn.style.background='#ef4444'; noBtn.style.borderColor='#ef4444'; noBtn.style.color='#fff';
     yesBtn.style.background='#f8fafc'; yesBtn.style.borderColor='#e2e8f0'; yesBtn.style.color='#64748b';
     if(fields) fields.style.display='none';
+  }
+  if(prefix==='recv') recvBoletoSync();
+}
+
+// ─── BOLETO: parcelamento com vencimentos e valores customizados ──
+function recvBoletoSync(){
+  const isBoleto = $('recvForma').value==='boleto';
+  const isRec = $('recvRecYes')?.style.background==='#22C55E' || $('recvRecYes')?.style.background==='rgb(34, 197, 94)';
+  const custom = isBoleto && isRec;
+  $('recvRecFields').style.display    = (isRec && !isBoleto) ? 'flex' : 'none';
+  $('recvBoletoParc').style.display   = custom ? 'flex' : 'none';
+  if(custom) recvBoletoRenderRows();
+}
+
+function recvBoletoRenderRows(){
+  const qtd = Math.max(1, parseInt($('recvBoletoQtd').value)||1);
+  const modo = $('recvBoletoModo').value;
+  const total = pv($('recvVal').value)||0;
+  const equalVal = qtd>0 ? (total/qtd) : 0;
+  const wrap = $('recvBoletoRows');
+  // Preserva valores já digitados ao só mudar a quantidade/modo, quando possível
+  const prevRows = Array.from(wrap.querySelectorAll('[data-row]')).map(r=>({
+    dias:r.querySelector('.bp-dias')?.value, data:r.querySelector('.bp-data')?.value, valor:r.querySelector('.bp-valor')?.value
+  }));
+  let html='';
+  for(let i=0;i<qtd;i++){
+    const prev = prevRows[i];
+    const dueInput = modo==='dias'
+      ? `<input class="inp bp-dias" type="number" min="0" placeholder="dias" style="width:70px" value="${prev?.dias??((i+1)*10)}">`
+      : `<input class="inp bp-data" type="date" style="width:130px" value="${prev?.data??''}">`;
+    const valorVal = prev?.valor ?? equalVal.toFixed(2).replace('.',',');
+    html += `<div data-row="${i}" style="display:flex;gap:6px;align-items:center">
+      <span style="font-size:11px;color:#94a3b8;width:16px">${i+1}ª</span>
+      ${dueInput}
+      <input class="inp bp-valor" placeholder="0,00" style="flex:1" value="${valorVal}" oninput="recvBoletoUpdateSum()">
+    </div>`;
+  }
+  wrap.innerHTML = html;
+  recvBoletoUpdateSum();
+}
+
+function recvBoletoUpdateSum(){
+  const total = pv($('recvVal').value)||0;
+  const rows = Array.from($('recvBoletoRows').querySelectorAll('.bp-valor'));
+  const sum = rows.reduce((s,i)=>s+pv(i.value),0);
+  const diff = total - sum;
+  const el = $('recvBoletoSum');
+  if(Math.abs(diff) < 0.01){
+    el.innerHTML = `Soma das parcelas: <b style="color:#15803D">${fmt(sum)}</b> de ${fmt(total)} ✓`;
+  } else {
+    el.innerHTML = `Soma das parcelas: <b style="color:#DC2626">${fmt(sum)}</b> de ${fmt(total)} (diferença de ${fmt(Math.abs(diff))})`;
   }
 }
 
@@ -4806,24 +4873,55 @@ async function saveReceivable(keepOpen=false){
   const notes     = $('recvNotes')?.value?.trim() || '';
 
   // Verifica se recorrência está ativa (botão Sim selecionado = fundo verde)
-  const recAtivo  = $('recvRecYes')?.style.background === '#22C55E' || $('recvRecYes')?.style.background === 'rgb(34, 197, 94)';
-  const nParcelas = recAtivo ? (parseInt($('recvParcelas').value)||1) : 1;
-  const period    = recAtivo ? ($('recvPeriod').value||'monthly') : 'monthly';
-  const total     = nParcelas;
+  const recAtivo   = $('recvRecYes')?.style.background === '#22C55E' || $('recvRecYes')?.style.background === 'rgb(34, 197, 94)';
+  const isBoletoCustom = forma==='boleto' && recAtivo;
+
+  // Monta a lista de parcelas: modo customizado (boleto) ou modo padrão (período fixo)
+  let parcelas = [];
+  if(isBoletoCustom){
+    const modo = $('recvBoletoModo').value;
+    const rows = Array.from($('recvBoletoRows').querySelectorAll('[data-row]'));
+    if(!rows.length){ toast('Adicione ao menos uma parcela','error'); return; }
+    parcelas = rows.map(r=>{
+      const valor = pv(r.querySelector('.bp-valor').value) || 0;
+      let due;
+      if(modo==='dias'){
+        const dias = parseInt(r.querySelector('.bp-dias').value)||0;
+        const d = new Date(); d.setDate(d.getDate()+dias);
+        due = d.toISOString().split('T')[0];
+      } else {
+        due = r.querySelector('.bp-data').value || today();
+      }
+      return {value:valor, dueDate:due};
+    });
+    const somaParcelas = parcelas.reduce((s,p)=>s+p.value,0);
+    if(somaParcelas<=0){ toast('Informe o valor das parcelas','error'); return; }
+  } else {
+    const nParcelas = recAtivo ? (parseInt($('recvParcelas').value)||1) : 1;
+    const period    = recAtivo ? ($('recvPeriod').value||'monthly') : 'monthly';
+    for(let i=0;i<nParcelas;i++){
+      parcelas.push({
+        value: value/nParcelas,
+        dueDate: i===0 ? baseDue : addPeriod(baseDue, period, i)
+      });
+    }
+  }
+  const total = parcelas.length;
 
   // Categoria "Taxas de Cartão" — usada para lançar a despesa automática da taxa
   const taxaCat = S.cats.expense.find(c=>c.name.toLowerCase().includes('taxa') && c.name.toLowerCase().includes('cart'));
 
   for(let i=0; i<total; i++){
     const parcelDesc = total>1 ? `${desc} (${i+1}/${total})` : desc;
-    const dueDate    = i===0 ? baseDue : addPeriod(baseDue, period, i);
-    const compDate   = i===0 ? baseComp : addPeriod(baseComp, period, i);
+    const parcelValue= isBoletoCustom ? parcelas[i].value : value;
+    const dueDate    = parcelas[i].dueDate;
+    const compDate   = i===0 ? baseComp : addPeriod(baseComp, 'monthly', i);
     const isDone     = done && i===0; // só a 1ª pode estar paga de imediato
     const pDoneDate  = isDone ? doneDate : null;
-    const parcelFee  = fee/total;
+    const parcelFee  = isBoletoCustom ? 0 : fee/total;
 
     const saved = await sbInsert('transactions',{
-      type:'receivable', amount:value, description:parcelDesc,
+      type:'receivable', amount:parcelValue, description:parcelDesc,
       due_date:dueDate||null, paid_date:pDoneDate||null,
       status:isDone?'paid':'pending', category:catId||null,
       account_id:accId||null, contact_id:clientId||null,
@@ -4831,12 +4929,12 @@ async function saveReceivable(keepOpen=false){
     });
     if(!saved) continue;
 
-    const r = {id:saved.id, value, done:isDone, dueDate, compDate, doneDate:pDoneDate,
+    const r = {id:saved.id, value:parcelValue, done:isDone, dueDate, compDate, doneDate:pDoneDate,
                desc:parcelDesc, categoryId:catId, accountId:accId, clientId, costCenterId:ccId,
-               ref, notes, paymentMethod:forma, operadoraId:op?.id||null, fee:parcelFee, netValue:value-parcelFee};
+               ref, notes, paymentMethod:forma, operadoraId:op?.id||null, fee:parcelFee, netValue:parcelValue-parcelFee};
     if(isDone && accId){
       // Credita o valor líquido (bruto - taxa) quando é cartão; valor cheio nos demais casos
-      const creditAmount = op ? (value - parcelFee) : value;
+      const creditAmount = op ? (parcelValue - parcelFee) : parcelValue;
       S.accounts = S.accounts.map(a=>a.id===accId?{...a,balance:a.balance+creditAmount}:a);
       await sbUpdate('accounts', accId, {balance: S.accounts.find(a=>a.id===accId)?.balance});
       // Lança a taxa como despesa automática, vinculada à mesma conta
