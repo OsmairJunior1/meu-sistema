@@ -4479,9 +4479,12 @@ function openModal(name, preserveState){
   const t=today();
   if(name==='receivable' && !preserveState){
     populateSelects(); $('recvDue').value=t; $('recvVal').value=''; $('recvDesc').value=''; $('recvRef').value=''; $('recvNotes').value='';
-    // Forma padrão = primeira da lista ordenada em Formas de Pagamento (Configurações)
-    const simplesOrdenadas = (S.paymentDefaults||[]).slice().sort((a,b)=>(a.ordem??100)-(b.ordem??100));
-    $('recvForma').value = simplesOrdenadas[0]?.tipo || 'dinheiro';
+    // Forma padrão = primeiro item da lista unificada (Formas de Pagamento) ordenada
+    const opsComTipo = (S.operadoras||[]).map(o=>({...o,_kind:'operadora'}));
+    const simplesComTipo = (S.paymentDefaults||[]).map(p=>({...p,_kind:'simples'}));
+    const unificada = [...opsComTipo, ...simplesComTipo].sort((a,b)=>(a.ordem??100)-(b.ordem??100));
+    const primeiro = unificada[0];
+    $('recvForma').value = primeiro ? (primeiro._kind==='simples' ? primeiro.tipo : 'credito') : 'dinheiro';
     S._recvBoletoParcelas=null; recvFormaChanged(); setRec('recv','no'); setEntrada(false);
   }
   if(name==='receivable' && preserveState){ populateSelects(); }
