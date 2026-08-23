@@ -3426,7 +3426,25 @@ textarea.inp{min-height:80px;resize:vertical}
           <!-- Value -->
           <div class="form-group">
             <label class="fl">Valor do recebimento <span class="req">*</span></label>
-            <div class="big-value"><span>R$</span><input id="recvVal" placeholder="0,00"></div>
+            <div class="big-value"><span>R$</span><input id="recvVal" placeholder="0,00" oninput="if($('recvOperadoraWrap').style.display!=='none')recvCalcNet()"></div>
+          </div>
+          <!-- Forma de recebimento -->
+          <div class="form-group">
+            <label class="fl">Forma de recebimento</label>
+            <select id="recvForma" class="inp" onchange="recvFormaChanged()">
+              <option value="dinheiro">Dinheiro</option>
+              <option value="pix">PIX</option>
+              <option value="debito">Cartão de Débito</option>
+              <option value="credito">Cartão de Crédito</option>
+              <option value="boleto">Boleto</option>
+            </select>
+          </div>
+          <div id="recvOperadoraWrap" style="display:none">
+            <div class="form-group">
+              <label class="fl">Operadora</label>
+              <select id="recvOperadora" class="inp" onchange="recvCalcNet()"></select>
+            </div>
+            <div id="recvNetInfo" style="background:#EFF6FF;border:1px solid #DBEAFE;border-radius:9px;padding:10px 12px;margin-bottom:13px;font-size:12px;color:#1E3A5F"></div>
           </div>
           <!-- Data do lançamento sempre visível -->
           <div class="form-group">
@@ -4285,9 +4303,45 @@ window.addEventListener('resize',()=>{
 });
 
 // ─── MODAL ───────────────────────────────────────────────
+function recvFormaChanged(){
+  const forma = $('recvForma').value;
+  const isCard = forma==='debito' || forma==='credito';
+  $('recvOperadoraWrap').style.display = isCard ? 'block' : 'none';
+  const doneWrap = $('recvDone');
+  if(forma==='debito'){
+    // Débito: recebido na hora
+    $('recvDone').checked = true; toggleRecvDoneDate();
+  } else if(forma==='credito'){
+    // Crédito: só recebe no prazo — não marca como já recebido
+    $('recvDone').checked = false; toggleRecvDoneDate();
+  }
+  if(isCard){
+    const ops = (S.operadoras||[]);
+    const sel = $('recvOperadora');
+    sel.innerHTML = ops.map(o=>`<option value="${o.id}">${o.nome}</option>`).join('') || '<option value="">Nenhuma operadora cadastrada</option>';
+    const padrao = ops.find(o=> forma==='debito' ? o.padrao_debito : o.padrao_credito);
+    if(padrao) sel.value = padrao.id;
+    recvCalcNet();
+  }
+}
+
+function recvCalcNet(){
+  const forma = $('recvForma').value;
+  const value = pv($('recvVal').value)||0;
+  const op = (S.operadoras||[]).find(o=>o.id===$('recvOperadora').value);
+  const info = $('recvNetInfo');
+  if(!op || !value){ info.innerHTML='Informe o valor e a operadora para calcular'; return; }
+  const taxaPct = forma==='debito' ? (op.taxa_debito||0) : (op.taxa_credito||0);
+  const fee = value * taxaPct/100;
+  const net = value - fee;
+  const acc = S.accounts.find(a=>a.id===op.conta_destino_id);
+  let prazoTxt = forma==='debito' ? 'na hora (D+0)' : `em ${op.prazo_credito_dias||0} dias`;
+  info.innerHTML = `Taxa ${op.nome} (${taxaPct}%): <b>-${fmt(fee)}</b> · Valor líquido: <b>${fmt(net)}</b><br>Cai em <b>${acc?acc.name:'conta não definida'}</b>, ${prazoTxt}`;
+}
+
 function openModal(name){
   const t=today();
-  if(name==='receivable'){ populateSelects(); $('recvDue').value=t; $('recvComp').value=t; $('recvVal').value=''; $('recvDesc').value=''; $('recvDone').checked=false; $('recvRef').value=''; $('recvNotes').value=''; }
+  if(name==='receivable'){ populateSelects(); $('recvDue').value=t; $('recvComp').value=t; $('recvVal').value=''; $('recvDesc').value=''; $('recvDone').checked=false; $('recvRef').value=''; $('recvNotes').value=''; $('recvForma').value='dinheiro'; recvFormaChanged(); }
   if(name==='payable'){ populateSelects(); $('payDue').value=t; $('payComp').value=t; $('payVal').value=''; $('payDesc').value=''; $('payDone').checked=false; if($('payRef')) $('payRef').value=''; if($('payNotes')) $('payNotes').value=''; }
   if(name==='transfer'){ populateSelects(); $('transDate').value=t; $('transVal').value=''; $('transDesc').value=''; }
   if(name==='account'){ $('accName').value=''; $('accBal').value=''; $('accBalDate').value=t; $('accNum').value=''; $('accAgency').value=''; $('accPixKey').value=''; }
@@ -4726,14 +4780,32 @@ async function saveReceivable(keepOpen=false){
   const value  = pv($('recvVal').value);
   const desc   = $('recvDesc').value.trim();
   const catId  = $('recvCat').value;
-  const done   = $('recvDone').checked;
-  const accId  = $('recvAcc').value;
+  let   accId  = $('recvAcc').value;
+  const forma  = $('recvForma')?.value || 'dinheiro';
+  const isCard = forma==='debito' || forma==='credito';
+  const op     = isCard ? (S.operadoras||[]).find(o=>o.id===$('recvOperadora').value) : null;
+  if(isCard && !op){ toast('Selecione a operadora do cartão','error'); return; }
+
+  let fee = 0, netValue = value, cardDueDate = null;
+  if(op){
+    const taxaPct = forma==='debito' ? (op.taxa_debito||0) : (op.taxa_credito||0);
+    fee = value * taxaPct/100;
+    netValue = value - fee;
+    if(op.conta_destino_id) accId = op.conta_destino_id;
+    if(forma==='credito'){
+      const d = new Date(); d.setDate(d.getDate() + (op.prazo_credito_dias||0));
+      cardDueDate = d.toISOString().split('T')[0];
+    }
+  }
+  // Débito: recebido na hora. Crédito: só recebido no prazo (A Receber)
+  const done = forma==='debito' ? true : (forma==='credito' ? false : $('recvDone').checked);
+
   if(!value){ toast('Informe o valor','error'); return; }
   if(!desc)  { toast('Informe a descrição','error'); $('recvDesc').focus(); return; }
   if(!catId) { toast('Selecione a categoria','error'); return; }
   if(done && !accId) { toast('Selecione a conta para registrar o recebimento','error'); return; }
 
-  const baseDue   = $('recvDue').value || today();
+  const baseDue   = cardDueDate || $('recvDue').value || today();
   const baseComp  = $('recvComp').value || today();
   const doneDate  = done && $('recvDoneDate').value ? $('recvDoneDate').value : (done ? today() : null);
   const clientId  = $('recvClient').value;
@@ -4747,12 +4819,16 @@ async function saveReceivable(keepOpen=false){
   const period    = recAtivo ? ($('recvPeriod').value||'monthly') : 'monthly';
   const total     = nParcelas;
 
+  // Categoria "Taxas de Cartão" — usada para lançar a despesa automática da taxa
+  const taxaCat = S.cats.expense.find(c=>c.name.toLowerCase().includes('taxa') && c.name.toLowerCase().includes('cart'));
+
   for(let i=0; i<total; i++){
     const parcelDesc = total>1 ? `${desc} (${i+1}/${total})` : desc;
     const dueDate    = i===0 ? baseDue : addPeriod(baseDue, period, i);
     const compDate   = i===0 ? baseComp : addPeriod(baseComp, period, i);
     const isDone     = done && i===0; // só a 1ª pode estar paga de imediato
     const pDoneDate  = isDone ? doneDate : null;
+    const parcelFee  = fee/total;
 
     const saved = await sbInsert('transactions',{
       type:'receivable', amount:value, description:parcelDesc,
@@ -4765,10 +4841,25 @@ async function saveReceivable(keepOpen=false){
 
     const r = {id:saved.id, value, done:isDone, dueDate, compDate, doneDate:pDoneDate,
                desc:parcelDesc, categoryId:catId, accountId:accId, clientId, costCenterId:ccId,
-               ref, notes};
+               ref, notes, paymentMethod:forma, operadoraId:op?.id||null, fee:parcelFee, netValue:value-parcelFee};
     if(isDone && accId){
-      S.accounts = S.accounts.map(a=>a.id===accId?{...a,balance:a.balance+value}:a);
+      // Credita o valor líquido (bruto - taxa) quando é cartão; valor cheio nos demais casos
+      const creditAmount = op ? (value - parcelFee) : value;
+      S.accounts = S.accounts.map(a=>a.id===accId?{...a,balance:a.balance+creditAmount}:a);
       await sbUpdate('accounts', accId, {balance: S.accounts.find(a=>a.id===accId)?.balance});
+      // Lança a taxa como despesa automática, vinculada à mesma conta
+      if(op && parcelFee>0 && taxaCat){
+        const feeSaved = await sbInsert('transactions',{
+          type:'payable', amount:parcelFee, description:`Taxa ${op.nome} - ${parcelDesc}`,
+          due_date:doneDate||today(), paid_date:doneDate||today(), status:'paid',
+          category:taxaCat.id, account_id:accId, notes:'Taxa gerada automaticamente'
+        });
+        if(feeSaved){
+          S.payables.push({id:feeSaved.id, value:parcelFee, done:true, dueDate:doneDate||today(),
+            compDate:doneDate||today(), doneDate:doneDate||today(), desc:`Taxa ${op.nome} - ${parcelDesc}`,
+            categoryId:taxaCat.id, accountId:accId, autoGenerated:true});
+        }
+      }
     }
     S.receivables.push(r);
   }
@@ -4779,7 +4870,7 @@ async function saveReceivable(keepOpen=false){
     $('recvVal').value=''; $('recvDesc').value=''; $('recvDone').checked=false;
     $('recvDoneDateWrap').style.display='none'; $('recvCat').value=''; $('recvAcc').value='';
     $('recvClient').value=''; $('recvCC').value=''; $('recvCatInfo').style.display='none';
-    $('recvParcelas').value='';
+    $('recvParcelas').value=''; $('recvForma').value='dinheiro'; recvFormaChanged();
   }
   refresh();
 }
