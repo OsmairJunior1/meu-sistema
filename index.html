@@ -10170,15 +10170,16 @@ function cfgContasHTML(){
 
 function cfgUsuariosHTML(){
   const rows = (S.teamMembers||[]).length ? S.teamMembers.map(t=>`
-    <div style="display:grid;grid-template-columns:1fr 1fr 90px 90px;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f4f6f9;font-size:12px">
+    <div style="display:grid;grid-template-columns:1fr 1fr 90px 90px 90px;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f4f6f9;font-size:12px">
       <span style="font-weight:600;color:var(--text)">${t.name||'—'}</span>
       <span style="color:#64748b">${t.email||'—'}</span>
+      <span style="background:${t.role==='gerente'?'#EFF6FF':'#F5F3FF'};color:${t.role==='gerente'?'#2563EB':'#7C3AED'};padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;text-align:center">${t.role==='gerente'?'Gerente':'Funcionário'}</span>
       <span style="background:${t.active?'#F0FDF4':'#FEF2F2'};color:${t.active?'#15803D':'#B91C1C'};padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;text-align:center">${t.active?'Ativo':'Inativo'}</span>
       <span style="display:flex;justify-content:flex-end">
         <button onclick="toggleTeamMember('${t.id}',${!t.active})" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 8px;cursor:pointer;font-size:11px;color:var(--text);font-family:inherit">${t.active?'Desativar':'Reativar'}</button>
       </span>
     </div>`).join('')
-  : `<div style="padding:24px 0;text-align:center;color:#94a3b8;font-size:12px">Nenhum funcionário cadastrado ainda</div>`;
+  : `<div style="padding:24px 0;text-align:center;color:#94a3b8;font-size:12px">Nenhum usuário cadastrado ainda</div>`;
 
   return `
   <div>
@@ -10188,17 +10189,24 @@ function cfgUsuariosHTML(){
     </div>
 
     <div style="background:#FAFBFC;border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:20px">
-      <div style="font-size:12.5px;font-weight:700;color:var(--text);margin-bottom:12px">+ Novo Funcionário</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end">
-        <div class="form-group" style="margin-bottom:0"><label class="fl">Nome</label><input id="tmName" class="inp" placeholder="Nome do funcionário"></div>
+      <div style="font-size:12.5px;font-weight:700;color:var(--text);margin-bottom:12px">+ Novo Usuário</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end;margin-bottom:10px">
+        <div class="form-group" style="margin-bottom:0"><label class="fl">Nome</label><input id="tmName" class="inp" placeholder="Nome do usuário"></div>
         <div class="form-group" style="margin-bottom:0"><label class="fl">E-mail</label><input id="tmEmail" class="inp" type="email" placeholder="email@exemplo.com"></div>
         <div class="form-group" style="margin-bottom:0"><label class="fl">Senha</label><input id="tmPassword" class="inp" type="text" placeholder="Senha de acesso"></div>
         <button class="btn btn-primary" style="padding:10px 18px;white-space:nowrap" onclick="createTeamMember()" id="tmCreateBtn">Criar</button>
       </div>
+      <div class="form-group" style="margin-bottom:0;max-width:280px">
+        <label class="fl">Papel</label>
+        <select id="tmRole" class="inp">
+          <option value="funcionario">Funcionário (acesso restrito)</option>
+          <option value="gerente">Gerente (acesso completo)</option>
+        </select>
+      </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr 90px 90px;gap:10px;padding:4px 0;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;border-bottom:1px solid var(--border);margin-bottom:2px">
-      <span>Nome</span><span>E-mail</span><span>Status</span><span></span>
+    <div style="display:grid;grid-template-columns:1fr 1fr 90px 90px 90px;gap:10px;padding:4px 0;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;border-bottom:1px solid var(--border);margin-bottom:2px">
+      <span>Nome</span><span>E-mail</span><span>Papel</span><span>Status</span><span></span>
     </div>
     ${rows}
   </div>`;
@@ -10208,6 +10216,7 @@ async function createTeamMember(){
   const name = $('tmName').value.trim();
   const email = $('tmEmail').value.trim();
   const password = $('tmPassword').value;
+  const role = $('tmRole').value;
   if(!name || !email || !password){ toast('Preencha nome, e-mail e senha','error'); return; }
   if(password.length<6){ toast('A senha precisa ter pelo menos 6 caracteres','error'); return; }
 
@@ -10223,7 +10232,7 @@ async function createTeamMember(){
         'Authorization':`Bearer ${session.access_token}`,
         'apikey': SUPABASE_KEY
       },
-      body: JSON.stringify({ name, email, password })
+      body: JSON.stringify({ name, email, password, role })
     });
     const result = await resp.json();
     if(!resp.ok || result.error){
@@ -10232,7 +10241,7 @@ async function createTeamMember(){
       toast('Funcionário criado! 👤');
       $('tmName').value=''; $('tmEmail').value=''; $('tmPassword').value='';
       const tmRes = await _sb.from('team_members').select('*').eq('owner_id', _currentUser.id).order('created_at');
-      S.teamMembers = (tmRes.data || []).map(t => ({ id:t.id, name:t.name, email:t.email, active:t.active }));
+      S.teamMembers = (tmRes.data || []).map(t => ({ id:t.id, name:t.name, email:t.email, active:t.active, role:t.role||'funcionario' }));
       setCfgSection('usuarios');
     }
   } catch(e){
@@ -12182,9 +12191,10 @@ async function loadData() {
   if (!_currentUser) return;
   const uid = _currentUser.id;
   try {
-    // Descobre se este login é funcionário de alguém (nesse caso, os dados são do MASTER, não do próprio login)
+    // Descobre se este login é funcionário/gerente de alguém (nesse caso, os dados são do MASTER, não do próprio login)
     const teamRes = await _sb.from('team_members').select('*').eq('member_user_id', uid).eq('active', true).maybeSingle();
-    S.isEmployee = !!teamRes.data;
+    S.userRole = teamRes.data ? teamRes.data.role : 'master';
+    S.isEmployee = S.userRole === 'funcionario'; // só Funcionário tem restrição de acesso; Gerente e Master têm acesso completo
     S.ownerId = teamRes.data ? teamRes.data.owner_id : uid;
     const ownerId = S.ownerId;
 
@@ -12221,7 +12231,7 @@ async function loadData() {
     // Lista de funcionários (só carrega de verdade se for o master — funcionário não enxerga a lista)
     if(!S.isEmployee){
       const tmRes = await _sb.from('team_members').select('*').eq('owner_id', uid).order('created_at');
-      S.teamMembers = (tmRes.data || []).map(t => ({ id:t.id, name:t.name, email:t.email, active:t.active }));
+      S.teamMembers = (tmRes.data || []).map(t => ({ id:t.id, name:t.name, email:t.email, active:t.active, role:t.role||'funcionario' }));
     } else {
       S.teamMembers = [];
     }
@@ -12355,7 +12365,7 @@ function applyRolePermissions(){
     if(bloqueadas.includes(page)) b.style.display = S.isEmployee ? 'none' : '';
   });
   const usuariosNav = $('cfgNav-usuarios');
-  if(usuariosNav) usuariosNav.style.display = S.isEmployee ? 'none' : 'flex';
+  if(usuariosNav) usuariosNav.style.display = (S.userRole==='master') ? 'flex' : 'none';
 }
 
 async function showApp(user) {
