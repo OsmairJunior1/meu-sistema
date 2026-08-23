@@ -3349,6 +3349,32 @@ textarea.inp{min-height:80px;resize:vertical}
   </div>
 </div>
 
+<div id="modal-boleto-parc" class="modal-overlay" style="display:none;z-index:800">
+  <div class="modal-box" style="max-width:520px;padding:24px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div style="font-size:15px;font-weight:800;color:var(--text)">Parcelar Boleto</div>
+      <button onclick="cancelBoletoParcModal()" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:16px">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="form-row">
+        <div class="form-group"><label class="fl">Definir vencimento por</label>
+          <select id="bpModo" class="inp" onchange="bpRenderRows()">
+            <option value="dias">Dias a partir de hoje</option>
+            <option value="data">Data fixa</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="fl">Nº de parcelas</label><input id="bpQtd" type="number" class="inp" min="1" max="60" value="2" oninput="bpRenderRows()"></div>
+      </div>
+      <div id="bpRows" style="display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto"></div>
+      <div id="bpSum" style="font-size:11.5px;color:#64748b"></div>
+      <div style="display:flex;gap:10px;margin-top:6px">
+        <button class="btn btn-primary" style="flex:1;padding:12px" onclick="saveBoletoParcModal()">Salvar</button>
+        <button class="btn" style="flex:1;padding:12px;background:none;border:1px solid var(--border);color:var(--text)" onclick="cancelBoletoParcModal()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="modal-operadora" class="modal-overlay" style="display:none;z-index:700">
   <div class="modal-box" style="max-width:420px;padding:24px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
@@ -3422,9 +3448,9 @@ textarea.inp{min-height:80px;resize:vertical}
       <button class="modal-close" onclick="closeModal('receivable')">✕</button>
     </div>
     <div class="modal-body">
-      <div class="modal-3col" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;align-items:start">
-        <!-- Coluna 1: O que foi (tipo de receita), valor, descrição, cliente -->
-        <div style="display:flex;flex-direction:column;gap:13px">
+      <div class="modal-3col" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;align-items:stretch">
+        <!-- Coluna 1: O que foi (tipo de receita), valor, cliente, descrição (cresce) -->
+        <div style="display:flex;flex-direction:column;gap:13px;height:100%">
           <div class="form-group">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
               <label class="fl">Tipo de receita <span class="req">*</span></label>
@@ -3436,9 +3462,8 @@ textarea.inp{min-height:80px;resize:vertical}
           </div>
           <div class="form-group">
             <label class="fl">Valor do recebimento <span class="req">*</span></label>
-            <div class="big-value"><span>R$</span><input id="recvVal" placeholder="0,00" oninput="if($('recvOperadoraWrap').style.display!=='none')recvCalcNet(); if($('recvBoletoParc').style.display!=='none')recvBoletoUpdateSum();"></div>
+            <div class="big-value"><span>R$</span><input id="recvVal" placeholder="0,00" oninput="if($('recvOperadoraWrap').style.display!=='none')recvCalcNet();"></div>
           </div>
-          <div class="form-group"><label class="fl">Descrição</label><input id="recvDesc" class="inp" placeholder="Breve descrição..."></div>
           <div class="form-group">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
               <label class="fl">Cliente</label>
@@ -3446,7 +3471,12 @@ textarea.inp{min-height:80px;resize:vertical}
             </div>
             <select id="recvClient" class="inp"><option value="">Selecione o cliente...</option></select>
           </div>
+          <div class="form-group" style="flex:1;display:flex;flex-direction:column">
+            <label class="fl">Descrição</label>
+            <textarea id="recvDesc" class="inp" style="flex:1;min-height:80px;resize:none" placeholder="Breve descrição..."></textarea>
+          </div>
         </div>
+
 
         <!-- Coluna 2: Forma de recebimento, operadora/conta, vencimento, já recebido -->
         <div style="display:flex;flex-direction:column;gap:13px">
@@ -3458,6 +3488,7 @@ textarea.inp{min-height:80px;resize:vertical}
               <option value="debito">Cartão de Débito</option>
               <option value="credito">Cartão de Crédito</option>
               <option value="boleto">Boleto</option>
+              <option value="aprazo">A Prazo (sem boleto)</option>
             </select>
           </div>
           <div id="recvOperadoraWrap" style="display:none">
@@ -3475,44 +3506,27 @@ textarea.inp{min-height:80px;resize:vertical}
             <select id="recvAcc" class="inp"><option value="">Selecione a conta...</option></select>
           </div>
           <div class="form-group">
-            <label class="fl">Data de vencimento</label>
+            <label class="fl" id="recvDueLabel">Data de vencimento</label>
             <input type="date" id="recvDue" class="inp">
           </div>
-          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:10px 12px">
-            <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;font-weight:600">
-              <input type="checkbox" id="recvDone" style="accent-color:#22C55E;width:15px;height:15px" onchange="toggleRecvDoneDate()"> Já foi recebido
-            </label>
-            <div id="recvDoneDateWrap" style="display:none;margin-top:10px">
-              <div class="form-group"><label class="fl">Data do recebimento</label><input type="date" id="recvDoneDate" class="inp"></div>
-            </div>
-          </div>
-          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:10px 12px">
-            <p style="font-size:11.5px;font-weight:700;margin-bottom:8px;color:var(--text)">Recorrência/Parcelamento?</p>
+          <!-- Recorrência padrão (mesmo intervalo todo período) — Dinheiro/PIX apenas -->
+          <div id="recvRecWrap" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:10px 12px">
+            <p style="font-size:11.5px;font-weight:700;margin-bottom:8px;color:var(--text)">Recorrência?</p>
             <div style="display:flex;gap:6px">
               <button id="recvRecNo"  onclick="setRec('recv','no')"  style="flex:1;padding:6px;border-radius:7px;border:1.5px solid #e2e8f0;background:#fff;font-size:12px;font-weight:600;color:#64748b;cursor:pointer;font-family:inherit;transition:all .15s">✕ Não</button>
               <button id="recvRecYes" onclick="setRec('recv','yes')" style="flex:1;padding:6px;border-radius:7px;border:1.5px solid #e2e8f0;background:#fff;font-size:12px;font-weight:600;color:#64748b;cursor:pointer;font-family:inherit;transition:all .15s">✓ Sim</button>
             </div>
-            <!-- Recorrência padrão (mesmo intervalo todo período) — usado quando NÃO é boleto -->
             <div id="recvRecFields" style="display:none;flex-direction:column;gap:10px;margin-top:10px">
               <div class="form-row">
                 <div class="form-group"><label class="fl">Período</label><select id="recvPeriod" class="inp"><option value="monthly">Mensal</option><option value="weekly">Semanal</option><option value="biweekly">Quinzenal</option><option value="yearly">Anual</option></select></div>
-                <div class="form-group"><label class="fl">Parcelas</label><input id="recvParcelas" type="number" class="inp" placeholder="Qtd..." min="1" max="120" oninput="recvBoletoSync()"></div>
+                <div class="form-group"><label class="fl">Parcelas</label><input id="recvParcelas" type="number" class="inp" placeholder="Qtd..." min="1" max="120"></div>
               </div>
             </div>
-            <!-- Parcelamento customizado — só para Boleto: cada parcela com seu próprio prazo/data e valor -->
-            <div id="recvBoletoParc" style="display:none;flex-direction:column;gap:8px;margin-top:10px">
-              <div class="form-row">
-                <div class="form-group"><label class="fl">Definir vencimento por</label>
-                  <select id="recvBoletoModo" class="inp" onchange="recvBoletoRenderRows()">
-                    <option value="dias">Dias a partir de hoje</option>
-                    <option value="data">Data fixa</option>
-                  </select>
-                </div>
-                <div class="form-group"><label class="fl">Nº de parcelas</label><input id="recvBoletoQtd" type="number" class="inp" min="1" max="60" value="1" oninput="recvBoletoRenderRows()"></div>
-              </div>
-              <div id="recvBoletoRows" style="display:flex;flex-direction:column;gap:6px"></div>
-              <div id="recvBoletoSum" style="font-size:11px;color:#64748b;padding:2px 2px"></div>
-            </div>
+          </div>
+          <!-- Parcelamento de boleto — botão que abre modal dedicado -->
+          <div id="recvBoletoParc" style="display:none;flex-direction:column;gap:6px">
+            <button type="button" class="btn btn-outline" style="width:100%;justify-content:center;font-size:12px" onclick="openBoletoParcModal()">⚙️ Parcelar boleto</button>
+            <div id="recvBoletoSummary" style="font-size:11px;color:#64748b;padding:2px 2px"></div>
           </div>
         </div>
 
@@ -4312,14 +4326,6 @@ function recvFormaChanged(){
   const isCard = forma==='debito' || forma==='credito';
   $('recvOperadoraWrap').style.display = isCard ? 'block' : 'none';
   $('recvAccWrap').style.display = isCard ? 'none' : 'block';
-  const doneWrap = $('recvDone');
-  if(forma==='debito'){
-    // Débito: recebido na hora
-    $('recvDone').checked = true; toggleRecvDoneDate();
-  } else if(forma==='credito'){
-    // Crédito: só recebe no prazo — não marca como já recebido
-    $('recvDone').checked = false; toggleRecvDoneDate();
-  }
   if(isCard){
     const ops = (S.operadoras||[]);
     const sel = $('recvOperadora');
@@ -4328,7 +4334,15 @@ function recvFormaChanged(){
     if(padrao) sel.value = padrao.id;
     recvCalcNet();
   }
-  recvBoletoSync();
+  // Rótulo da data muda conforme a forma
+  $('recvDueLabel').textContent = (forma==='boleto'||forma==='aprazo'||forma==='credito') ? 'Data de vencimento' : 'Data';
+  // Recorrência só faz sentido para Dinheiro/PIX (receita recorrente, tipo mensalidade)
+  const showRec = forma==='dinheiro' || forma==='pix';
+  $('recvRecWrap').style.display = showRec ? 'block' : 'none';
+  if(!showRec) setRec('recv','no');
+  // Parcelamento de boleto: botão dedicado só aparece para Boleto
+  $('recvBoletoParc').style.display = forma==='boleto' ? 'flex' : 'none';
+  if(forma!=='boleto'){ S._recvBoletoParcelas = null; $('recvBoletoSummary').innerHTML=''; }
 }
 
 function recvCalcNet(){
@@ -4347,7 +4361,7 @@ function recvCalcNet(){
 
 function openModal(name, preserveState){
   const t=today();
-  if(name==='receivable' && !preserveState){ populateSelects(); $('recvDue').value=t; $('recvComp').value=t; $('recvVal').value=''; $('recvDesc').value=''; $('recvDone').checked=false; $('recvRef').value=''; $('recvNotes').value=''; $('recvForma').value='dinheiro'; recvFormaChanged(); setRec('recv','no'); }
+  if(name==='receivable' && !preserveState){ populateSelects(); $('recvDue').value=t; $('recvComp').value=t; $('recvVal').value=''; $('recvDesc').value=''; $('recvRef').value=''; $('recvNotes').value=''; $('recvForma').value='dinheiro'; S._recvBoletoParcelas=null; recvFormaChanged(); setRec('recv','no'); }
   if(name==='receivable' && preserveState){ populateSelects(); }
   if(name==='payable'){ populateSelects(); $('payDue').value=t; $('payComp').value=t; $('payVal').value=''; $('payDesc').value=''; $('payDone').checked=false; if($('payRef')) $('payRef').value=''; if($('payNotes')) $('payNotes').value=''; }
   if(name==='transfer'){ populateSelects(); $('transDate').value=t; $('transVal').value=''; $('transDesc').value=''; }
@@ -4415,57 +4429,72 @@ function setRec(prefix, val){
     yesBtn.style.background='#f8fafc'; yesBtn.style.borderColor='#e2e8f0'; yesBtn.style.color='#64748b';
     if(fields) fields.style.display='none';
   }
-  if(prefix==='recv') recvBoletoSync();
 }
 
-// ─── BOLETO: parcelamento com vencimentos e valores customizados ──
-function recvBoletoSync(){
-  const isBoleto = $('recvForma').value==='boleto';
-  const isRec = $('recvRecYes')?.style.background==='#22C55E' || $('recvRecYes')?.style.background==='rgb(34, 197, 94)';
-  const custom = isBoleto && isRec;
-  $('recvRecFields').style.display    = (isRec && !isBoleto) ? 'flex' : 'none';
-  $('recvBoletoParc').style.display   = custom ? 'flex' : 'none';
-  if(custom) recvBoletoRenderRows();
+// ─── MODAL DEDICADO: parcelamento de boleto (dias ou data fixa, valores editáveis) ──
+function openBoletoParcModal(){
+  const total = pv($('recvVal').value)||0;
+  if(!total){ toast('Informe o valor do boleto antes de parcelar','error'); return; }
+  const prev = S._recvBoletoParcelas;
+  $('bpQtd').value = prev ? prev.length : 2;
+  $('bpModo').value = prev ? (prev[0].modo||'dias') : 'dias';
+  bpRenderRows();
+  $('modal-boleto-parc').style.display='flex';
 }
+function cancelBoletoParcModal(){ $('modal-boleto-parc').style.display='none'; }
 
-function recvBoletoRenderRows(){
-  const qtd = Math.max(1, parseInt($('recvBoletoQtd').value)||1);
-  const modo = $('recvBoletoModo').value;
+function bpRenderRows(){
+  const qtd = Math.max(1, parseInt($('bpQtd').value)||1);
+  const modo = $('bpModo').value;
   const total = pv($('recvVal').value)||0;
   const equalVal = qtd>0 ? (total/qtd) : 0;
-  const wrap = $('recvBoletoRows');
-  // Preserva valores já digitados ao só mudar a quantidade/modo, quando possível
-  const prevRows = Array.from(wrap.querySelectorAll('[data-row]')).map(r=>({
-    dias:r.querySelector('.bp-dias')?.value, data:r.querySelector('.bp-data')?.value, valor:r.querySelector('.bp-valor')?.value
-  }));
+  const prev = S._recvBoletoParcelas;
+  const wrap = $('bpRows');
   let html='';
   for(let i=0;i<qtd;i++){
-    const prev = prevRows[i];
+    const p = prev && prev[i];
     const dueInput = modo==='dias'
-      ? `<input class="inp bp-dias" type="number" min="0" placeholder="dias" style="width:70px" value="${prev?.dias??((i+1)*10)}">`
-      : `<input class="inp bp-data" type="date" style="width:130px" value="${prev?.data??''}">`;
-    const valorVal = prev?.valor ?? equalVal.toFixed(2).replace('.',',');
+      ? `<input class="inp bp-dias" type="number" min="0" placeholder="dias" style="width:75px" value="${p?.dias ?? ((i+1)*10)}">`
+      : `<input class="inp bp-data" type="date" style="width:135px" value="${p?.data ?? ''}">`;
+    const valorVal = p?.value ? String(p.value).toFixed(2).replace('.',',') : equalVal.toFixed(2).replace('.',',');
     html += `<div data-row="${i}" style="display:flex;gap:6px;align-items:center">
-      <span style="font-size:11px;color:#94a3b8;width:16px">${i+1}ª</span>
+      <span style="font-size:11px;color:#94a3b8;width:18px">${i+1}ª</span>
       ${dueInput}
-      <input class="inp bp-valor" placeholder="0,00" style="flex:1" value="${valorVal}" oninput="recvBoletoUpdateSum()">
+      <input class="inp bp-valor" placeholder="0,00" style="flex:1" value="${valorVal}" oninput="bpUpdateSum()">
     </div>`;
   }
   wrap.innerHTML = html;
-  recvBoletoUpdateSum();
+  bpUpdateSum();
 }
 
-function recvBoletoUpdateSum(){
+function bpUpdateSum(){
   const total = pv($('recvVal').value)||0;
-  const rows = Array.from($('recvBoletoRows').querySelectorAll('.bp-valor'));
+  const rows = Array.from($('bpRows').querySelectorAll('.bp-valor'));
   const sum = rows.reduce((s,i)=>s+pv(i.value),0);
   const diff = total - sum;
-  const el = $('recvBoletoSum');
+  const el = $('bpSum');
   if(Math.abs(diff) < 0.01){
     el.innerHTML = `Soma das parcelas: <b style="color:#15803D">${fmt(sum)}</b> de ${fmt(total)} ✓`;
   } else {
     el.innerHTML = `Soma das parcelas: <b style="color:#DC2626">${fmt(sum)}</b> de ${fmt(total)} (diferença de ${fmt(Math.abs(diff))})`;
   }
+}
+
+function saveBoletoParcModal(){
+  const modo = $('bpModo').value;
+  const rows = Array.from($('bpRows').querySelectorAll('[data-row]'));
+  const parcelas = rows.map(r=>({
+    modo,
+    dias: modo==='dias' ? (parseInt(r.querySelector('.bp-dias').value)||0) : null,
+    data: modo==='data' ? (r.querySelector('.bp-data').value||today()) : null,
+    value: pv(r.querySelector('.bp-valor').value)||0
+  }));
+  if(!parcelas.length || parcelas.every(p=>!p.value)){ toast('Informe os valores das parcelas','error'); return; }
+  S._recvBoletoParcelas = parcelas;
+  const qtd = parcelas.length;
+  const total = parcelas.reduce((s,p)=>s+p.value,0);
+  $('recvBoletoSummary').innerHTML = `<b>${qtd} parcelas</b> configuradas — total ${fmt(total)}`;
+  $('modal-boleto-parc').style.display='none';
 }
 
 // ─── COLOR PICK ───────────────────────────────────────────
@@ -4740,12 +4769,7 @@ function payCatChanged(){
 }
 
 
-// Done-date toggles
-function toggleRecvDoneDate(){
-  const w=$('recvDoneDateWrap');
-  w.style.display=$('recvDone').checked?'block':'none';
-  if($('recvDone').checked&&!$('recvDoneDate').value) $('recvDoneDate').value=today();
-}
+// Done-date toggle (Pagamentos)
 function togglePayDoneDate(){
   const w=$('payDoneDateWrap');
   w.style.display=$('payDone').checked?'block':'none';
@@ -4768,7 +4792,7 @@ function quickNewClient(returnModal){
   if(returnModal==='receivable'){
     S._savedRecv={
       val:$('recvVal').value, desc:$('recvDesc').value, due:$('recvDue').value,
-      comp:$('recvComp').value, done:$('recvDone').checked, doneDate:$('recvDoneDate').value,
+      comp:$('recvComp').value,
       cat:$('recvCat').value, client:$('recvClient').value, cc:$('recvCC').value,
       ref:$('recvRef').value, notes:$('recvNotes').value,
       period:$('recvPeriod').value, parcelas:$('recvParcelas').value,
@@ -4856,8 +4880,9 @@ async function saveReceivable(keepOpen=false){
       cardDueDate = d.toISOString().split('T')[0];
     }
   }
-  // Débito: recebido na hora. Crédito: só recebido no prazo (A Receber)
-  const done = forma==='debito' ? true : (forma==='credito' ? false : $('recvDone').checked);
+  // "Já foi recebido" agora é automático conforme a forma escolhida:
+  // Dinheiro/PIX/Débito = recebido na hora | Crédito/Boleto/A Prazo = pendente (A Receber)
+  const done = (forma==='dinheiro' || forma==='pix' || forma==='debito');
 
   if(!value){ toast('Informe o valor','error'); return; }
   if(!desc)  { toast('Informe a descrição','error'); $('recvDesc').focus(); return; }
@@ -4866,36 +4891,31 @@ async function saveReceivable(keepOpen=false){
 
   const baseDue   = cardDueDate || $('recvDue').value || today();
   const baseComp  = $('recvComp').value || today();
-  const doneDate  = done && $('recvDoneDate').value ? $('recvDoneDate').value : (done ? today() : null);
+  const doneDate  = done ? today() : null;
   const clientId  = $('recvClient').value;
   const ccId      = $('recvCC').value;
   const ref       = $('recvRef')?.value?.trim() || '';
   const notes     = $('recvNotes')?.value?.trim() || '';
 
-  // Verifica se recorrência está ativa (botão Sim selecionado = fundo verde)
+  // Verifica se recorrência está ativa (Dinheiro/PIX apenas)
   const recAtivo   = $('recvRecYes')?.style.background === '#22C55E' || $('recvRecYes')?.style.background === 'rgb(34, 197, 94)';
-  const isBoletoCustom = forma==='boleto' && recAtivo;
+  const isBoletoCustom = forma==='boleto' && !!S._recvBoletoParcelas;
 
-  // Monta a lista de parcelas: modo customizado (boleto) ou modo padrão (período fixo)
+  // Monta a lista de parcelas: boleto customizado (modal dedicado) ou modo padrão (período fixo)
   let parcelas = [];
   if(isBoletoCustom){
-    const modo = $('recvBoletoModo').value;
-    const rows = Array.from($('recvBoletoRows').querySelectorAll('[data-row]'));
-    if(!rows.length){ toast('Adicione ao menos uma parcela','error'); return; }
-    parcelas = rows.map(r=>{
-      const valor = pv(r.querySelector('.bp-valor').value) || 0;
+    parcelas = S._recvBoletoParcelas.map(p=>{
       let due;
-      if(modo==='dias'){
-        const dias = parseInt(r.querySelector('.bp-dias').value)||0;
-        const d = new Date(); d.setDate(d.getDate()+dias);
+      if(p.modo==='dias'){
+        const d = new Date(); d.setDate(d.getDate()+(p.dias||0));
         due = d.toISOString().split('T')[0];
       } else {
-        due = r.querySelector('.bp-data').value || today();
+        due = p.data || today();
       }
-      return {value:valor, dueDate:due};
+      return {value:p.value, dueDate:due};
     });
     const somaParcelas = parcelas.reduce((s,p)=>s+p.value,0);
-    if(somaParcelas<=0){ toast('Informe o valor das parcelas','error'); return; }
+    if(somaParcelas<=0){ toast('Configure as parcelas do boleto','error'); return; }
   } else {
     const nParcelas = recAtivo ? (parseInt($('recvParcelas').value)||1) : 1;
     const period    = recAtivo ? ($('recvPeriod').value||'monthly') : 'monthly';
@@ -4957,10 +4977,10 @@ async function saveReceivable(keepOpen=false){
   toast(total>1 ? `${total} parcelas adicionadas! ✅` : 'Recebimento adicionado! ✅');
   if(!keepOpen) closeModal('receivable');
   else {
-    $('recvVal').value=''; $('recvDesc').value=''; $('recvDone').checked=false;
-    $('recvDoneDateWrap').style.display='none'; $('recvCat').value=''; $('recvAcc').value='';
+    $('recvVal').value=''; $('recvDesc').value='';
+    $('recvCat').value=''; $('recvAcc').value='';
     $('recvClient').value=''; $('recvCC').value=''; $('recvCatInfo').style.display='none';
-    $('recvParcelas').value=''; $('recvForma').value='dinheiro'; recvFormaChanged();
+    $('recvParcelas').value=''; $('recvForma').value='dinheiro'; S._recvBoletoParcelas=null; recvFormaChanged();
   }
   refresh();
 }
@@ -5099,7 +5119,6 @@ async function saveClient(){
       if(sv.desc)   $('recvDesc').value=sv.desc;
       if(sv.due)    $('recvDue').value=sv.due;
       if(sv.comp)   $('recvComp').value=sv.comp;
-      if(sv.done){  $('recvDone').checked=true; toggleRecvDoneDate(); if(sv.doneDate) $('recvDoneDate').value=sv.doneDate; }
       if(sv.cat)    $('recvCat').value=sv.cat;
       if(sv.cc)     $('recvCC').value=sv.cc;
       if(sv.ref)    $('recvRef').value=sv.ref;
@@ -7236,11 +7255,9 @@ function openEditLanc(id, type){
       $('recvClient').value = item.clientId||'';
       if($('recvRef'))   $('recvRef').value   = item.ref||'';
       if($('recvNotes')) $('recvNotes').value = item.notes||'';
-      if(item.done){
-        $('recvDone').checked=true;
-        $('recvDoneDateWrap').style.display='block';
-        $('recvDoneDate').value=item.doneDate||today();
-      }
+      $('recvForma').value = item.paymentMethod||'dinheiro';
+      recvFormaChanged();
+      if(item.operadoraId){ $('recvOperadora').value = item.operadoraId; recvCalcNet(); }
     } else {
       $('payVal').value  = item.value.toFixed(2).replace('.',',');
       $('payDesc').value = item.desc||'';
@@ -7288,10 +7305,11 @@ async function saveEditLanc(){
   if(!catId) { toast('Selecione a categoria','error'); return; }
 
   const dueDate  = isIncome ? $('recvDue').value  : $('payDue').value;
-  const done     = isIncome ? $('recvDone').checked : $('payDone').checked;
+  const recvForma = isIncome ? ($('recvForma')?.value||'dinheiro') : null;
+  const done     = isIncome ? (recvForma==='dinheiro'||recvForma==='pix'||recvForma==='debito') : $('payDone').checked;
   if(done && !accId) { toast(isIncome ? 'Selecione a conta para registrar o recebimento' : 'Selecione a conta para registrar o pagamento','error'); return; }
   const doneDate = isIncome
-    ? ($('recvDoneDate').value || (done?today():null))
+    ? (done ? today() : null)
     : ($('payDoneDate').value  || (done?today():null));
   const ref   = isIncome ? ($('recvRef')?.value?.trim()||'')   : ($('payRef')?.value?.trim()||'');
   const notes = isIncome ? ($('recvNotes')?.value?.trim()||'') : ($('payNotes')?.value?.trim()||'');
@@ -9259,8 +9277,8 @@ function openModalFromOFX(type, descEnc, absVal, date){
       $('recvDesc').value = desc;
       $('recvVal').value  = val.toFixed(2).replace('.',',');
       if(date) $('recvDue').value = date;
-      if($('recvDone')){ $('recvDone').checked=true; toggleRecvDone && toggleRecvDone(); }
-      if($('recvDoneDate')&&date) $('recvDoneDate').value=date;
+      // Transação importada do banco já ocorreu — marca forma como Dinheiro (recebido na hora)
+      if($('recvForma')){ $('recvForma').value='dinheiro'; recvFormaChanged(); }
     }
     // Pre-select account from current extrato
     if(S.extratoAccountId){
