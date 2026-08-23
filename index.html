@@ -3423,12 +3423,33 @@ textarea.inp{min-height:80px;resize:vertical}
     </div>
     <div class="modal-body">
       <div class="modal-3col" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;align-items:start">
-        <!-- Coluna 1: Valor e forma de recebimento -->
+        <!-- Coluna 1: O que foi (tipo de receita), valor, descrição, cliente -->
         <div style="display:flex;flex-direction:column;gap:13px">
+          <div class="form-group">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <label class="fl">Tipo de receita <span class="req">*</span></label>
+              <button onclick="quickNewCat('income')" style="font-size:10px;color:#22C55E;background:none;border:none;cursor:pointer;font-weight:700;padding:0">+ Novo tipo</button>
+            </div>
+            <select id="recvCat" class="inp" onchange="recvCatChanged()"><option value="">Selecione...</option></select>
+            <div id="recvCatWrap"></div>
+            <div id="recvCatInfo" style="display:none;margin-top:4px;font-size:11px;color:#64748b;padding:4px 8px;background:#f0fdf4;border-radius:6px;border-left:3px solid #22C55E"></div>
+          </div>
           <div class="form-group">
             <label class="fl">Valor do recebimento <span class="req">*</span></label>
             <div class="big-value"><span>R$</span><input id="recvVal" placeholder="0,00" oninput="if($('recvOperadoraWrap').style.display!=='none')recvCalcNet()"></div>
           </div>
+          <div class="form-group"><label class="fl">Descrição</label><input id="recvDesc" class="inp" placeholder="Breve descrição..."></div>
+          <div class="form-group">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <label class="fl">Cliente</label>
+              <button onclick="quickNewClient('receivable')" style="font-size:10px;color:#f59e0b;background:none;border:none;cursor:pointer;font-weight:700;padding:0">+ Novo cliente</button>
+            </div>
+            <select id="recvClient" class="inp"><option value="">Selecione o cliente...</option></select>
+          </div>
+        </div>
+
+        <!-- Coluna 2: Forma de recebimento, operadora/conta, vencimento, já recebido -->
+        <div style="display:flex;flex-direction:column;gap:13px">
           <div class="form-group">
             <label class="fl">Forma de recebimento</label>
             <select id="recvForma" class="inp" onchange="recvFormaChanged()">
@@ -3453,10 +3474,6 @@ textarea.inp{min-height:80px;resize:vertical}
             </div>
             <select id="recvAcc" class="inp"><option value="">Selecione a conta...</option></select>
           </div>
-        </div>
-
-        <!-- Coluna 2: Datas, descrição, categoria, cliente -->
-        <div style="display:flex;flex-direction:column;gap:13px">
           <div class="form-group">
             <label class="fl">Data de vencimento</label>
             <input type="date" id="recvDue" class="inp">
@@ -3469,28 +3486,10 @@ textarea.inp{min-height:80px;resize:vertical}
               <div class="form-group"><label class="fl">Data do recebimento</label><input type="date" id="recvDoneDate" class="inp"></div>
             </div>
           </div>
-          <div class="form-group"><label class="fl">Descrição</label><input id="recvDesc" class="inp" placeholder="Breve descrição..."></div>
-          <div class="form-group">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-              <label class="fl">Categoria <span class="req">*</span></label>
-              <button onclick="quickNewCat('income')" style="font-size:10px;color:#22C55E;background:none;border:none;cursor:pointer;font-weight:700;padding:0">+ Nova categoria</button>
-            </div>
-            <select id="recvCat" class="inp" onchange="recvCatChanged()"><option value="">Selecione...</option></select>
-            <div id="recvCatWrap"></div>
-            <div id="recvCatInfo" style="display:none;margin-top:4px;font-size:11px;color:#64748b;padding:4px 8px;background:#f0fdf4;border-radius:6px;border-left:3px solid #22C55E"></div>
-          </div>
         </div>
 
-        <!-- Coluna 3: Competência, cliente, centro de custo, recorrência, adicionais -->
+        <!-- Coluna 3: Complementares -->
         <div style="display:flex;flex-direction:column;gap:13px">
-          <div class="form-group"><label class="fl">Data competência</label><input type="date" id="recvComp" class="inp"></div>
-          <div class="form-group">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-              <label class="fl">Cliente</label>
-              <button onclick="quickNewClient('receivable')" style="font-size:10px;color:#f59e0b;background:none;border:none;cursor:pointer;font-weight:700;padding:0">+ Novo cliente</button>
-            </div>
-            <select id="recvClient" class="inp"><option value="">Selecione o cliente...</option></select>
-          </div>
           <div class="form-group">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
               <label class="fl">Centro de custo</label>
@@ -3498,6 +3497,7 @@ textarea.inp{min-height:80px;resize:vertical}
             </div>
             <select id="recvCC" class="inp"><option value="">Selecione...</option></select>
           </div>
+          <div class="form-group"><label class="fl">Data competência</label><input type="date" id="recvComp" class="inp"></div>
           <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:10px 12px">
             <p style="font-size:11.5px;font-weight:700;margin-bottom:8px;color:var(--text)">Recorrência/Parcelamento?</p>
             <div style="display:flex;gap:6px">
