@@ -3458,7 +3458,10 @@ textarea.inp{min-height:80px;resize:vertical}
             </div>
             <select id="recvCat" class="inp" onchange="recvCatChanged()"><option value="">Selecione...</option></select>
             <div id="recvCatWrap"></div>
-            <div id="recvCatInfo" style="display:none;margin-top:4px;font-size:11px;color:#64748b;padding:4px 8px;background:#f0fdf4;border-radius:6px;border-left:3px solid #22C55E"></div>
+          </div>
+          <div class="form-group">
+            <label class="fl" id="recvDueLabel">Data de vencimento</label>
+            <input type="date" id="recvDue" class="inp">
           </div>
           <div class="form-group">
             <label class="fl">Valor do recebimento <span class="req">*</span></label>
@@ -3516,10 +3519,6 @@ textarea.inp{min-height:80px;resize:vertical}
               <button onclick="quickNewAccount('receivable')" style="font-size:10px;color:#3b82f6;background:none;border:none;cursor:pointer;font-weight:700;padding:0">+ Conta Bancária</button>
             </div>
             <select id="recvAcc" class="inp"><option value="">Selecione a conta...</option></select>
-          </div>
-          <div class="form-group">
-            <label class="fl" id="recvDueLabel">Data de vencimento</label>
-            <input type="date" id="recvDue" class="inp">
           </div>
           <!-- Recorrência padrão (mesmo intervalo todo período) — Dinheiro/PIX apenas -->
           <div id="recvRecWrap" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:10px 12px">
@@ -4766,10 +4765,7 @@ function populateSelects(){
 
 // Category → synthetic account info (now uses group field)
 function recvCatChanged(){
-  const cat=S.cats.income.find(c=>c.id===$('recvCat').value);
-  const info=$('recvCatInfo');
-  if(cat?.group){ info.style.display='block'; info.textContent='↗ Grupo: '+cat.group; }
-  else info.style.display='none';
+  // Info de grupo removida a pedido — não exibe mais abaixo do campo
 }
 function payCatChanged(){
   const cat=S.cats.expense.find(c=>c.id===$('payCat').value);
@@ -4988,7 +4984,7 @@ async function saveReceivable(keepOpen=false){
   else {
     $('recvVal').value=''; $('recvDesc').value='';
     $('recvCat').value=''; $('recvAcc').value='';
-    $('recvClient').value=''; $('recvCC').value=''; $('recvCatInfo').style.display='none';
+    $('recvClient').value=''; $('recvCC').value='';
     $('recvParcelas').value=''; $('recvForma').value='dinheiro'; S._recvBoletoParcelas=null; recvFormaChanged();
   }
   refresh();
