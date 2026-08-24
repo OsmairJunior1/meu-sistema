@@ -10200,30 +10200,135 @@ function cfgContasHTML(){
 
 const AUDIT_TABLE_LABELS = {
   transactions:'Lançamento', accounts:'Conta Bancária', contacts:'Cliente/Fornecedor',
-  cost_centers:'Centro de Custo', operadoras_cartao:'Operadora de Cartão', payment_defaults:'Forma de Pagamento'
+  cost_centers:'Centro de Custo', operadoras_cartao:'Operadora de Cartão', payment_defaults:'Forma de Pagamento',
+  team_members:'Usuário'
 };
 const AUDIT_ACTION_LABELS = {
   create:{label:'Criou', color:'#15803D', bg:'#F0FDF4'},
   update:{label:'Editou', color:'#B45309', bg:'#FFFBEB'},
   delete:{label:'Excluiu', color:'#B91C1C', bg:'#FEF2F2'}
 };
-
-async function loadAuditoria(){
-  const { data, error } = await _sb.from('audit_log').select('*').order('created_at',{ascending:false}).limit(300);
-  if(error){ $('cfgContent').innerHTML = `<div style="padding:24px;text-align:center;color:#DC2626;font-size:12px">Erro ao carregar histórico</div>`; return; }
-  S.auditLog = data||[];
-  renderAuditoriaList();
+// Tradução dos nomes de campo (chaves do banco) para português
+const AUDIT_FIELD_LABELS = {
+  description:'Descrição', desc:'Descrição', amount:'Valor', value:'Valor',
+  category:'Categoria', categoryId:'Categoria', account_id:'Conta', accountId:'Conta',
+  contact_id:'Cliente/Fornecedor', clientId:'Cliente', supplierId:'Fornecedor',
+  due_date:'Vencimento', dueDate:'Vencimento', paid_date:'Data do Pagamento', doneDate:'Data do Pagamento',
+  status:'Status', type:'Tipo', name:'Nome', nome:'Nome', email:'E-mail', phone:'Telefone', document:'Documento',
+  notes:'Anotações', reference:'Referência', ref:'Referência', active:'Ativo',
+  balance:'Saldo', number:'Número da conta', agency:'Agência', pixKey:'Chave Pix',
+  taxa_debito:'Taxa Débito (%)', taxa_credito:'Taxa Crédito (%)', prazo_credito_dias:'Prazo (dias)',
+  modo_credito:'Modo de recebimento', intervalo_parcelas_dias:'Intervalo entre parcelas',
+  conta_destino_id:'Conta destino', ordem:'Ordem', tipo:'Tipo', role:'Papel', group:'Grupo', costCenterId:'Centro de Custo'
+};
+function auditResolveValue(field, val){
+  if(val===null || val===undefined || val==='') return '—';
+  if((field==='account_id'||field==='accountId'||field==='conta_destino_id')){
+    const a = S.accounts.find(x=>x.id===val); return a ? a.name : val;
+  }
+  if(field==='category'||field==='categoryId'){
+    const c = [...S.cats.income,...S.cats.expense].find(x=>x.id===val); return c ? c.name : val;
+  }
+  if(field==='status') return val==='paid' ? 'Pago/Recebido' : (val==='pending'?'Pendente':val);
+  if(field==='active') return val ? 'Sim' : 'Não';
+  if((field==='amount'||field==='value'||field==='balance') && typeof val==='number') return fmt(val);
+  if(typeof val==='object') return JSON.stringify(val);
+  return String(val);
 }
 
-function renderAuditoriaList(){
-  const list = S.auditLog||[];
+async function loadAuditoria(){
+  const { data, error } = await _sb.from('audit_log').select('*').order('created_at',{ascending:false}).limit(500);
+  if(error){ $('cfgContent').innerHTML = `<div style="padding:24px;text-align:center;color:#DC2626;font-size:12px">Erro ao carregar histórico</div>`; return; }
+  S.auditLog = data||[];
+  S._auditFiltroUser = 'all';
+  S._auditFiltroPeriodo = 'all';
+  renderAuditoriaScreen();
+}
+
+function auditFiltrar(){
+  let list = S.auditLog||[];
+  if(S._auditFiltroUser!=='all') list = list.filter(a=>a.actor_user_id===S._auditFiltroUser);
+  const hoje = today();
+  if(S._auditFiltroPeriodo==='hoje'){
+    list = list.filter(a=>a.created_at.slice(0,10)===hoje);
+  } else if(S._auditFiltroPeriodo==='5dias'){
+    const d=new Date(); d.setDate(d.getDate()-5);
+    const lim=d.toISOString().split('T')[0];
+    list = list.filter(a=>a.created_at.slice(0,10)>=lim);
+  } else if(S._auditFiltroPeriodo==='intervalo'){
+    const de=$('auditDataDe')?.value, ate=$('auditDataAte')?.value;
+    if(de) list = list.filter(a=>a.created_at.slice(0,10)>=de);
+    if(ate) list = list.filter(a=>a.created_at.slice(0,10)<=ate);
+  }
+  return list;
+}
+function setAuditFiltroUser(v){ S._auditFiltroUser=v; renderAuditoriaLista(); }
+function setAuditFiltroPeriodo(v){
+  S._auditFiltroPeriodo=v;
+  document.querySelectorAll('.audit-periodo-btn').forEach(b=>b.classList.toggle('active', b.dataset.p===v));
+  $('auditIntervaloWrap').style.display = v==='intervalo' ? 'flex' : 'none';
+  renderAuditoriaLista();
+}
+
+function renderAuditoriaScreen(){
+  const atores = [];
+  const seen = new Set();
+  (S.auditLog||[]).forEach(a=>{ if(!seen.has(a.actor_user_id)){ seen.add(a.actor_user_id); atores.push({id:a.actor_user_id, name:a.actor_name}); } });
+
+  $('cfgContent').innerHTML = `
+  <div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:14px;font-weight:700;color:var(--text)">Histórico de Auditoria</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">Registro de todas as criações, edições e exclusões feitas por você e sua equipe</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:6px">
+      <select id="auditUserFilter" class="inp" style="width:200px;padding:7px 10px;font-size:12px" onchange="setAuditFiltroUser(this.value)">
+        <option value="all">Todos os usuários</option>
+        ${atores.map(a=>`<option value="${a.id}">${a.name||'—'}</option>`).join('')}
+      </select>
+      <button class="audit-periodo-btn active" data-p="all" onclick="setAuditFiltroPeriodo('all')">Todos</button>
+      <button class="audit-periodo-btn" data-p="hoje" onclick="setAuditFiltroPeriodo('hoje')">Hoje</button>
+      <button class="audit-periodo-btn" data-p="5dias" onclick="setAuditFiltroPeriodo('5dias')">5 dias</button>
+      <button class="audit-periodo-btn" data-p="intervalo" onclick="setAuditFiltroPeriodo('intervalo')">Intervalo específico</button>
+      <div id="auditIntervaloWrap" style="display:none;gap:6px;align-items:center">
+        <input type="date" id="auditDataDe" class="inp" style="width:135px;padding:6px 8px;font-size:12px" onchange="renderAuditoriaLista()">
+        <span style="font-size:11px;color:#94a3b8">até</span>
+        <input type="date" id="auditDataAte" class="inp" style="width:135px;padding:6px 8px;font-size:12px" onchange="renderAuditoriaLista()">
+      </div>
+    </div>
+    <div id="auditoriaListWrap"></div>
+  </div>
+  <style>
+  .audit-periodo-btn{padding:6px 12px;border-radius:20px;border:1.5px solid #e2e8f0;background:#fff;font-size:11.5px;font-weight:600;color:#64748b;cursor:pointer;font-family:inherit}
+  .audit-periodo-btn.active{background:#0F2A44;border-color:#0F2A44;color:#fff}
+  </style>`;
+  renderAuditoriaLista();
+}
+
+function renderAuditoriaLista(){
+  const list = auditFiltrar();
   const rows = list.length ? list.map(a=>{
     const act = AUDIT_ACTION_LABELS[a.action]||{label:a.action,color:'#64748b',bg:'#f1f5f9'};
     const tableLabel = AUDIT_TABLE_LABELS[a.table_name]||a.table_name;
-    let detailsTxt = '—';
+    let detailsHtml = '—';
     try{
       const d = a.details ? JSON.parse(a.details) : null;
-      if(d) detailsTxt = Object.entries(d).filter(([k,v])=>v!==null && v!==undefined && k!=='user_id').slice(0,4).map(([k,v])=>`${k}: ${typeof v==='object'?JSON.stringify(v):v}`).join(' · ');
+      if(d && a.action==='update' && d.after){
+        // Antes → Depois: só mostra os campos que realmente mudaram
+        const linhas = Object.keys(d.after).filter(k=>k!=='user_id').map(k=>{
+          const label = AUDIT_FIELD_LABELS[k]||k;
+          const antes = auditResolveValue(k, d.before?.[k]);
+          const depois = auditResolveValue(k, d.after[k]);
+          return `<div><b>${label}:</b> ${antes} → <b style="color:#0F2A44">${depois}</b></div>`;
+        });
+        detailsHtml = linhas.join('');
+      } else if(d){
+        const linhas = Object.entries(d).filter(([k,v])=>k!=='user_id' && v!==null && v!==undefined && v!=='').slice(0,6).map(([k,v])=>{
+          const label = AUDIT_FIELD_LABELS[k]||k;
+          return `<div><b>${label}:</b> ${auditResolveValue(k,v)}</div>`;
+        });
+        detailsHtml = linhas.join('') || '—';
+      }
     }catch(e){}
     const dt = new Date(a.created_at);
     return `
@@ -10236,20 +10341,14 @@ function renderAuditoriaList(){
         </div>
         <span style="color:#94a3b8;font-size:11px;white-space:nowrap">${dt.toLocaleDateString('pt-BR')} ${dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</span>
       </div>
-      <div style="margin-top:4px;color:#64748b;font-size:11px;padding-left:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${detailsTxt}</div>
+      <div style="margin-top:5px;color:#64748b;font-size:11px;padding-left:2px;line-height:1.7">${detailsHtml}</div>
     </div>`;
   }).join('')
-  : `<div style="padding:30px 0;text-align:center;color:#94a3b8;font-size:12px">Nenhuma ação registrada ainda</div>`;
-
-  $('cfgContent').innerHTML = `
-  <div>
-    <div style="margin-bottom:16px">
-      <div style="font-size:14px;font-weight:700;color:var(--text)">Histórico de Auditoria</div>
-      <div style="font-size:11px;color:var(--muted);margin-top:2px">Registro de todas as criações, edições e exclusões feitas por você e sua equipe (últimos 300 registros)</div>
-    </div>
-    ${rows}
-  </div>`;
+  : `<div style="padding:30px 0;text-align:center;color:#94a3b8;font-size:12px">Nenhuma ação encontrada para esse filtro</div>`;
+  $('auditoriaListWrap').innerHTML = rows;
 }
+
+function renderAuditoriaList(){ renderAuditoriaScreen(); } // compat
 
 function cfgUsuariosHTML(){
   const rows = (S.teamMembers||[]).length ? S.teamMembers.map(t=>`
@@ -12466,9 +12565,16 @@ async function sbInsert(table, row) {
 async function sbUpdate(table, id, changes) {
   if (!_currentUser) return;
   const ownerId = S.ownerId || _currentUser.id;
+  // Busca os valores atuais antes de sobrescrever, para registrar "antes → depois" na auditoria
+  let before = null;
+  try{
+    const fields = Object.keys(changes).join(',');
+    const r = await _sb.from(table).select(fields).eq('id', id).maybeSingle();
+    before = r.data;
+  } catch(e){}
   const { error } = await _sb.from(table).update(changes).eq('id', id).eq('user_id', ownerId);
   if (error) { console.error('Erro ao atualizar:', error?.message || error?.code); return; }
-  logAudit('update', table, id, changes);
+  logAudit('update', table, id, {before, after:changes});
 }
 async function sbDelete(table, id) {
   if (!_currentUser) return { success: false, error: 'Sem usuário' };
