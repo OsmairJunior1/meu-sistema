@@ -4591,6 +4591,13 @@ function openModal(name, preserveState){
     const primeiro = unificada[0];
     $('recvForma').value = primeiro ? (primeiro._kind==='simples' ? primeiro.tipo : 'credito') : 'dinheiro';
     S._recvBoletoParcelas=null; recvFormaChanged(); setRec('recv','no'); setEntrada(false);
+    resetEditLancUI();
+    // Restaura o rodapé padrão (Salvar/Salvar e continuar/Cancelar), caso tenha sido trocado por uma edição
+    const footer = document.querySelector('#modal-receivable .modal-footer');
+    if(footer) footer.innerHTML = `
+      <button class="btn btn-green" style="flex:1;justify-content:center" onclick="saveReceivable()">Salvar</button>
+      <button class="btn btn-outline" style="flex:1;justify-content:center" onclick="saveReceivable(true)">Salvar e continuar</button>
+      <button class="btn" style="flex:1;justify-content:center;background:none;border:1px solid var(--border);color:var(--text)" onclick="closeModal('receivable')">Cancelar</button>`;
   }
   if(name==='receivable' && preserveState){ populateSelects(); }
   if(name==='payable' && !preserveState){ populateSelects(); $('payDue').value=t; $('payVal').value=''; $('payDesc').value=''; $('payDone').checked=false; if($('payRef')) $('payRef').value=''; if($('payNotes')) $('payNotes').value=''; }
@@ -7637,6 +7644,19 @@ function openEditLanc(id, type){
       $('recvForma').value = item.paymentMethod||'dinheiro';
       recvFormaChanged();
       if(item.operadoraId){ $('recvOperadora').value = item.operadoraId; recvCalcNet(); }
+      // Trava os campos complexos na edição (forma/operadora/entrada não são recalculáveis com segurança aqui)
+      $('recvForma').disabled = true;
+      if($('recvOperadora')) $('recvOperadora').disabled = true;
+      $('recvEntradaYes').style.pointerEvents='none'; $('recvEntradaYes').style.opacity='.5';
+      $('recvEntradaNo').style.pointerEvents='none'; $('recvEntradaNo').style.opacity='.5';
+      const avisoId = 'recvEditFormaAviso';
+      if(!$(avisoId)){
+        const aviso = document.createElement('div');
+        aviso.id = avisoId;
+        aviso.style.cssText = 'font-size:10.5px;color:#B45309;background:#FFFBEB;padding:6px 8px;border-radius:6px;margin-top:4px';
+        aviso.textContent = 'Forma de pagamento não pode ser alterada aqui. Para mudar, exclua e lance novamente.';
+        $('recvForma').closest('.form-group').appendChild(aviso);
+      }
     } else {
       $('payVal').value  = item.value.toFixed(2).replace('.',',');
       $('payDesc').value = item.desc||'';
@@ -7661,10 +7681,22 @@ function openEditLanc(id, type){
   },60);
 }
 
+function resetEditLancUI(){
+  const forma = $('recvForma'), op = $('recvOperadora');
+  if(forma) forma.disabled = false;
+  if(op) op.disabled = false;
+  const y=$('recvEntradaYes'), n=$('recvEntradaNo');
+  if(y){ y.style.pointerEvents=''; y.style.opacity=''; }
+  if(n){ n.style.pointerEvents=''; n.style.opacity=''; }
+  const aviso = $('recvEditFormaAviso');
+  if(aviso) aviso.remove();
+}
+
 function cancelEditLanc(){
+  const type = S._editType;
   S._editId=null; S._editType=null;
-  closeModal(S._editType==='income'?'receivable':'payable');
-  // Restaurar footer original
+  resetEditLancUI();
+  closeModal(type==='income'?'receivable':'payable');
   refresh();
 }
 
@@ -7692,24 +7724,29 @@ async function saveEditLanc(){
     : ($('payDoneDate').value  || (done?today():null));
   const ref   = isIncome ? ($('recvRef')?.value?.trim()||'')   : ($('payRef')?.value?.trim()||'');
   const notes = isIncome ? ($('recvNotes')?.value?.trim()||'') : ($('payNotes')?.value?.trim()||'');
+  const peerId = isIncome ? ($('recvClient').value||null) : ($('paySupplier').value||null);
 
   const changes = {
     description: desc, amount: value, category: catId,
-    account_id: accId, due_date: dueDate||null,
+    account_id: accId||null, due_date: dueDate||null,
     status: done?'paid':'pending',
     paid_date: done?(doneDate||null):null,
     reference: ref||null, notes: notes||null,
+    contact_id: peerId,
   };
   await sbUpdate('transactions', id, changes);
 
   const list = isIncome ? S.receivables : S.payables;
   const idx  = list.findIndex(x=>x.id===id);
   if(idx>=0){
-    list[idx] = {...list[idx], value, desc, categoryId:catId, accountId:accId,
-      dueDate, done, doneDate: done?doneDate:null, ref, notes};
+    if(isIncome) list[idx] = {...list[idx], value, desc, categoryId:catId, accountId:accId||null,
+      dueDate, done, doneDate: done?doneDate:null, ref, notes, clientId:peerId};
+    else list[idx] = {...list[idx], value, desc, categoryId:catId, accountId:accId||null,
+      dueDate, done, doneDate: done?doneDate:null, ref, notes, supplierId:peerId};
   }
 
   S._editId=null; S._editType=null;
+  resetEditLancUI();
   closeModal(isIncome?'receivable':'payable');
   toast('Lançamento atualizado! ✅');
   refresh();
