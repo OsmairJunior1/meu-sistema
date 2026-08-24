@@ -2619,6 +2619,7 @@ textarea.inp{min-height:80px;resize:vertical}
       <div style="display:flex;gap:0;border-bottom:2px solid #e2e8f0;margin-bottom:18px">
         <button id="relTab0" onclick="setRelTab(0)" style="padding:10px 22px;font-size:13px;font-weight:700;color:#3b82f6;border-bottom:2px solid #3b82f6;margin-bottom:-2px;background:none;border-top:none;border-left:none;border-right:none;cursor:pointer;font-family:inherit">Relatórios</button>
         <button id="relTab1" onclick="setRelTab(1)" style="padding:10px 22px;font-size:13px;font-weight:500;color:#64748b;border-bottom:2px solid transparent;margin-bottom:-2px;background:none;border-top:none;border-left:none;border-right:none;cursor:pointer;font-family:inherit">Fluxo de Caixa</button>
+        <button id="relTab2" onclick="setRelTab(2)" style="padding:10px 22px;font-size:13px;font-weight:500;color:#64748b;border-bottom:2px solid transparent;margin-bottom:-2px;background:none;border-top:none;border-left:none;border-right:none;cursor:pointer;font-family:inherit">💳 Cartões de Crédito</button>
       </div>
 
       <!-- ── View 0: Resumo / Donuts / Evolução ── -->
@@ -2800,6 +2801,34 @@ textarea.inp{min-height:80px;resize:vertical}
           <div class="cf-months-scroll" style="overflow-x:auto">
             <table id="cfTable" style="width:100%;border-collapse:collapse;font-size:12px;min-width:900px"></table>
           </div>
+        </div>
+      </div>
+
+      <!-- ── View 2: Cartões de Crédito ── -->
+      <div id="relView2" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+          <h2 style="font-size:20px;font-weight:800;letter-spacing:-.02em">Gastos no Cartão de Crédito</h2>
+          <select id="relCartaoFilter" class="inp" style="padding:7px 14px;font-size:12px;min-width:180px" onchange="renderRelCartoes()">
+            <option value="">Todos os cartões</option>
+          </select>
+        </div>
+
+        <div id="relCartaoCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:20px"></div>
+
+        <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:16px">
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:18px">
+            <div style="font-size:13px;font-weight:700;color:#0F2A44;margin-bottom:12px">📈 Evolução mensal de gastos no cartão</div>
+            <div id="relCartaoEvolucao" style="height:220px"></div>
+          </div>
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:18px">
+            <div style="font-size:13px;font-weight:700;color:#0F2A44;margin-bottom:12px">📅 Próximas faturas a vencer</div>
+            <div id="relCartaoFaturas"></div>
+          </div>
+        </div>
+
+        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:18px;margin-top:16px">
+          <div style="font-size:13px;font-weight:700;color:#0F2A44;margin-bottom:12px">🧾 Lançamentos no cartão</div>
+          <div id="relCartaoLancamentos"></div>
         </div>
       </div>
     </div>
@@ -6327,6 +6356,104 @@ function renderDayChart(elId, items, color){
   el.innerHTML=`<div style="display:flex;flex-direction:column;height:100%;gap:6px"><div style="font-size:11px;color:#64748b;text-align:right">${now.toLocaleDateString('pt-BR',{month:'long',year:'numeric'})}</div><div style="flex:1;display:flex;align-items:flex-end;gap:3px">${bars}</div></div>`;
 }
 
+function renderRelCartoes(){
+  const cartoes = (S.accounts||[]).filter(a=>a.tipo==='cartao');
+  const filtroCartao = $('relCartaoFilter').value;
+
+  // Popula o filtro (preserva seleção)
+  if(!$('relCartaoFilter')._populated){
+    $('relCartaoFilter').innerHTML = '<option value="">Todos os cartões</option>' + cartoes.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+    $('relCartaoFilter')._populated = true;
+  }
+
+  const cartoesFiltrados = filtroCartao ? cartoes.filter(c=>c.id===filtroCartao) : cartoes;
+  const lancsCartao = (S.payables||[]).filter(p=>p.paymentMethod==='cartao_credito' && (filtroCartao ? p.accountId===filtroCartao : cartoes.some(c=>c.id===p.accountId)));
+
+  // ── Cards de resumo por cartão ──
+  if(!cartoes.length){
+    $('relCartaoCards').innerHTML = `<div style="grid-column:1/-1;padding:30px;text-align:center;color:#94a3b8;font-size:12px;background:#fff;border:1px solid #e2e8f0;border-radius:12px">Nenhum cartão de crédito cadastrado ainda. Cadastre em Configurações → Bancos e Cartões.</div>`;
+  } else {
+    $('relCartaoCards').innerHTML = cartoesFiltrados.map(c=>{
+      const limite = c.limite||0;
+      const fatura = c.faturaAtual||0;
+      const pct = limite>0 ? Math.min(100,(fatura/limite)*100) : 0;
+      const corBarra = pct>=90?'#DC2626':pct>=70?'#F59E0B':'#3B82F6';
+      return `
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <span style="font-size:18px">💳</span>
+          <span style="font-size:13px;font-weight:700;color:#0F2A44">${c.name}</span>
+        </div>
+        <div style="font-size:20px;font-weight:800;color:#ef4444">${fmt(fatura)}</div>
+        <div style="font-size:11px;color:#94a3b8;margin-bottom:8px">Fatura em aberto · Limite ${fmt(limite)}</div>
+        <div style="background:#F1F5F9;border-radius:6px;height:6px;overflow:hidden">
+          <div style="width:${pct}%;background:${corBarra};height:100%"></div>
+        </div>
+        <div style="font-size:10px;color:#94a3b8;margin-top:4px">${pct.toFixed(0)}% do limite usado</div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── Evolução mensal (últimos 6 meses, por data de lançamento) ──
+  const hoje = new Date();
+  const meses = [];
+  for(let i=5;i>=0;i--){
+    const d = new Date(hoje.getFullYear(), hoje.getMonth()-i, 1);
+    meses.push({ano:d.getFullYear(), mes:d.getMonth(), label:d.toLocaleDateString('pt-BR',{month:'short'})});
+  }
+  const porMes = meses.map(m=>{
+    const total = lancsCartao.filter(p=>{
+      const dt = p.transactionDate ? new Date(p.transactionDate+'T12:00:00') : null;
+      return dt && dt.getFullYear()===m.ano && dt.getMonth()===m.mes;
+    }).reduce((s,p)=>s+p.value,0);
+    return {label:m.label, value:total};
+  });
+  const maxMes = Math.max(...porMes.map(m=>m.value),1);
+  $('relCartaoEvolucao').innerHTML = porMes.length ? `
+    <div style="display:flex;align-items:flex-end;gap:8px;height:170px">
+      ${porMes.map(m=>`
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1">
+          <span style="font-size:9px;color:#64748b;font-weight:700">${m.value>0?fmt(m.value):''}</span>
+          <div style="width:100%;display:flex;align-items:flex-end;height:120px">
+            <div style="width:100%;background:#ef4444;border-radius:4px 4px 0 0;height:${(m.value/maxMes)*100}%;min-height:${m.value>0?'4px':'0'}"></div>
+          </div>
+          <span style="font-size:10px;color:#94a3b8;text-transform:capitalize">${m.label}</span>
+        </div>`).join('')}
+    </div>` : `<div style="color:#94a3b8;font-size:12px;text-align:center;padding:40px 0">Sem dados</div>`;
+
+  // ── Próximas faturas a vencer ──
+  const pendentes = lancsCartao.filter(p=>!p.done).sort((a,b)=>(a.dueDate||'').localeCompare(b.dueDate||'')).slice(0,6);
+  $('relCartaoFaturas').innerHTML = pendentes.length ? pendentes.map(p=>{
+    const c = cartoes.find(x=>x.id===p.accountId);
+    const vencido = p.dueDate < today();
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f4f6f9;font-size:12px">
+      <div>
+        <div style="font-weight:600;color:#0F2A44">${c?c.name:'—'}</div>
+        <div style="font-size:11px;color:${vencido?'#DC2626':'#94a3b8'}">${vencido?'Venceu em ':'Vence em '}${fmtD(p.dueDate)}</div>
+      </div>
+      <span style="font-weight:800;color:#ef4444">${fmt(p.value)}</span>
+    </div>`;
+  }).join('') : `<div style="color:#94a3b8;font-size:12px;text-align:center;padding:30px 0">Nenhuma fatura pendente 🎉</div>`;
+
+  // ── Lista de lançamentos no cartão ──
+  const ordenados = [...lancsCartao].sort((a,b)=>(b.transactionDate||'').localeCompare(a.transactionDate||''));
+  $('relCartaoLancamentos').innerHTML = ordenados.length ? `
+    <div style="display:grid;grid-template-columns:100px 1fr 140px 90px 90px;gap:10px;padding:6px 0;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;border-bottom:1px solid #e2e8f0">
+      <span>Data</span><span>Descrição</span><span>Cartão</span><span>Status</span><span style="text-align:right">Valor</span>
+    </div>
+    ${ordenados.map(p=>{
+      const c = cartoes.find(x=>x.id===p.accountId);
+      return `<div style="display:grid;grid-template-columns:100px 1fr 140px 90px 90px;gap:10px;padding:8px 0;border-bottom:1px solid #f8fafc;font-size:12px;align-items:center">
+        <span style="color:#64748b">${fmtD(p.transactionDate)}</span>
+        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.desc||'—'}</span>
+        <span style="color:#64748b">${c?c.name:'—'}</span>
+        <span style="background:${p.done?'#F0FDF4':'#FFF7ED'};color:${p.done?'#15803D':'#C2410C'};padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;text-align:center">${p.done?'Pago':'Pendente'}</span>
+        <span style="text-align:right;font-weight:700;color:#ef4444">${fmt(p.value)}</span>
+      </div>`;
+    }).join('')}
+  ` : `<div style="color:#94a3b8;font-size:12px;text-align:center;padding:30px 0">Nenhum lançamento no cartão ainda</div>`;
+}
+
 async function markDone(id, type){
   // Agora usa o modal de efetivar para selecionar conta e data
   openEfetivar(id, type);
@@ -8478,7 +8605,8 @@ function setRelTab(i){
   S.relTab=i;
   $('relView0').style.display=i===0?'block':'none';
   $('relView1').style.display=i===1?'block':'none';
-  [[0,'#2F80ED'],[1,'#64748b']].forEach(([idx,def])=>{
+  $('relView2').style.display=i===2?'block':'none';
+  [[0,'#2F80ED'],[1,'#64748b'],[2,'#64748b']].forEach(([idx,def])=>{
     const btn=$('relTab'+idx);
     const active=idx===i;
     btn.style.color=active?'#2F80ED':'#64748b';
@@ -8487,6 +8615,7 @@ function setRelTab(i){
   });
   if(i===0)renderRelatorios();
   if(i===1){ populateCfAccounts(); renderCashflow(); }
+  if(i===2) renderRelCartoes();
 }
 
 function closeCfMobModal(){
