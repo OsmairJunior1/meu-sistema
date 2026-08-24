@@ -3189,6 +3189,10 @@ textarea.inp{min-height:80px;resize:vertical}
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="4.5" r="2.3" stroke="currentColor" stroke-width="1.3"/><path d="M2.5 12c0-2.2 2-3.5 4.5-3.5s4.5 1.3 4.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
               Usuários
             </button>
+            <button class="cfg-nav" id="cfgNav-auditoria" onclick="setCfgSection('auditoria')" style="display:none">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 2h6l2 2v8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.3"/><path d="M4.5 6h5M4.5 8.5h5M4.5 11h3" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
+              Histórico de Auditoria
+            </button>
           </div>
           <!-- Settings content -->
           <div style="flex:1;overflow-y:auto;padding:24px 28px" id="cfgContent"></div>
@@ -9879,6 +9883,7 @@ function setCfgSection(sec){
   if(sec==='centros')   { c.innerHTML = cfgCentrosHTML(); }
   if(sec==='cartoes')   { c.innerHTML = cfgCartoesHTML(); }
   if(sec==='usuarios')  { c.innerHTML = cfgUsuariosHTML(); }
+  if(sec==='auditoria') { c.innerHTML = '<div style="padding:24px;text-align:center;color:#94a3b8;font-size:12px">Carregando histórico...</div>'; loadAuditoria(); }
 }
 
 function cfgEmpresaHTML(){
@@ -10188,6 +10193,59 @@ function cfgContasHTML(){
     </div>
     <div style="display:grid;grid-template-columns:1fr 110px 90px 60px;gap:10px;padding:4px 0;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;border-bottom:1px solid var(--border);margin-bottom:2px">
       <span>Nome da conta</span><span>Saldo atual</span><span>Status</span><span></span>
+    </div>
+    ${rows}
+  </div>`;
+}
+
+const AUDIT_TABLE_LABELS = {
+  transactions:'Lançamento', accounts:'Conta Bancária', contacts:'Cliente/Fornecedor',
+  cost_centers:'Centro de Custo', operadoras_cartao:'Operadora de Cartão', payment_defaults:'Forma de Pagamento'
+};
+const AUDIT_ACTION_LABELS = {
+  create:{label:'Criou', color:'#15803D', bg:'#F0FDF4'},
+  update:{label:'Editou', color:'#B45309', bg:'#FFFBEB'},
+  delete:{label:'Excluiu', color:'#B91C1C', bg:'#FEF2F2'}
+};
+
+async function loadAuditoria(){
+  const { data, error } = await _sb.from('audit_log').select('*').order('created_at',{ascending:false}).limit(300);
+  if(error){ $('cfgContent').innerHTML = `<div style="padding:24px;text-align:center;color:#DC2626;font-size:12px">Erro ao carregar histórico</div>`; return; }
+  S.auditLog = data||[];
+  renderAuditoriaList();
+}
+
+function renderAuditoriaList(){
+  const list = S.auditLog||[];
+  const rows = list.length ? list.map(a=>{
+    const act = AUDIT_ACTION_LABELS[a.action]||{label:a.action,color:'#64748b',bg:'#f1f5f9'};
+    const tableLabel = AUDIT_TABLE_LABELS[a.table_name]||a.table_name;
+    let detailsTxt = '—';
+    try{
+      const d = a.details ? JSON.parse(a.details) : null;
+      if(d) detailsTxt = Object.entries(d).filter(([k,v])=>v!==null && v!==undefined && k!=='user_id').slice(0,4).map(([k,v])=>`${k}: ${typeof v==='object'?JSON.stringify(v):v}`).join(' · ');
+    }catch(e){}
+    const dt = new Date(a.created_at);
+    return `
+    <div style="padding:11px 0;border-bottom:1px solid #f4f6f9;font-size:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+        <div style="display:flex;align-items:center;gap:8px;min-width:0">
+          <span style="background:${act.bg};color:${act.color};padding:2px 9px;border-radius:20px;font-size:10.5px;font-weight:700;white-space:nowrap">${act.label}</span>
+          <span style="font-weight:600;color:var(--text)">${tableLabel}</span>
+          <span style="color:#94a3b8;font-size:11px">por ${a.actor_name||'—'}</span>
+        </div>
+        <span style="color:#94a3b8;font-size:11px;white-space:nowrap">${dt.toLocaleDateString('pt-BR')} ${dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</span>
+      </div>
+      <div style="margin-top:4px;color:#64748b;font-size:11px;padding-left:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${detailsTxt}</div>
+    </div>`;
+  }).join('')
+  : `<div style="padding:30px 0;text-align:center;color:#94a3b8;font-size:12px">Nenhuma ação registrada ainda</div>`;
+
+  $('cfgContent').innerHTML = `
+  <div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:14px;font-weight:700;color:var(--text)">Histórico de Auditoria</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">Registro de todas as criações, edições e exclusões feitas por você e sua equipe (últimos 300 registros)</div>
     </div>
     ${rows}
   </div>`;
@@ -12244,6 +12302,7 @@ async function loadData() {
     // Descobre se este login é funcionário/gerente de alguém (nesse caso, os dados são do MASTER, não do próprio login)
     const teamRes = await _sb.from('team_members').select('*').eq('member_user_id', uid).eq('active', true).maybeSingle();
     S.userRole = teamRes.data ? teamRes.data.role : 'master';
+    S._actorSelf = teamRes.data ? {name:teamRes.data.name, email:teamRes.data.email} : null;
     S.isEmployee = S.userRole === 'funcionario'; // só Funcionário tem restrição de acesso; Gerente e Master têm acesso completo
     S.ownerId = teamRes.data ? teamRes.data.owner_id : uid;
     const ownerId = S.ownerId;
@@ -12381,24 +12440,45 @@ async function sbLoadProfile() {
   if (error && error.code !== 'PGRST116') console.error('Erro ao carregar perfil:', error?.message || error?.code);
   return data || null;
 }
+// ─── AUDITORIA ──────────────────────────────────────────
+async function logAudit(action, tableName, recordId, details){
+  if (!_currentUser || !S.ownerId) return;
+  const actorName = S._actorSelf?.name || S.user?.nome || _currentUser.email || 'Desconhecido';
+  try{
+    await _sb.from('audit_log').insert({
+      owner_id: S.ownerId,
+      actor_user_id: _currentUser.id,
+      actor_name: actorName,
+      action, table_name: tableName, record_id: recordId||null,
+      details: details ? JSON.stringify(details) : null
+    });
+  } catch(e){ console.error('Erro ao registrar auditoria:', e); }
+}
+
 async function sbInsert(table, row) {
   if (!_currentUser) return null;
   const ownerId = S.ownerId || _currentUser.id;
   const { data, error } = await _sb.from(table).insert({ ...row, user_id: ownerId }).select().single();
   if (error) { console.error('Erro ao salvar:', error?.message || error?.code); toast('Erro ao salvar no banco', 'error'); return null; }
+  logAudit('create', table, data?.id, row);
   return data;
 }
 async function sbUpdate(table, id, changes) {
   if (!_currentUser) return;
   const ownerId = S.ownerId || _currentUser.id;
   const { error } = await _sb.from(table).update(changes).eq('id', id).eq('user_id', ownerId);
-  if (error) console.error('Erro ao atualizar:', error?.message || error?.code);
+  if (error) { console.error('Erro ao atualizar:', error?.message || error?.code); return; }
+  logAudit('update', table, id, changes);
 }
 async function sbDelete(table, id) {
   if (!_currentUser) return { success: false, error: 'Sem usuário' };
   const ownerId = S.ownerId || _currentUser.id;
+  // Busca o registro antes de excluir, para guardar o que era no histórico
+  let oldRow = null;
+  try{ const r = await _sb.from(table).select('*').eq('id', id).maybeSingle(); oldRow = r.data; }catch(e){}
   const { error } = await _sb.from(table).delete().eq('id', id).eq('user_id', ownerId);
   if (error) { console.error('Erro ao excluir:', error?.message || error?.code); return { success: false, error }; }
+  logAudit('delete', table, id, oldRow);
   return { success: true };
 }
 
@@ -12416,6 +12496,8 @@ function applyRolePermissions(){
   });
   const usuariosNav = $('cfgNav-usuarios');
   if(usuariosNav) usuariosNav.style.display = (S.userRole==='master') ? 'flex' : 'none';
+  const auditoriaNav = $('cfgNav-auditoria');
+  if(auditoriaNav) auditoriaNav.style.display = (S.userRole==='master') ? 'flex' : 'none';
 }
 
 async function showApp(user) {
