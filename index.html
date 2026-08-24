@@ -3583,7 +3583,7 @@ textarea.inp{min-height:80px;resize:vertical}
             <div id="recvCatWrap"></div>
           </div>
           <div class="form-group">
-            <label class="fl" id="recvDueLabel">Data de vencimento</label>
+            <label class="fl">Data de Lançamento</label>
             <input type="date" id="recvDue" class="inp">
           </div>
           <div class="form-group">
@@ -3638,10 +3638,15 @@ textarea.inp{min-height:80px;resize:vertical}
               <option value="aprazo">A Prazo (sem boleto)</option>
             </select>
           </div>
+          <div class="form-group">
+            <label class="fl">Data de Recebimento</label>
+            <input type="date" id="recvDataReceb" class="inp">
+            <div id="recvDataRecebHint" style="font-size:10.5px;color:#94a3b8;margin-top:3px"></div>
+          </div>
           <div id="recvOperadoraWrap" style="display:none">
             <div class="form-group" style="margin-bottom:8px">
               <label class="fl">Operadora</label>
-              <select id="recvOperadora" class="inp" onchange="recvCalcNet()"></select>
+              <select id="recvOperadora" class="inp" onchange="recvCalcNet();recvSugerirDataReceb()"></select>
             </div>
             <div id="recvParcCredWrap" style="display:none;margin-bottom:8px">
               <div class="form-group"><label class="fl">Nº de parcelas</label><input id="recvCredParcelas" type="number" class="inp" min="1" max="24" value="1" oninput="recvCalcNet()"></div>
@@ -4471,6 +4476,25 @@ window.addEventListener('resize',()=>{
 });
 
 // ─── MODAL ───────────────────────────────────────────────
+function recvSugerirDataReceb(){
+  const forma = $('recvForma').value;
+  const hint = $('recvDataRecebHint');
+  if(forma==='dinheiro' || forma==='pix' || forma==='debito'){
+    $('recvDataReceb').value = $('recvDue').value || today();
+    hint.textContent = 'Recebido na hora';
+  } else if(forma==='credito'){
+    const op = (S.operadoras||[]).find(o=>o.id===$('recvOperadora').value);
+    if(op){
+      const d = new Date(); d.setDate(d.getDate()+(op.prazo_credito_dias||0));
+      $('recvDataReceb').value = d.toISOString().split('T')[0];
+      hint.textContent = `Sugestão automática (${op.nome}, D+${op.prazo_credito_dias||0}) — pode ajustar`;
+    } else { hint.textContent = ''; }
+  } else {
+    if(!$('recvDataReceb').value) $('recvDataReceb').value = $('recvDue').value || today();
+    hint.textContent = 'Defina quando o valor deve ser recebido';
+  }
+}
+
 function recvFormaChanged(){
   const forma = $('recvForma').value;
   const isCard = forma==='debito' || forma==='credito';
@@ -4489,8 +4513,8 @@ function recvFormaChanged(){
     const pd = (S.paymentDefaults||[]).find(p=>p.tipo===forma);
     if(pd?.conta_destino_id) $('recvAcc').value = pd.conta_destino_id;
   }
-  // Rótulo da data muda conforme a forma
-  $('recvDueLabel').textContent = (forma==='boleto'||forma==='aprazo'||forma==='credito') ? 'Data de vencimento' : 'Data';
+  // Sugere a Data de Recebimento automaticamente conforme a forma (sempre editável, nunca trava)
+  recvSugerirDataReceb();
   // Recorrência só faz sentido para Dinheiro/PIX (receita recorrente, tipo mensalidade)
   const showRec = forma==='dinheiro' || forma==='pix';
   $('recvRecWrap').style.display = showRec ? 'block' : 'none';
@@ -4583,7 +4607,7 @@ function recvCalcNet(){
 function openModal(name, preserveState){
   const t=today();
   if(name==='receivable' && !preserveState){
-    populateSelects(); $('recvDue').value=t; $('recvVal').value=''; $('recvDesc').value=''; $('recvRef').value=''; $('recvNotes').value='';
+    populateSelects(); $('recvDue').value=t; $('recvDataReceb').value=t; $('recvVal').value=''; $('recvDesc').value=''; $('recvRef').value=''; $('recvNotes').value='';
     // Forma padrão = primeiro item da lista unificada (Formas de Pagamento) ordenada
     const opsComTipo = (S.operadoras||[]).map(o=>({...o,_kind:'operadora'}));
     const simplesComTipo = (S.paymentDefaults||[]).map(p=>({...p,_kind:'simples'}));
@@ -5177,7 +5201,8 @@ async function saveReceivable(keepOpen=false){
       type:'receivable', amount:entradaValue, description:entradaDesc,
       due_date:today(), paid_date:today(), status:'paid', category:catId||null,
       account_id:entradaAcc, contact_id:$('recvClient').value||null,
-      payment_method:entradaForma, operadora_id:null, fee:0
+      payment_method:entradaForma, operadora_id:null, fee:0,
+      transaction_date:$('recvDue').value || today()
     });
     if(entradaSaved){
       S.accounts = S.accounts.map(a=>a.id===entradaAcc?{...a,balance:a.balance+entradaValue}:a);
@@ -5194,7 +5219,8 @@ async function saveReceivable(keepOpen=false){
     return;
   }
 
-  const baseDue   = cardDueDate || $('recvDue').value || today();
+  const baseDue   = $('recvDataReceb').value || cardDueDate || today();
+  const transactionDate = $('recvDue').value || today();
   const baseComp  = baseDue;
   const doneDate  = done ? today() : null;
   const clientId  = $('recvClient').value;
@@ -5259,7 +5285,8 @@ async function saveReceivable(keepOpen=false){
       status:isDone?'paid':'pending', category:catId||null,
       account_id:accId||null, contact_id:clientId||null,
       reference:ref||null, notes:notes||null,
-      payment_method:forma, operadora_id:op?.id||null, fee:parcelFee
+      payment_method:forma, operadora_id:op?.id||null, fee:parcelFee,
+      transaction_date:transactionDate
     });
     if(!saved) continue;
 
@@ -7651,7 +7678,7 @@ function openEditLanc(id, type){
     if(isIncome){
       $('recvVal').value  = item.value.toFixed(2).replace('.',',');
       $('recvDesc').value = item.desc||'';
-      $('recvDue').value  = item.dueDate||'';
+      $('recvDue').value  = item.transactionDate||item.dueDate||'';
       $('recvCat').value  = item.categoryId||'';
       $('recvCatWrap')?._catPicker?._setValue(item.categoryId||'');
       $('recvAcc').value  = item.accountId||'';
@@ -7661,6 +7688,9 @@ function openEditLanc(id, type){
       $('recvForma').value = item.paymentMethod||'dinheiro';
       recvFormaChanged();
       if(item.operadoraId){ $('recvOperadora').value = item.operadoraId; recvCalcNet(); }
+      // Define a data de recebimento REAL por último, para não ser sobrescrita pela sugestão automática acima
+      $('recvDataReceb').value = item.dueDate||'';
+      $('recvDataRecebHint').textContent = '';
       // Entrada e Parcelamento continuam travados: mexer neles exige criar/apagar mais de um lançamento,
       // o que não é seguro fazer numa edição simples. Forma/Operadora já podem ser alteradas livremente.
       $('recvEntradaYes').style.pointerEvents='none'; $('recvEntradaYes').style.opacity='.5';
@@ -7749,10 +7779,11 @@ async function saveEditLanc(){
   const notes = isIncome ? ($('recvNotes')?.value?.trim()||'') : ($('payNotes')?.value?.trim()||'');
   const peerId = isIncome ? ($('recvClient').value||null) : ($('paySupplier').value||null);
 
-  let accId, dueDate, done, doneDate, forma=null, opId=null, fee=0;
+  let accId, dueDate, done, doneDate, forma=null, opId=null, fee=0, transactionDate=null;
 
   if(isIncome){
     forma = $('recvForma').value;
+    transactionDate = $('recvDue').value || today();
     const isCard = forma==='debito' || forma==='credito';
     const op = isCard ? (S.operadoras||[]).find(o=>o.id===$('recvOperadora').value) : null;
     if(isCard && !op){ toast('Selecione a operadora do cartão','error'); return; }
@@ -7762,13 +7793,10 @@ async function saveEditLanc(){
       fee = value * taxaPct/100;
       opId = op.id;
       accId = op.conta_destino_id||null;
-      dueDate = forma==='credito'
-        ? (()=>{ const d=new Date(); d.setDate(d.getDate()+(op.prazo_credito_dias||0)); return d.toISOString().split('T')[0]; })()
-        : $('recvDue').value;
     } else {
       accId = $('recvAcc').value||null;
-      dueDate = $('recvDue').value;
     }
+    dueDate = $('recvDataReceb').value || today(); // respeita o que está no campo, nunca recalcula por cima
     done = (forma==='dinheiro' || forma==='pix' || forma==='debito');
     if(done && !accId){ toast('Selecione a conta para registrar o recebimento','error'); return; }
     doneDate = done ? today() : null;
@@ -7788,7 +7816,7 @@ async function saveEditLanc(){
     reference: ref||null, notes: notes||null,
     contact_id: peerId,
   };
-  if(isIncome){ changes.payment_method = forma; changes.operadora_id = opId; changes.fee = fee; }
+  if(isIncome){ changes.payment_method = forma; changes.operadora_id = opId; changes.fee = fee; changes.transaction_date = transactionDate; }
   await sbUpdate('transactions', id, changes);
 
   // Ajusta o saldo das contas: reverte o crédito/débito antigo (se estava confirmado) e aplica o novo (se estiver confirmado agora)
@@ -7807,7 +7835,7 @@ async function saveEditLanc(){
 
   if(isIncome) list[idx] = {...list[idx], value, desc, categoryId:catId, accountId:accId||null,
     dueDate, done, doneDate: done?doneDate:null, ref, notes, clientId:peerId,
-    paymentMethod:forma, operadoraId:opId, fee, netValue:value-fee};
+    paymentMethod:forma, operadoraId:opId, fee, netValue:value-fee, transactionDate};
   else list[idx] = {...list[idx], value, desc, categoryId:catId, accountId:accId||null,
     dueDate, done, doneDate: done?doneDate:null, ref, notes, supplierId:peerId};
 
@@ -12602,7 +12630,8 @@ async function loadData() {
         clientId: t.contact_id, costCenterId: null,
         ref: t.reference||'', notes: t.notes||'',
         paymentMethod: t.payment_method||null, operadoraId: t.operadora_id||null,
-        fee: parseFloat(t.fee)||0, netValue: (parseFloat(t.amount)||0)-(parseFloat(t.fee)||0)
+        fee: parseFloat(t.fee)||0, netValue: (parseFloat(t.amount)||0)-(parseFloat(t.fee)||0),
+        transactionDate: t.transaction_date||t.due_date
       }));
 
     // Pagamentos
