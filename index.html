@@ -4593,7 +4593,8 @@ function openModal(name, preserveState){
     S._recvBoletoParcelas=null; recvFormaChanged(); setRec('recv','no'); setEntrada(false);
   }
   if(name==='receivable' && preserveState){ populateSelects(); }
-  if(name==='payable'){ populateSelects(); $('payDue').value=t; $('payVal').value=''; $('payDesc').value=''; $('payDone').checked=false; if($('payRef')) $('payRef').value=''; if($('payNotes')) $('payNotes').value=''; }
+  if(name==='payable' && !preserveState){ populateSelects(); $('payDue').value=t; $('payVal').value=''; $('payDesc').value=''; $('payDone').checked=false; if($('payRef')) $('payRef').value=''; if($('payNotes')) $('payNotes').value=''; }
+  if(name==='payable' && preserveState){ populateSelects(); }
   if(name==='transfer'){ populateSelects(); $('transDate').value=t; $('transVal').value=''; $('transDesc').value=''; }
   if(name==='account'){ $('accName').value=''; $('accBal').value=''; $('accBalDate').value=t; $('accNum').value=''; $('accAgency').value=''; $('accPixKey').value=''; }
   $('modal-'+name).style.display='flex';
@@ -5152,7 +5153,8 @@ async function saveReceivable(keepOpen=false){
     const entradaSaved = await sbInsert('transactions',{
       type:'receivable', amount:entradaValue, description:entradaDesc,
       due_date:today(), paid_date:today(), status:'paid', category:catId||null,
-      account_id:entradaAcc, contact_id:$('recvClient').value||null
+      account_id:entradaAcc, contact_id:$('recvClient').value||null,
+      payment_method:entradaForma, operadora_id:null, fee:0
     });
     if(entradaSaved){
       S.accounts = S.accounts.map(a=>a.id===entradaAcc?{...a,balance:a.balance+entradaValue}:a);
@@ -5233,7 +5235,8 @@ async function saveReceivable(keepOpen=false){
       due_date:dueDate||null, paid_date:pDoneDate||null,
       status:isDone?'paid':'pending', category:catId||null,
       account_id:accId||null, contact_id:clientId||null,
-      reference:ref||null, notes:notes||null
+      reference:ref||null, notes:notes||null,
+      payment_method:forma, operadora_id:op?.id||null, fee:parcelFee
     });
     if(!saved) continue;
 
@@ -7618,7 +7621,7 @@ function openEditLanc(id, type){
 
   S._editId   = id;
   S._editType = type;
-  openModal(isIncome?'receivable':'payable');
+  openModal(isIncome?'receivable':'payable', true);
 
   setTimeout(()=>{
     populateSelects();
@@ -12478,7 +12481,9 @@ async function loadData() {
         done: t.status === 'paid', doneDate: t.paid_date,
         categoryId: t.category, accountId: t.account_id,
         clientId: t.contact_id, costCenterId: null,
-        ref: t.reference||'', notes: t.notes||''
+        ref: t.reference||'', notes: t.notes||'',
+        paymentMethod: t.payment_method||null, operadoraId: t.operadora_id||null,
+        fee: parseFloat(t.fee)||0, netValue: (parseFloat(t.amount)||0)-(parseFloat(t.fee)||0)
       }));
 
     // Pagamentos
