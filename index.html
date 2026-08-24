@@ -4139,7 +4139,11 @@ const S = {
 // ─── UTILS ───────────────────────────────────────────────
 const fmt=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0);
 const uid=()=>Math.random().toString(36).slice(2,9);
-const today=()=>new Date().toISOString().split('T')[0];
+const today=()=>{
+  const d=new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+};
+function toLocalDateStr(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 const fmtD=d=>d?new Date(d+'T12:00:00').toLocaleDateString('pt-BR'):'—';
 // Escapa HTML para prevenir XSS ao injetar dados do usuário via innerHTML
 const escHtml=s=>s==null?'—':String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -4486,7 +4490,7 @@ function recvSugerirDataReceb(){
     const op = (S.operadoras||[]).find(o=>o.id===$('recvOperadora').value);
     if(op){
       const d = new Date(); d.setDate(d.getDate()+(op.prazo_credito_dias||0));
-      $('recvDataReceb').value = d.toISOString().split('T')[0];
+      $('recvDataReceb').value = toLocalDateStr(d);
       hint.textContent = `Sugestão automática (${op.nome}, D+${op.prazo_credito_dias||0}) — pode ajustar`;
     } else { hint.textContent = ''; }
   } else {
@@ -4591,11 +4595,11 @@ function recvCalcNet(){
       const ultima = new Date(); ultima.setDate(ultima.getDate() + (op.prazo_credito_dias||0) + intervalo*(nParc-1));
       info.innerHTML = `Taxa ${op.nome} (${taxaPct}%): <b>-${fmt(fee)}</b> · Valor líquido: <b>${fmt(net)}</b><br>
         <b>${nParc}x de ${fmt(parcNet)}</b>, recebendo 1 a cada ${intervalo} dias<br>
-        1ª em <b>${fmtD(primeira.toISOString().split('T')[0])}</b>, última em <b>${fmtD(ultima.toISOString().split('T')[0])}</b>, na conta <b>${acc?acc.name:'não definida'}</b>`;
+        1ª em <b>${fmtD(toLocalDateStr(primeira))}</b>, última em <b>${fmtD(toLocalDateStr(ultima))}</b>, na conta <b>${acc?acc.name:'não definida'}</b>`;
     } else {
       const d = new Date(); d.setDate(d.getDate() + (op.prazo_credito_dias||0));
       const modoTxt = nParc>1 ? ` (${nParc}x, mas ${op.nome} antecipa tudo de uma vez)` : '';
-      info.innerHTML = `Taxa ${op.nome} (${taxaPct}%): <b>-${fmt(fee)}</b> · Valor líquido: <b>${fmt(net)}</b>${modoTxt}<br>Cai tudo em <b>${acc?acc.name:'conta não definida'}</b>, em ${fmtD(d.toISOString().split('T')[0])}`;
+      info.innerHTML = `Taxa ${op.nome} (${taxaPct}%): <b>-${fmt(fee)}</b> · Valor líquido: <b>${fmt(net)}</b>${modoTxt}<br>Cai tudo em <b>${acc?acc.name:'conta não definida'}</b>, em ${fmtD(toLocalDateStr(d))}`;
     }
     return;
   }
@@ -4708,7 +4712,7 @@ function cancelBoletoParcModal(){ $('modal-boleto-parc').style.display='none'; }
 
 function bpDiasToDate(dias){
   const d = new Date(); d.setDate(d.getDate()+(parseInt(dias)||0));
-  return d.toISOString().split('T')[0];
+  return toLocalDateStr(d);
 }
 function bpUpdateRowDateHint(idx){
   const row = $('bpRows').querySelector(`[data-row="${idx}"]`);
@@ -5182,7 +5186,7 @@ async function saveReceivable(keepOpen=false){
     if(op.conta_destino_id) accId = op.conta_destino_id;
     if(forma==='credito'){
       const d = new Date(); d.setDate(d.getDate() + (op.prazo_credito_dias||0));
-      cardDueDate = d.toISOString().split('T')[0];
+      cardDueDate = toLocalDateStr(d);
     }
   }
   // "Já foi recebido" agora é automático conforme a forma escolhida:
@@ -5241,7 +5245,7 @@ async function saveReceivable(keepOpen=false){
       let due;
       if(p.modo==='dias'){
         const d = new Date(); d.setDate(d.getDate()+(p.dias||0));
-        due = d.toISOString().split('T')[0];
+        due = toLocalDateStr(d);
       } else {
         due = p.data || today();
       }
@@ -5253,7 +5257,7 @@ async function saveReceivable(keepOpen=false){
     const intervalo = op.intervalo_parcelas_dias||30;
     for(let i=0;i<nCredParc;i++){
       const d = new Date(); d.setDate(d.getDate() + (op.prazo_credito_dias||0) + intervalo*i);
-      parcelas.push({ value: value/nCredParc, dueDate: d.toISOString().split('T')[0] });
+      parcelas.push({ value: value/nCredParc, dueDate: toLocalDateStr(d) });
     }
   } else {
     const nParcelas = recAtivo ? (parseInt($('recvParcelas').value)||1) : 1;
@@ -5551,10 +5555,10 @@ function setAlertFiltro(f){
 function renderAlertasList(){
   const hoje = today();
   let limite = null; // data limite (inclusive) para o filtro, null = sem limite superior (todos vencidos)
-  if(_alertFiltro==='1'){ const d=new Date(); d.setDate(d.getDate()+1); limite=d.toISOString().split('T')[0]; }
-  else if(_alertFiltro==='5'){ const d=new Date(); d.setDate(d.getDate()+5); limite=d.toISOString().split('T')[0]; }
-  else if(_alertFiltro==='7'){ const d=new Date(); d.setDate(d.getDate()+7); limite=d.toISOString().split('T')[0]; }
-  else if(_alertFiltro==='30'){ const d=new Date(); d.setDate(d.getDate()+30); limite=d.toISOString().split('T')[0]; }
+  if(_alertFiltro==='1'){ const d=new Date(); d.setDate(d.getDate()+1); limite=toLocalDateStr(d); }
+  else if(_alertFiltro==='5'){ const d=new Date(); d.setDate(d.getDate()+5); limite=toLocalDateStr(d); }
+  else if(_alertFiltro==='7'){ const d=new Date(); d.setDate(d.getDate()+7); limite=toLocalDateStr(d); }
+  else if(_alertFiltro==='30'){ const d=new Date(); d.setDate(d.getDate()+30); limite=toLocalDateStr(d); }
   else if(_alertFiltro==='data'){ limite=$('alertDataEspecifica').value||hoje; }
   // 'all' = sem limite superior, mostra tudo que está pendente (vencido ou não)
 
@@ -6072,8 +6076,8 @@ var _PF_MODES = ['mes','anterior','proximo','3meses','ultimoano','ano','anoanter
 
 (function initPeriod(){
   const now = new Date();
-  S.periodFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-  S.periodTo   = new Date(now.getFullYear(), now.getMonth()+1, 0).toISOString().split('T')[0];
+  S.periodFrom = toLocalDateStr(new Date(now.getFullYear(), now.getMonth(), 1));
+  S.periodTo   = toLocalDateStr(new Date(now.getFullYear(), now.getMonth()+1, 0));
 })();
 
 function _pfClose(){
@@ -6119,20 +6123,20 @@ function setPeriodFilter(mode){
   const now=new Date(), y=now.getFullYear(), m=now.getMonth();
   switch(mode){
     case 'mes':
-      S.periodFrom=new Date(y,m,1).toISOString().split('T')[0];
-      S.periodTo  =new Date(y,m+1,0).toISOString().split('T')[0]; break;
+      S.periodFrom=toLocalDateStr(new Date(y,m,1));
+      S.periodTo  =toLocalDateStr(new Date(y,m+1,0)); break;
     case 'anterior':
-      S.periodFrom=new Date(y,m-1,1).toISOString().split('T')[0];
-      S.periodTo  =new Date(y,m,0).toISOString().split('T')[0]; break;
+      S.periodFrom=toLocalDateStr(new Date(y,m-1,1));
+      S.periodTo  =toLocalDateStr(new Date(y,m,0)); break;
     case 'proximo':
-      S.periodFrom=new Date(y,m+1,1).toISOString().split('T')[0];
-      S.periodTo  =new Date(y,m+2,0).toISOString().split('T')[0]; break;
+      S.periodFrom=toLocalDateStr(new Date(y,m+1,1));
+      S.periodTo  =toLocalDateStr(new Date(y,m+2,0)); break;
     case '3meses':
-      S.periodFrom=new Date(y,m-1,1).toISOString().split('T')[0];
-      S.periodTo  =new Date(y,m+2,0).toISOString().split('T')[0]; break;
+      S.periodFrom=toLocalDateStr(new Date(y,m-1,1));
+      S.periodTo  =toLocalDateStr(new Date(y,m+2,0)); break;
     case 'ultimoano':
-      S.periodFrom=new Date(y-1,m,now.getDate()).toISOString().split('T')[0];
-      S.periodTo  =now.toISOString().split('T')[0]; break;
+      S.periodFrom=toLocalDateStr(new Date(y-1,m,now.getDate()));
+      S.periodTo  =toLocalDateStr(now); break;
     case 'ano':
       S.periodFrom=y+'-01-01'; S.periodTo=y+'-12-31'; break;
     case 'anoanterior':
@@ -7083,8 +7087,8 @@ function getLancItems(){
 function renderLancamentos(){
   // init dates se vazios: usa o período global se disponível, senão mês atual
   const df=$('lancDateFrom'), dt=$('lancDateTo');
-  if(df&&!df.value) df.value = S.periodFrom || new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
-  if(dt&&!dt.value) dt.value = S.periodTo   || new Date(new Date().getFullYear(), new Date().getMonth()+1, 0).toISOString().split('T')[0];
+  if(df&&!df.value) df.value = S.periodFrom || toLocalDateStr(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+  if(dt&&!dt.value) dt.value = S.periodTo   || toLocalDateStr(new Date(new Date().getFullYear(), new Date().getMonth()+1, 0));
 
   const list=getLancItems();
   const total=list.reduce((s,x)=>s+x.value,0);
@@ -10403,7 +10407,7 @@ function auditFiltrar(){
     list = list.filter(a=>a.created_at.slice(0,10)===hoje);
   } else if(S._auditFiltroPeriodo==='5dias'){
     const d=new Date(); d.setDate(d.getDate()-5);
-    const lim=d.toISOString().split('T')[0];
+    const lim=toLocalDateStr(d);
     list = list.filter(a=>a.created_at.slice(0,10)>=lim);
   } else if(S._auditFiltroPeriodo==='intervalo'){
     const de=$('auditDataDe')?.value, ate=$('auditDataAte')?.value;
@@ -10912,7 +10916,7 @@ function initOrcamento(){
   preencherDadosEmpresa();
   gerarNumOrc();
   const today = new Date();
-  const toISO = d => d.toISOString().split('T')[0];
+  const toISO = d => toLocalDateStr(d);
   const validity = new Date(today); validity.setDate(validity.getDate()+15);
   $('orcData').value     = toISO(today);
   $('orcValidade').value = toISO(validity);
@@ -12344,8 +12348,8 @@ function updateMobPeriodNav(){
 function mobApplyPeriod(){
   const r=S.mobRef;
   if(S.mobMode==='mes'){
-    S.periodFrom=new Date(r.getFullYear(),r.getMonth(),1).toISOString().split('T')[0];
-    S.periodTo  =new Date(r.getFullYear(),r.getMonth()+1,0).toISOString().split('T')[0];
+    S.periodFrom=toLocalDateStr(new Date(r.getFullYear(),r.getMonth(),1));
+    S.periodTo  =toLocalDateStr(new Date(r.getFullYear(),r.getMonth()+1,0));
     S.periodFilter='mes';
   } else if(S.mobMode==='ano'){
     S.periodFrom=`${r.getFullYear()}-01-01`;
@@ -12778,8 +12782,8 @@ async function showApp(user) {
   (function(){
     const now = new Date();
     S.periodFilter = 'mes';
-    S.periodFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-    S.periodTo   = new Date(now.getFullYear(), now.getMonth()+1, 0).toISOString().split('T')[0];
+    S.periodFrom = toLocalDateStr(new Date(now.getFullYear(), now.getMonth(), 1));
+    S.periodTo   = toLocalDateStr(new Date(now.getFullYear(), now.getMonth()+1, 0));
     // Mobile: também reseta navegação de mês para o mês atual
     S.mobRef  = new Date();
     S.mobMode = 'mes';
