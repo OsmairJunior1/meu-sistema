@@ -3741,25 +3741,99 @@ textarea.inp{min-height:80px;resize:vertical}
 
 <!-- Payable Modal -->
 <div id="modal-payable" class="modal-overlay" style="display:none">
-  <div class="modal-box modal-wide">
+  <div class="modal-box" style="max-width:980px">
     <div class="modal-header" style="border-bottom:3px solid #ef4444">
       <span class="modal-title">❤️ Conta a Pagar</span>
       <button class="modal-close" onclick="closeModal('payable')">✕</button>
     </div>
     <div class="modal-body">
-      <div class="modal-split">
-        <div class="modal-left">
+      <div class="modal-3col" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;align-items:stretch">
+        <!-- Coluna 1: Tipo de despesa, data lançamento, valor, fornecedor, descrição -->
+        <div style="display:flex;flex-direction:column;gap:13px;height:100%">
           <div class="form-group">
-            <label class="fl">Valor do pagamento <span class="req">*</span></label>
-            <div class="big-value"><span>R$</span><input id="payVal" placeholder="0,00"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <label class="fl">Tipo de despesa <span class="req">*</span></label>
+              <button onclick="quickNewCat('expense')" style="font-size:10px;color:#ef4444;background:none;border:none;cursor:pointer;font-weight:700;padding:0">+ Novo tipo</button>
+            </div>
+            <select id="payCat" class="inp" onchange="payCatChanged()"><option value="">Selecione...</option></select>
+            <div id="payCatWrap"></div>
           </div>
-          <!-- Data do lançamento sempre visível -->
           <div class="form-group">
-            <label class="fl">Data de vencimento</label>
+            <label class="fl">Data de Lançamento</label>
             <input type="date" id="payDue" class="inp">
           </div>
-          <!-- Done + date -->
-          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:10px 12px">
+          <div class="form-group">
+            <label class="fl">Valor do pagamento <span class="req">*</span></label>
+            <div class="big-value"><span>R$</span><input id="payVal" placeholder="0,00" oninput="if($('payCartaoWrap').style.display!=='none')payCalcCartao()"></div>
+          </div>
+          <div class="form-group">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <label class="fl">Fornecedor</label>
+              <button onclick="quickNewSupplier('payable')" style="font-size:10px;color:#ec4899;background:none;border:none;cursor:pointer;font-weight:700;padding:0">+ Novo fornecedor</button>
+            </div>
+            <select id="paySupplier" class="inp"><option value="">Selecione o fornecedor...</option></select>
+          </div>
+          <div class="form-group" style="flex:1;display:flex;flex-direction:column">
+            <label class="fl">Descrição</label>
+            <textarea id="payDesc" class="inp" style="flex:1;min-height:60px;resize:none" placeholder="Breve descrição..."></textarea>
+          </div>
+        </div>
+
+        <!-- Coluna 2: Forma de pagamento, cartão/conta, data de pagamento -->
+        <div style="display:flex;flex-direction:column;gap:13px">
+          <div class="form-group">
+            <label class="fl">Forma de pagamento</label>
+            <select id="payForma" class="inp" onchange="payFormaChanged()">
+              <option value="dinheiro">Dinheiro</option>
+              <option value="pix">PIX</option>
+              <option value="debito">Débito</option>
+              <option value="transferencia">Transferência</option>
+              <option value="boleto">Boleto</option>
+              <option value="aprazo">A Prazo (sem boleto)</option>
+              <option value="cartao_credito">Cartão de Crédito</option>
+            </select>
+          </div>
+          <div id="payCartaoWrap" style="display:none">
+            <div class="form-group" style="margin-bottom:8px">
+              <label class="fl">Cartão</label>
+              <select id="payCartao" class="inp" onchange="payCalcCartao()"></select>
+            </div>
+            <div class="form-group" style="margin-bottom:8px">
+              <label class="fl">Nº de parcelas</label>
+              <input id="payCartaoParcelas" type="number" class="inp" min="1" max="24" value="1" oninput="payCalcCartao()">
+            </div>
+            <div id="payCartaoInfo" style="background:#FFF1F2;border:1px solid #FECDD3;border-radius:9px;padding:9px 11px;font-size:11.5px;color:#7F1D1D;line-height:1.5"></div>
+          </div>
+          <div id="payAccWrap" class="form-group">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <label class="fl">Conta Bancária</label>
+              <button onclick="quickNewAccount('payable')" style="font-size:10px;color:#3b82f6;background:none;border:none;cursor:pointer;font-weight:700;padding:0">+ Conta Bancária</button>
+            </div>
+            <select id="payAcc" class="inp"><option value="">Selecione a conta...</option></select>
+          </div>
+          <div class="form-group">
+            <label class="fl">Data de Pagamento</label>
+            <input type="date" id="payDataPagamento" class="inp">
+            <div id="payDataPagamentoHint" style="font-size:10.5px;color:#94a3b8;margin-top:3px"></div>
+          </div>
+          <div id="payRecWrap" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:10px 12px">
+            <p style="font-size:11.5px;font-weight:700;margin-bottom:8px;color:var(--text)">Pagamento recorrente?</p>
+            <div style="display:flex;gap:6px">
+              <button id="payRecNo"  onclick="setRec('pay','no')"  style="flex:1;padding:6px;border-radius:7px;border:1.5px solid #e2e8f0;background:#fff;font-size:12px;font-weight:600;color:#64748b;cursor:pointer;font-family:inherit;transition:all .15s">✕ Não</button>
+              <button id="payRecYes" onclick="setRec('pay','yes')" style="flex:1;padding:6px;border-radius:7px;border:1.5px solid #e2e8f0;background:#fff;font-size:12px;font-weight:600;color:#64748b;cursor:pointer;font-family:inherit;transition:all .15s">✓ Sim</button>
+            </div>
+            <div id="payRecFields" style="display:none;flex-direction:column;gap:10px;margin-top:10px">
+              <div class="form-row">
+                <div class="form-group"><label class="fl">Período</label><select id="payPeriod" class="inp"><option value="monthly">Mensal</option><option value="weekly">Semanal</option><option value="biweekly">Quinzenal</option><option value="yearly">Anual</option></select></div>
+                <div class="form-group"><label class="fl">Parcelas</label><input id="payParcelas" type="number" class="inp" placeholder="Qtd..." min="1" max="120"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Coluna 3: Já foi pago, centro de custo, referência, anotações -->
+        <div style="display:flex;flex-direction:column;gap:13px">
+          <div id="payDoneWrap" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:10px 12px">
             <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;font-weight:600">
               <input type="checkbox" id="payDone" style="accent-color:#ef4444;width:15px;height:15px" onchange="togglePayDoneDate()"> Já foi pago
             </label>
@@ -3767,75 +3841,22 @@ textarea.inp{min-height:80px;resize:vertical}
               <div class="form-group"><label class="fl">Data do pagamento</label><input type="date" id="payDoneDate" class="inp"></div>
             </div>
           </div>
-          <div class="form-group"><label class="fl">Descrição</label><input id="payDesc" class="inp" placeholder="Breve descrição..."></div>
-          <!-- Category with + new -->
           <div class="form-group">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-              <label class="fl">Categoria <span class="req">*</span></label>
-              <button onclick="quickNewCat('expense')" style="font-size:10px;color:#ef4444;background:none;border:none;cursor:pointer;font-weight:700;padding:0">+ Nova categoria</button>
+              <label class="fl">Centro de custo</label>
+              <button onclick="quickNewCC('payable')" style="font-size:10px;color:#8b5cf6;background:none;border:none;cursor:pointer;font-weight:700;padding:0">+ Novo centro</button>
             </div>
-            <select id="payCat" class="inp" onchange="payCatChanged()"><option value="">Selecione...</option></select>
-            <div id="payCatWrap"></div>
-            <div id="payCatInfo" style="display:none;margin-top:4px;font-size:11px;color:#64748b;padding:4px 8px;background:#fff1f2;border-radius:6px;border-left:3px solid #ef4444"></div>
+            <select id="payCC" class="inp"><option value="">Selecione...</option></select>
           </div>
-          <!-- Account with + new -->
-          <div class="form-group">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-              <label class="fl">Conta Bancária</label>
-              <button onclick="quickNewAccount('payable')" style="font-size:10px;color:#3b82f6;background:none;border:none;cursor:pointer;font-weight:700;padding:0">+ Conta Bancária</button>
-            </div>
-            <select id="payAcc" class="inp"><option value="">Selecione a conta...</option></select>
-          </div>
-        </div>
-        <div class="modal-right">
-          <div class="modal-tabs">
-            <button class="modal-tab active" style="color:#ef4444;border-bottom-color:#ef4444" onclick="switchMTab(this,'pay',0)">Dados do Lançamento</button>
-            <button class="modal-tab" onclick="switchMTab(this,'pay',1)">Recorrência</button>
-            <button class="modal-tab" onclick="switchMTab(this,'pay',2)">Adicionais</button>
-          </div>
-          <div id="pay-tab-0" class="modal-tab-content active" style="display:flex">
-            <!-- Supplier with + new -->
-            <div class="form-group">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-                <label class="fl">Fornecedor</label>
-                <button onclick="quickNewSupplier('payable')" style="font-size:10px;color:#ec4899;background:none;border:none;cursor:pointer;font-weight:700;padding:0">+ Novo fornecedor</button>
-              </div>
-              <select id="paySupplier" class="inp"><option value="">Selecione o fornecedor...</option></select>
-            </div>
-            <!-- Cost center with + new -->
-            <div class="form-group">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-                <label class="fl">Centro de custo</label>
-                <button onclick="quickNewCC('payable')" style="font-size:10px;color:#8b5cf6;background:none;border:none;cursor:pointer;font-weight:700;padding:0">+ Novo centro</button>
-              </div>
-              <select id="payCC" class="inp"><option value="">Selecione...</option></select>
-            </div>
-          </div>
-          <div id="pay-tab-1" class="modal-tab-content">
-            <div style="padding:10px 0;border-bottom:1px solid var(--border)">
-              <p style="font-size:13px;font-weight:500;margin-bottom:10px">Pagamento recorrente?</p>
-              <div style="display:flex;gap:8px">
-                <button id="payRecNo"  onclick="setRec('pay','no')"  style="flex:1;padding:8px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:13px;font-weight:600;color:#64748b;cursor:pointer;font-family:inherit;transition:all .15s">✕ Não</button>
-                <button id="payRecYes" onclick="setRec('pay','yes')" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:13px;font-weight:600;color:#64748b;cursor:pointer;font-family:inherit;transition:all .15s">✓ Sim</button>
-              </div>
-            </div>
-            <div id="payRecFields" style="display:none;flex-direction:column;gap:13px;margin-top:4px">
-              <div class="form-row">
-                <div class="form-group"><label class="fl">Período</label><select id="payPeriod" class="inp"><option value="monthly">Mensal</option><option value="weekly">Semanal</option><option value="biweekly">Quinzenal</option><option value="yearly">Anual</option></select></div>
-                <div class="form-group"><label class="fl">Parcelas</label><input id="payParcelas" type="number" class="inp" placeholder="Qtd..." min="1" max="120"></div>
-              </div>
-            </div>
-          </div>
-          <div id="pay-tab-2" class="modal-tab-content">
-            <div class="form-group"><label class="fl">Referência</label><input id="payRef" class="inp" placeholder="Referência do pagamento..."></div>
-            <div class="form-group"><label class="fl">Anotações</label><textarea id="payNotes" class="inp" placeholder="Anotações adicionais..."></textarea></div>
-          </div>
+          <div class="form-group"><label class="fl">Referência</label><input id="payRef" class="inp" placeholder="Referência do pagamento..."></div>
+          <div class="form-group"><label class="fl">Anotações</label><textarea id="payNotes" class="inp" style="min-height:70px" placeholder="Anotações adicionais..."></textarea></div>
         </div>
       </div>
     </div>
     <div class="modal-footer" style="display:flex;gap:10px">
-      <button class="btn btn-outline" style="flex:1;justify-content:center" onclick="savePayable(true)">Adicionar e continuar</button>
-      <button class="btn btn-red" style="flex:1;justify-content:center" onclick="savePayable()">Adicionar</button>
+      <button class="btn btn-red" style="flex:1;justify-content:center" onclick="savePayable()">Salvar</button>
+      <button class="btn btn-outline" style="flex:1;justify-content:center" onclick="savePayable(true)">Salvar e continuar</button>
+      <button class="btn" style="flex:1;justify-content:center;background:none;border:1px solid var(--border);color:var(--text)" onclick="closeModal('payable')">Cancelar</button>
     </div>
   </div>
 </div>
@@ -4668,7 +4689,11 @@ function openModal(name, preserveState){
       <button class="btn" style="flex:1;justify-content:center;background:none;border:1px solid var(--border);color:var(--text)" onclick="closeModal('receivable')">Cancelar</button>`;
   }
   if(name==='receivable' && preserveState){ populateSelects(); }
-  if(name==='payable' && !preserveState){ populateSelects(); $('payDue').value=t; $('payVal').value=''; $('payDesc').value=''; $('payDone').checked=false; if($('payRef')) $('payRef').value=''; if($('payNotes')) $('payNotes').value=''; }
+  if(name==='payable' && !preserveState){
+    populateSelects(); $('payDue').value=t; $('payVal').value=''; $('payDesc').value=''; $('payDone').checked=false;
+    if($('payRef')) $('payRef').value=''; if($('payNotes')) $('payNotes').value='';
+    $('payForma').value='dinheiro'; setRec('pay','no'); payFormaChanged();
+  }
   if(name==='payable' && preserveState){ populateSelects(); }
   if(name==='transfer'){ populateSelects(); $('transDate').value=t; $('transVal').value=''; $('transDesc').value=''; }
   if(name==='account'){
@@ -5158,6 +5183,15 @@ function quickNewClient(returnModal){
 }
 function quickNewSupplier(returnModal){
   S._returnModal=returnModal;
+  if(returnModal==='payable'){
+    S._savedPay={
+      val:$('payVal').value, desc:$('payDesc').value, due:$('payDue').value,
+      dataPag:$('payDataPagamento').value, done:$('payDone').checked, doneDate:$('payDoneDate').value,
+      cat:$('payCat').value, cc:$('payCC').value, ref:$('payRef').value, notes:$('payNotes').value,
+      period:$('payPeriod').value, parcelas:$('payParcelas').value,
+      forma:$('payForma').value, acc:$('payAcc').value
+    };
+  }
   openModal('supplier');
 }
 function quickNewCat(type){
@@ -5167,16 +5201,24 @@ function quickNewCat(type){
 }
 function quickNewCC(returnModal){
   S._returnModal=returnModal;
-  // Inline quick dialog
-  const name=prompt('Nome do Centro de Custo:');
-  if(!name||!name.trim()) return;
-  S.costCenters.push({id:uid(),name:name.trim()});
-  toast('Centro de custo criado! 🏷️'); populateSelects();
-  // Re-select in the right modal
-  setTimeout(()=>{
-    const sel=$(returnModal==='receivable'?'recvCC':'payCC');
-    if(sel) sel.value=S.costCenters[S.costCenters.length-1].id;
-  },50);
+  if(returnModal==='payable'){
+    S._savedPay={
+      val:$('payVal').value, desc:$('payDesc').value, due:$('payDue').value,
+      dataPag:$('payDataPagamento').value, done:$('payDone').checked, doneDate:$('payDoneDate').value,
+      cat:$('payCat').value, supplier:$('paySupplier').value, ref:$('payRef').value, notes:$('payNotes').value,
+      period:$('payPeriod').value, parcelas:$('payParcelas').value,
+      forma:$('payForma').value, acc:$('payAcc').value
+    };
+  } else if(returnModal==='receivable'){
+    S._savedRecv = S._savedRecv || {
+      val:$('recvVal').value, desc:$('recvDesc').value, due:$('recvDue').value,
+      cat:$('recvCat').value, client:$('recvClient').value,
+      ref:$('recvRef').value, notes:$('recvNotes').value,
+      period:$('recvPeriod').value, parcelas:$('recvParcelas').value,
+      forma:$('recvForma').value, operadora:$('recvOperadora')?.value||'', acc:$('recvAcc').value
+    };
+  }
+  openCostCenterModal();
 }
 
 // ─── SAVERS ──────────────────────────────────────────────
@@ -5499,53 +5541,126 @@ async function saveReceivable(keepOpen=false){
   refresh();
 }
 
+// ─── MODAL DE PAGAR: forma de pagamento e cartão de crédito ──
+function payFormaChanged(){
+  const forma = $('payForma').value;
+  const isCartao = forma==='cartao_credito';
+  $('payCartaoWrap').style.display = isCartao ? 'block' : 'none';
+  $('payAccWrap').style.display = isCartao ? 'none' : 'block';
+  $('payRecWrap').style.display = isCartao ? 'none' : 'block'; // recorrência de cartão usa parcelas do próprio cartão
+  $('payDoneWrap').style.display = isCartao ? 'none' : 'block'; // cartão só "paga" quando a fatura é quitada
+  if(isCartao){
+    if(!$('payRecYes')?.style.background?.includes('34, 197, 94')) setRec('pay','no'); // garante que recorrência normal fica desligada
+    const cartoes = (S.accounts||[]).filter(a=>a.tipo==='cartao' && a.active!==false);
+    $('payCartao').innerHTML = cartoes.map(c=>`<option value="${c.id}">${c.name}</option>`).join('') || '<option value="">Nenhum cartão cadastrado</option>';
+    payCalcCartao();
+  }
+  // Sugere a Data de Pagamento conforme a forma
+  const hint = $('payDataPagamentoHint');
+  if(forma==='dinheiro'||forma==='pix'||forma==='debito'||forma==='transferencia'){
+    $('payDataPagamento').value = $('payDue').value || today();
+    hint.textContent = 'Pago na hora';
+  } else if(!isCartao){
+    if(!$('payDataPagamento').value) $('payDataPagamento').value = $('payDue').value || today();
+    hint.textContent = 'Defina quando o valor deve ser pago';
+  } else {
+    hint.textContent = '';
+  }
+}
+
+function payCalcCartao(){
+  const cartao = (S.accounts||[]).find(a=>a.id===$('payCartao').value);
+  const info = $('payCartaoInfo');
+  const value = pv($('payVal').value)||0;
+  if(!cartao || !value){ info.innerHTML='Informe o valor e o cartão para calcular'; return; }
+  const nParc = Math.max(1, parseInt($('payCartaoParcelas').value)||1);
+  const venc = payCalcVencimentoFatura(cartao, 0);
+  const parcVal = value/nParc;
+  const pagadora = S.accounts.find(a=>a.id===cartao.contaPagadoraId);
+  let txt = `Vai para a fatura de <b>${cartao.name}</b>`;
+  if(nParc>1){
+    const vencUltima = payCalcVencimentoFatura(cartao, nParc-1);
+    txt += `<br><b>${nParc}x de ${fmt(parcVal)}</b> — 1ª fatura vence ${fmtD(venc)}, última em ${fmtD(vencUltima)}`;
+  } else {
+    txt += `<br>Vencimento da fatura: <b>${fmtD(venc)}</b>`;
+  }
+  txt += `<br>Será pago pela conta <b>${pagadora?pagadora.name:'não definida'}</b> quando a fatura vencer`;
+  info.innerHTML = txt;
+}
+
+// Calcula a data de vencimento da fatura de um cartão, N meses à frente (parcelas)
+function payCalcVencimentoFatura(cartao, mesesAFrente){
+  const fech = cartao.diaFechamento||1;
+  const venc = cartao.diaVencimento||10;
+  const hoje = new Date();
+  let mes = hoje.getMonth(), ano = hoje.getFullYear();
+  if(hoje.getDate() > fech){ mes++; if(mes>11){mes=0;ano++;} }
+  let vencMes = mes, vencAno = ano;
+  if(venc <= fech){ vencMes++; if(vencMes>11){vencMes=0;vencAno++;} }
+  vencMes += mesesAFrente;
+  while(vencMes>11){ vencMes-=12; vencAno++; }
+  return `${vencAno}-${String(vencMes+1).padStart(2,'0')}-${String(venc).padStart(2,'0')}`;
+}
+
 async function savePayable(keepOpen=false){
   const value  = pv($('payVal').value);
   const desc   = $('payDesc').value.trim();
   const catId  = $('payCat').value;
-  const done   = $('payDone').checked;
-  const accId  = $('payAcc').value;
+  const forma  = $('payForma')?.value || 'dinheiro';
+  const isCartao = forma==='cartao_credito';
+  const cartao = isCartao ? (S.accounts||[]).find(a=>a.id===$('payCartao').value) : null;
+  if(isCartao && !cartao){ toast('Selecione o cartão','error'); return; }
+
+  const done   = isCartao ? false : $('payDone').checked;
+  const accId  = isCartao ? null : $('payAcc').value;
   if(!value){ toast('Informe o valor','error'); return; }
   if(!desc)  { toast('Informe a descrição','error'); $('payDesc').focus(); return; }
   if(!catId) { toast('Selecione a categoria','error'); return; }
   if(done && !accId) { toast('Selecione a conta para registrar o pagamento','error'); return; }
 
-  const baseDue    = $('payDue').value || today();
-  const baseComp   = baseDue;
+  const transactionDate = $('payDue').value || today();
+  const baseDue    = isCartao ? payCalcVencimentoFatura(cartao,0) : ($('payDataPagamento').value || today());
   const doneDate   = done && $('payDoneDate').value ? $('payDoneDate').value : (done ? today() : null);
   const supplierId = $('paySupplier').value;
   const ccId       = $('payCC').value;
   const ref        = $('payRef')?.value?.trim() || '';
   const notes      = $('payNotes')?.value?.trim() || '';
 
-  // Verifica se recorrência está ativa (botão Sim selecionado = fundo verde)
-  const recAtivo  = $('payRecYes')?.style.background === '#22C55E' || $('payRecYes')?.style.background === 'rgb(34, 197, 94)';
-  const nParcelas = recAtivo ? (parseInt($('payParcelas').value)||1) : 1;
+  // Parcelas: cartão usa suas próprias parcelas; senão, usa a recorrência normal
+  const recAtivo  = !isCartao && ($('payRecYes')?.style.background === '#22C55E' || $('payRecYes')?.style.background === 'rgb(34, 197, 94)');
+  const nParcelas = isCartao ? Math.max(1,parseInt($('payCartaoParcelas').value)||1) : (recAtivo ? (parseInt($('payParcelas').value)||1) : 1);
   const period    = recAtivo ? ($('payPeriod').value||'monthly') : 'monthly';
   const total     = nParcelas;
+  const cartaoParcelaValor = isCartao ? value/nParcelas : value;
 
   for(let i=0; i<total; i++){
     const parcelDesc = total>1 ? `${desc} (${i+1}/${total})` : desc;
-    const dueDate    = i===0 ? baseDue : addPeriod(baseDue, period, i);
-    const compDate   = dueDate;
+    const dueDate    = isCartao ? payCalcVencimentoFatura(cartao,i) : (i===0 ? baseDue : addPeriod(baseDue, period, i));
     const isDone     = done && i===0;
     const pDoneDate  = isDone ? doneDate : null;
+    const parcelVal  = isCartao ? cartaoParcelaValor : value;
 
     const saved = await sbInsert('transactions',{
-      type:'payable', amount:value, description:parcelDesc,
+      type:'payable', amount:parcelVal, description:parcelDesc,
       due_date:dueDate||null, paid_date:pDoneDate||null,
       status:isDone?'paid':'pending', category:catId||null,
-      account_id:accId||null, contact_id:supplierId||null,
-      reference:ref||null, notes:notes||null
+      account_id:(isCartao?cartao.id:accId)||null, contact_id:supplierId||null,
+      reference:ref||null, notes:notes||null,
+      payment_method:forma, transaction_date:transactionDate
     });
     if(!saved) continue;
 
-    const p = {id:saved.id, value, done:isDone, dueDate, compDate, doneDate:pDoneDate,
-               desc:parcelDesc, categoryId:catId, accountId:accId, supplierId, costCenterId:ccId,
-               ref, notes};
+    const p = {id:saved.id, value:parcelVal, done:isDone, dueDate, compDate:dueDate, doneDate:pDoneDate,
+               desc:parcelDesc, categoryId:catId, accountId:(isCartao?cartao.id:accId), supplierId, costCenterId:ccId,
+               ref, notes, paymentMethod:forma, transactionDate};
     if(isDone && accId){
-      S.accounts = S.accounts.map(a=>a.id===accId?{...a,balance:a.balance-value}:a);
+      S.accounts = S.accounts.map(a=>a.id===accId?{...a,balance:a.balance-parcelVal}:a);
       await sbUpdate('accounts', accId, {balance: S.accounts.find(a=>a.id===accId)?.balance});
+    }
+    if(isCartao){
+      // Soma na fatura do cartão (não debita conta agora — só quando a fatura for paga)
+      S.accounts = S.accounts.map(a=>a.id===cartao.id?{...a,faturaAtual:(a.faturaAtual||0)+parcelVal}:a);
+      await sbUpdate('accounts', cartao.id, {fatura_atual: S.accounts.find(a=>a.id===cartao.id)?.faturaAtual});
     }
     S.payables.push(p);
     syncPayableToPrecificacao(p);
@@ -5556,8 +5671,9 @@ async function savePayable(keepOpen=false){
   else {
     $('payVal').value=''; $('payDesc').value=''; $('payDone').checked=false;
     $('payDoneDateWrap').style.display='none'; $('payCat').value=''; $('payAcc').value='';
-    $('paySupplier').value=''; $('payCC').value=''; $('payCatInfo').style.display='none';
+    $('paySupplier').value=''; $('payCC').value='';
     $('payParcelas').value=''; if($('payRef')) $('payRef').value=''; if($('payNotes')) $('payNotes').value='';
+    $('payForma').value='dinheiro'; payFormaChanged();
   }
   refresh();
 }
@@ -5709,8 +5825,26 @@ async function saveSupplier(){
   S.suppliers.push(sup);
   toast('Fornecedor adicionado! 📦'); closeModal('supplier');
   if(S._returnModal==='payable'){
-    S._returnModal=null; openModal('payable');
-    setTimeout(()=>{ populateSelects(); $('paySupplier').value=sup.id; },50);
+    S._returnModal=null; openModal('payable', true);
+    setTimeout(()=>{
+      populateSelects();
+      const sv=S._savedPay||{};
+      if(sv.val)    $('payVal').value=sv.val;
+      if(sv.desc)   $('payDesc').value=sv.desc;
+      if(sv.due)    $('payDue').value=sv.due;
+      if(sv.dataPag)$('payDataPagamento').value=sv.dataPag;
+      if(sv.done){  $('payDone').checked=true; togglePayDoneDate(); if(sv.doneDate) $('payDoneDate').value=sv.doneDate; }
+      if(sv.cat)    $('payCat').value=sv.cat;
+      if(sv.cc)     $('payCC').value=sv.cc;
+      if(sv.ref)    $('payRef').value=sv.ref;
+      if(sv.notes)  $('payNotes').value=sv.notes;
+      if(sv.period) $('payPeriod').value=sv.period;
+      if(sv.parcelas) $('payParcelas').value=sv.parcelas;
+      if(sv.forma){ $('payForma').value=sv.forma; payFormaChanged(); }
+      if(sv.acc)    $('payAcc').value=sv.acc;
+      $('paySupplier').value=sup.id;
+      S._savedPay=null;
+    },50);
   } else { S._returnModal=null; if(S.currentPage==='fornecedores')renderFornecedores(); }
 }
 function saveCategory(){
@@ -7869,8 +8003,16 @@ function openEfetivar(id, type){
   btn.textContent      = isIncome ? '✅ Confirmar recebimento' : '💳 Confirmar pagamento';
 
   // Conta: pré-seleciona a conta do lançamento se houver
+  // Se for pagável ligado a um cartão de crédito, mostra só contas bancárias reais (não cartões),
+  // e já sugere a conta que paga a fatura desse cartão
+  const cartaoOrigem = (!isIncome) ? (S.accounts||[]).find(a=>a.id===item.accountId && a.tipo==='cartao') : null;
+  const contasParaEscolher = cartaoOrigem ? S.accounts.filter(a=>a.tipo!=='cartao') : S.accounts;
+  const contaSugerida = cartaoOrigem ? cartaoOrigem.contaPagadoraId : item.accountId;
+  if(cartaoOrigem){
+    $('efet-desc').textContent = `Pagamento da fatura: ${item.desc||''} (${cartaoOrigem.name})`;
+  }
   $('efet-acc').innerHTML = '<option value="">Selecione a conta...</option>' +
-    S.accounts.map(a=>`<option value="${a.id}" ${a.id===item.accountId?'selected':''}>${a.name} (${fmt(a.balance)})</option>`).join('');
+    contasParaEscolher.map(a=>`<option value="${a.id}" ${a.id===contaSugerida?'selected':''}>${a.name} (${fmt(a.balance)})</option>`).join('');
 
   // Data: hoje
   $('efet-date').value = today();
@@ -7920,10 +8062,17 @@ async function confirmEfetivar(){
     } else {
       const p=S.payables.find(x=>x.id===id);
       if(p&&!p.done){
+        const cartaoOrigem = (S.accounts||[]).find(a=>a.id===p.accountId && a.tipo==='cartao');
         p.done=true; p.doneDate=date; p.accountId=accId;
         await sbUpdate('transactions',id,{status:'paid',paid_date:date,account_id:accId});
         S.accounts=S.accounts.map(a=>a.id===accId?{...a,balance:a.balance-p.value}:a);
         await sbUpdate('accounts',accId,{balance:S.accounts.find(a=>a.id===accId)?.balance});
+        // Se essa parcela era de uma fatura de cartão, desconta o valor da fatura em aberto
+        if(cartaoOrigem){
+          const novaFatura = Math.max(0, (cartaoOrigem.faturaAtual||0) - p.value);
+          S.accounts = S.accounts.map(a=>a.id===cartaoOrigem.id?{...a,faturaAtual:novaFatura}:a);
+          await sbUpdate('accounts', cartaoOrigem.id, {fatura_atual: novaFatura});
+        }
       }
     }
   }
@@ -8017,13 +8166,19 @@ function openEditLanc(id, type){
     } else {
       $('payVal').value  = item.value.toFixed(2).replace('.',',');
       $('payDesc').value = item.desc||'';
-      $('payDue').value  = item.dueDate||'';
+      $('payDue').value  = item.transactionDate||item.dueDate||'';
       $('payCat').value  = item.categoryId||'';
       $('payCatWrap')?._catPicker?._setValue(item.categoryId||'');
-      $('payAcc').value  = item.accountId||'';
       $('paySupplier').value = item.supplierId||'';
       if($('payRef'))   $('payRef').value   = item.ref||'';
       if($('payNotes')) $('payNotes').value = item.notes||'';
+      $('payForma').value = item.paymentMethod||'dinheiro';
+      payFormaChanged();
+      if(item.paymentMethod==='cartao_credito'){ $('payCartao').value = item.accountId||''; payCalcCartao(); }
+      else { $('payAcc').value = item.accountId||''; }
+      // Define a data de pagamento real por último, para não ser sobrescrita pela sugestão automática
+      $('payDataPagamento').value = item.dueDate||'';
+      $('payDataPagamentoHint').textContent = '';
       if(item.done){
         $('payDone').checked=true;
         $('payDoneDateWrap').style.display='block';
@@ -8108,9 +8263,14 @@ async function saveEditLanc(){
     if(done && !accId){ toast('Selecione a conta para registrar o recebimento','error'); return; }
     doneDate = done ? today() : null;
   } else {
-    accId = $('payAcc').value||null;
-    dueDate = $('payDue').value;
-    done = $('payDone').checked;
+    forma = $('payForma').value;
+    transactionDate = $('payDue').value || today();
+    const isCartao = forma==='cartao_credito';
+    const cartao = isCartao ? (S.accounts||[]).find(a=>a.id===$('payCartao').value) : null;
+    if(isCartao && !cartao){ toast('Selecione o cartão','error'); return; }
+    accId = isCartao ? (cartao?.id||null) : ($('payAcc').value||null);
+    dueDate = isCartao ? payCalcVencimentoFatura(cartao,0) : ($('payDataPagamento').value || today());
+    done = isCartao ? false : $('payDone').checked;
     if(done && !accId){ toast('Selecione a conta para registrar o pagamento','error'); return; }
     doneDate = $('payDoneDate').value || (done?today():null);
   }
@@ -8124,7 +8284,24 @@ async function saveEditLanc(){
     contact_id: peerId,
   };
   if(isIncome){ changes.payment_method = forma; changes.operadora_id = opId; changes.fee = fee; changes.transaction_date = transactionDate; }
+  else { changes.payment_method = forma; changes.transaction_date = transactionDate; }
   await sbUpdate('transactions', id, changes);
+
+  // Ajusta a fatura do cartão: remove do cartão antigo (se estava pendente nele), soma no novo (se aplicável)
+  if(!isIncome){
+    const oldCartao = (S.accounts||[]).find(a=>a.id===oldItem.accountId && a.tipo==='cartao');
+    const newCartao = (forma==='cartao_credito') ? (S.accounts||[]).find(a=>a.id===accId) : null;
+    if(oldCartao && !oldItem.done){
+      const nova = Math.max(0,(oldCartao.faturaAtual||0)-oldItem.value);
+      S.accounts = S.accounts.map(a=>a.id===oldCartao.id?{...a,faturaAtual:nova}:a);
+      await sbUpdate('accounts', oldCartao.id, {fatura_atual:nova});
+    }
+    if(newCartao && !done){
+      const nova = (newCartao.faturaAtual||0)+value;
+      S.accounts = S.accounts.map(a=>a.id===newCartao.id?{...a,faturaAtual:nova}:a);
+      await sbUpdate('accounts', newCartao.id, {fatura_atual:nova});
+    }
+  }
 
   // Ajusta o saldo das contas: reverte o crédito/débito antigo (se estava confirmado) e aplica o novo (se estiver confirmado agora)
   const sign = isIncome ? 1 : -1; // recebimento soma no saldo, pagamento subtrai
@@ -8144,7 +8321,8 @@ async function saveEditLanc(){
     dueDate, done, doneDate: done?doneDate:null, ref, notes, clientId:peerId,
     paymentMethod:forma, operadoraId:opId, fee, netValue:value-fee, transactionDate};
   else list[idx] = {...list[idx], value, desc, categoryId:catId, accountId:accId||null,
-    dueDate, done, doneDate: done?doneDate:null, ref, notes, supplierId:peerId};
+    dueDate, done, doneDate: done?doneDate:null, ref, notes, supplierId:peerId,
+    paymentMethod:forma, transactionDate};
 
   S._editId=null; S._editType=null;
   resetEditLancUI();
@@ -11213,14 +11391,56 @@ async function saveCostCenter(keepOpen){
     S.costCenters.push({id:saved.id, name, active:true});
   }
   toast('Centro de custo salvo! 🏷️');
+  const novoId = id || S.costCenters[S.costCenters.length-1].id;
+
   if(keepOpen){
     $('ccId').value=''; $('ccName').value='';
     $('ccModalTitle').textContent='Novo Centro de Custo';
     $('ccName').focus();
-  } else {
-    closeCostCenterModal();
+    return;
   }
-  setCfgSection('centros');
+  closeCostCenterModal();
+
+  if(S._returnModal==='receivable'||S._returnModal==='payable'){
+    const ret = S._returnModal; S._returnModal=null;
+    openModal(ret, true);
+    setTimeout(()=>{
+      populateSelects();
+      if(ret==='payable'){
+        const sv=S._savedPay||{};
+        if(sv.val)    $('payVal').value=sv.val;
+        if(sv.desc)   $('payDesc').value=sv.desc;
+        if(sv.due)    $('payDue').value=sv.due;
+        if(sv.dataPag)$('payDataPagamento').value=sv.dataPag;
+        if(sv.done){  $('payDone').checked=true; togglePayDoneDate(); if(sv.doneDate) $('payDoneDate').value=sv.doneDate; }
+        if(sv.cat)    $('payCat').value=sv.cat;
+        if(sv.supplier) $('paySupplier').value=sv.supplier;
+        if(sv.ref)    $('payRef').value=sv.ref;
+        if(sv.notes)  $('payNotes').value=sv.notes;
+        if(sv.period) $('payPeriod').value=sv.period;
+        if(sv.parcelas) $('payParcelas').value=sv.parcelas;
+        if(sv.forma){ $('payForma').value=sv.forma; payFormaChanged(); }
+        if(sv.acc)    $('payAcc').value=sv.acc;
+        $('payCC').value=novoId;
+        S._savedPay=null;
+      } else {
+        const sv=S._savedRecv||{};
+        if(sv.val)    $('recvVal').value=sv.val;
+        if(sv.desc)   $('recvDesc').value=sv.desc;
+        if(sv.due)    $('recvDue').value=sv.due;
+        if(sv.cat){ $('recvCat').value=sv.cat; $('recvCatWrap')?._catPicker?._setValue(sv.cat); }
+        if(sv.client) $('recvClient').value=sv.client;
+        if(sv.ref)    $('recvRef').value=sv.ref;
+        if(sv.notes)  $('recvNotes').value=sv.notes;
+        if(sv.forma){ $('recvForma').value=sv.forma; recvFormaChanged(); if(sv.operadora){ $('recvOperadora').value=sv.operadora; recvCalcNet(); } }
+        if(sv.acc)    $('recvAcc').value=sv.acc;
+        $('recvCC').value=novoId;
+        S._savedRecv=null;
+      }
+    },50);
+  } else {
+    setCfgSection('centros');
+  }
 }
 
 async function deleteCostCenter(id){
@@ -13085,7 +13305,8 @@ async function loadData() {
         done: t.status === 'paid', doneDate: t.paid_date,
         categoryId: t.category, accountId: t.account_id,
         supplierId: t.contact_id, costCenterId: null,
-        ref: t.reference||'', notes: t.notes||''
+        ref: t.reference||'', notes: t.notes||'',
+        paymentMethod: t.payment_method||null, transactionDate: t.transaction_date||t.due_date
       }));
 
     // Transferências
