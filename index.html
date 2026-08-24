@@ -4430,6 +4430,9 @@ function navigate(page){
 
   document.querySelectorAll('.page').forEach(p=>p.style.display='none');
   $('page-'+page).style.display='block';
+  // Barra de período/exportar PDF só faz sentido nas telas que usam esse filtro
+  const periodBar = $('period-bar');
+  if(periodBar) periodBar.style.display = ['dashboard','lancamentos','relatorios'].includes(page) ? 'flex' : 'none';
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   const activeBtn=document.querySelector(`.nav-btn[data-page="${page}"]`);
   if(activeBtn) activeBtn.classList.add('active');
