@@ -10311,21 +10311,34 @@ function renderAuditoriaLista(){
     const act = AUDIT_ACTION_LABELS[a.action]||{label:a.action,color:'#64748b',bg:'#f1f5f9'};
     const tableLabel = AUDIT_TABLE_LABELS[a.table_name]||a.table_name;
     let detailsHtml = '—';
+    const camposOcultos = ['id','user_id','created_at','owner_id'];
     try{
       const d = a.details ? JSON.parse(a.details) : null;
       if(d && a.action==='update' && d.after){
-        // Antes → Depois: só mostra os campos que realmente mudaram
-        const linhas = Object.keys(d.after).filter(k=>k!=='user_id').map(k=>{
+        // Antes = registro completo | Depois = só os campos alterados, na mesma linha do Antes
+        const before = d.before||{};
+        const after = d.after||{};
+        const camposAntes = Object.keys(before).filter(k=>!camposOcultos.includes(k));
+        const linhas = camposAntes.map(k=>{
           const label = AUDIT_FIELD_LABELS[k]||k;
-          const antes = auditResolveValue(k, d.before?.[k]);
-          const depois = auditResolveValue(k, d.after[k]);
-          return `<div><b>${label}:</b> ${antes} → <b style="color:#0F2A44">${depois}</b></div>`;
+          const foiAlterado = Object.prototype.hasOwnProperty.call(after,k);
+          const valorAntes = auditResolveValue(k, before[k]);
+          const valorDepois = foiAlterado ? auditResolveValue(k, after[k]) : '';
+          return `<div style="display:grid;grid-template-columns:110px 1fr 1fr;gap:8px;padding:2px 0">
+            <span style="color:#94a3b8">${label}</span>
+            <span>${valorAntes}</span>
+            <span style="${foiAlterado?'font-weight:700;color:#0F2A44':'color:#cbd5e1'}">${foiAlterado?valorDepois:'—'}</span>
+          </div>`;
         });
-        detailsHtml = linhas.join('');
+        detailsHtml = `
+          <div style="display:grid;grid-template-columns:110px 1fr 1fr;gap:8px;padding:2px 0;font-weight:700;font-size:10px;text-transform:uppercase;color:#94a3b8">
+            <span></span><span>Antes</span><span>Depois</span>
+          </div>${linhas.join('')}`;
       } else if(d){
-        const linhas = Object.entries(d).filter(([k,v])=>k!=='user_id' && v!==null && v!==undefined && v!=='').slice(0,6).map(([k,v])=>{
+        const camposCreateDelete = Object.keys(d).filter(k=>!camposOcultos.includes(k) && d[k]!==null && d[k]!==undefined && d[k]!=='');
+        const linhas = camposCreateDelete.slice(0,10).map(k=>{
           const label = AUDIT_FIELD_LABELS[k]||k;
-          return `<div><b>${label}:</b> ${auditResolveValue(k,v)}</div>`;
+          return `<div><b>${label}:</b> ${auditResolveValue(k,d[k])}</div>`;
         });
         detailsHtml = linhas.join('') || '—';
       }
@@ -10341,7 +10354,7 @@ function renderAuditoriaLista(){
         </div>
         <span style="color:#94a3b8;font-size:11px;white-space:nowrap">${dt.toLocaleDateString('pt-BR')} ${dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</span>
       </div>
-      <div style="margin-top:5px;color:#64748b;font-size:11px;padding-left:2px;line-height:1.7">${detailsHtml}</div>
+      <div style="margin-top:6px;color:#64748b;font-size:11px;padding:8px 10px;background:#FAFBFC;border-radius:8px">${detailsHtml}</div>
     </div>`;
   }).join('')
   : `<div style="padding:30px 0;text-align:center;color:#94a3b8;font-size:12px">Nenhuma ação encontrada para esse filtro</div>`;
@@ -12565,11 +12578,10 @@ async function sbInsert(table, row) {
 async function sbUpdate(table, id, changes) {
   if (!_currentUser) return;
   const ownerId = S.ownerId || _currentUser.id;
-  // Busca os valores atuais antes de sobrescrever, para registrar "antes → depois" na auditoria
+  // Busca o registro completo antes de sobrescrever, para mostrar "Antes" completo na auditoria
   let before = null;
   try{
-    const fields = Object.keys(changes).join(',');
-    const r = await _sb.from(table).select(fields).eq('id', id).maybeSingle();
+    const r = await _sb.from(table).select('*').eq('id', id).maybeSingle();
     before = r.data;
   } catch(e){}
   const { error } = await _sb.from(table).update(changes).eq('id', id).eq('user_id', ownerId);
