@@ -10320,24 +10320,40 @@ const AUDIT_FIELD_LABELS = {
   category:'Categoria', categoryId:'Categoria', account_id:'Conta', accountId:'Conta',
   contact_id:'Cliente/Fornecedor', clientId:'Cliente', supplierId:'Fornecedor',
   due_date:'Vencimento', dueDate:'Vencimento', paid_date:'Data do Pagamento', doneDate:'Data do Pagamento',
-  status:'Status', type:'Tipo', name:'Nome', nome:'Nome', email:'E-mail', phone:'Telefone', document:'Documento',
+  status:'Status', type:'Tipo de lançamento', name:'Nome', nome:'Nome', email:'E-mail', phone:'Telefone', document:'Documento',
   notes:'Anotações', reference:'Referência', ref:'Referência', active:'Ativo',
   balance:'Saldo', number:'Número da conta', agency:'Agência', pixKey:'Chave Pix',
   taxa_debito:'Taxa Débito (%)', taxa_credito:'Taxa Crédito (%)', prazo_credito_dias:'Prazo (dias)',
   modo_credito:'Modo de recebimento', intervalo_parcelas_dias:'Intervalo entre parcelas',
-  conta_destino_id:'Conta destino', ordem:'Ordem', tipo:'Tipo', role:'Papel', group:'Grupo', costCenterId:'Centro de Custo'
+  conta_destino_id:'Conta destino', ordem:'Ordem', tipo:'Tipo', role:'Papel', group:'Grupo', costCenterId:'Centro de Custo',
+  payment_method:'Forma de Pagamento', operadora_id:'Operadora', fee:'Taxa de Cartão'
 };
+// Campos técnicos que não fazem sentido mostrar ao usuário
+const AUDIT_HIDDEN_FIELDS = ['id','user_id','owner_id','created_at','updated_at','recurrence'];
+
 function auditResolveValue(field, val){
   if(val===null || val===undefined || val==='') return '—';
   if((field==='account_id'||field==='accountId'||field==='conta_destino_id')){
-    const a = S.accounts.find(x=>x.id===val); return a ? a.name : val;
+    const a = S.accounts.find(x=>x.id===val); return a ? a.name : '—';
   }
   if(field==='category'||field==='categoryId'){
-    const c = [...S.cats.income,...S.cats.expense].find(x=>x.id===val); return c ? c.name : val;
+    const c = [...S.cats.income,...S.cats.expense].find(x=>x.id===val); return c ? c.name : '—';
+  }
+  if(field==='operadora_id'){
+    const o = (S.operadoras||[]).find(x=>x.id===val); return o ? o.nome : '—';
+  }
+  if(field==='contact_id'||field==='clientId'||field==='supplierId'){
+    const p = [...(S.clients||[]),...(S.suppliers||[])].find(x=>x.id===val); return p ? p.name : '—';
   }
   if(field==='status') return val==='paid' ? 'Pago/Recebido' : (val==='pending'?'Pendente':val);
   if(field==='active') return val ? 'Sim' : 'Não';
-  if((field==='amount'||field==='value'||field==='balance') && typeof val==='number') return fmt(val);
+  if(field==='type') return val==='receivable' ? 'A Receber' : (val==='payable' ? 'A Pagar' : val);
+  if(field==='payment_method'){
+    const map = {dinheiro:'Dinheiro', pix:'PIX', debito:'Cartão de Débito', credito:'Cartão de Crédito', boleto:'Boleto', aprazo:'A Prazo (sem boleto)'};
+    return map[val]||val;
+  }
+  if((field==='due_date'||field==='dueDate'||field==='paid_date'||field==='doneDate') && /^\d{4}-\d{2}-\d{2}/.test(val)) return fmtD(val.slice(0,10));
+  if((field==='amount'||field==='value'||field==='balance'||field==='fee') && typeof val==='number') return fmt(val);
   if(typeof val==='object') return JSON.stringify(val);
   return String(val);
 }
@@ -10417,7 +10433,7 @@ function renderAuditoriaLista(){
     const act = AUDIT_ACTION_LABELS[a.action]||{label:a.action,color:'#64748b',bg:'#f1f5f9'};
     const tableLabel = AUDIT_TABLE_LABELS[a.table_name]||a.table_name;
     let detailsHtml = '—';
-    const camposOcultos = ['id','user_id','created_at','owner_id'];
+    const camposOcultos = AUDIT_HIDDEN_FIELDS;
     try{
       const d = a.details ? JSON.parse(a.details) : null;
       if(d && a.action==='update' && d.after){
