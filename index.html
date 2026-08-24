@@ -7661,17 +7661,20 @@ function openEditLanc(id, type){
       $('recvForma').value = item.paymentMethod||'dinheiro';
       recvFormaChanged();
       if(item.operadoraId){ $('recvOperadora').value = item.operadoraId; recvCalcNet(); }
-      // Trava os campos complexos na edição (forma/operadora/entrada não são recalculáveis com segurança aqui)
-      $('recvForma').disabled = true;
-      if($('recvOperadora')) $('recvOperadora').disabled = true;
+      // Entrada e Parcelamento continuam travados: mexer neles exige criar/apagar mais de um lançamento,
+      // o que não é seguro fazer numa edição simples. Forma/Operadora já podem ser alteradas livremente.
       $('recvEntradaYes').style.pointerEvents='none'; $('recvEntradaYes').style.opacity='.5';
       $('recvEntradaNo').style.pointerEvents='none'; $('recvEntradaNo').style.opacity='.5';
+      $('recvRecYes').style.pointerEvents='none'; $('recvRecYes').style.opacity='.5';
+      $('recvRecNo').style.pointerEvents='none'; $('recvRecNo').style.opacity='.5';
+      const boletoBtn = document.querySelector('#recvBoletoParc button');
+      if(boletoBtn){ boletoBtn.disabled=true; boletoBtn.style.opacity='.5'; boletoBtn.style.cursor='not-allowed'; }
       const avisoId = 'recvEditFormaAviso';
       if(!$(avisoId)){
         const aviso = document.createElement('div');
         aviso.id = avisoId;
         aviso.style.cssText = 'font-size:10.5px;color:#B45309;background:#FFFBEB;padding:6px 8px;border-radius:6px;margin-top:4px';
-        aviso.textContent = 'Forma de pagamento não pode ser alterada aqui. Para mudar, exclua e lance novamente.';
+        aviso.textContent = 'Entrada e Parcelamento não podem ser alterados aqui (exige criar/excluir lançamentos). Para mudar isso, exclua e lance novamente.';
         $('recvForma').closest('.form-group').appendChild(aviso);
       }
     } else {
@@ -7706,6 +7709,11 @@ function resetEditLancUI(){
   const y=$('recvEntradaYes'), n=$('recvEntradaNo');
   if(y){ y.style.pointerEvents=''; y.style.opacity=''; }
   if(n){ n.style.pointerEvents=''; n.style.opacity=''; }
+  const ry=$('recvRecYes'), rn=$('recvRecNo');
+  if(ry){ ry.style.pointerEvents=''; ry.style.opacity=''; }
+  if(rn){ rn.style.pointerEvents=''; rn.style.opacity=''; }
+  const boletoBtn = document.querySelector('#recvBoletoParc button');
+  if(boletoBtn){ boletoBtn.disabled=false; boletoBtn.style.opacity=''; boletoBtn.style.cursor=''; }
   const aviso = $('recvEditFormaAviso');
   if(aviso) aviso.remove();
 }
@@ -7726,23 +7734,51 @@ async function saveEditLanc(){
   const isIncome = type==='income';
   const desc  = isIncome ? $('recvDesc').value.trim() : $('payDesc').value.trim();
   const catId = isIncome ? $('recvCat').value         : $('payCat').value;
-  const accId = isIncome ? $('recvAcc').value         : $('payAcc').value;
   const value = pv(isIncome ? $('recvVal').value      : $('payVal').value);
 
   if(!value){ toast('Informe o valor','error'); return; }
   if(!desc)  { toast('Informe a descrição','error'); return; }
   if(!catId) { toast('Selecione a categoria','error'); return; }
 
-  const dueDate  = isIncome ? $('recvDue').value  : $('payDue').value;
-  const recvForma = isIncome ? ($('recvForma')?.value||'dinheiro') : null;
-  const done     = isIncome ? (recvForma==='dinheiro'||recvForma==='pix'||recvForma==='debito') : $('payDone').checked;
-  if(done && !accId) { toast(isIncome ? 'Selecione a conta para registrar o recebimento' : 'Selecione a conta para registrar o pagamento','error'); return; }
-  const doneDate = isIncome
-    ? (done ? today() : null)
-    : ($('payDoneDate').value  || (done?today():null));
+  const list = isIncome ? S.receivables : S.payables;
+  const idx  = list.findIndex(x=>x.id===id);
+  if(idx<0) return;
+  const oldItem = list[idx];
+
   const ref   = isIncome ? ($('recvRef')?.value?.trim()||'')   : ($('payRef')?.value?.trim()||'');
   const notes = isIncome ? ($('recvNotes')?.value?.trim()||'') : ($('payNotes')?.value?.trim()||'');
   const peerId = isIncome ? ($('recvClient').value||null) : ($('paySupplier').value||null);
+
+  let accId, dueDate, done, doneDate, forma=null, opId=null, fee=0;
+
+  if(isIncome){
+    forma = $('recvForma').value;
+    const isCard = forma==='debito' || forma==='credito';
+    const op = isCard ? (S.operadoras||[]).find(o=>o.id===$('recvOperadora').value) : null;
+    if(isCard && !op){ toast('Selecione a operadora do cartão','error'); return; }
+
+    if(op){
+      const taxaPct = forma==='debito' ? (op.taxa_debito||0) : (op.taxa_credito||0);
+      fee = value * taxaPct/100;
+      opId = op.id;
+      accId = op.conta_destino_id||null;
+      dueDate = forma==='credito'
+        ? (()=>{ const d=new Date(); d.setDate(d.getDate()+(op.prazo_credito_dias||0)); return d.toISOString().split('T')[0]; })()
+        : $('recvDue').value;
+    } else {
+      accId = $('recvAcc').value||null;
+      dueDate = $('recvDue').value;
+    }
+    done = (forma==='dinheiro' || forma==='pix' || forma==='debito');
+    if(done && !accId){ toast('Selecione a conta para registrar o recebimento','error'); return; }
+    doneDate = done ? today() : null;
+  } else {
+    accId = $('payAcc').value||null;
+    dueDate = $('payDue').value;
+    done = $('payDone').checked;
+    if(done && !accId){ toast('Selecione a conta para registrar o pagamento','error'); return; }
+    doneDate = $('payDoneDate').value || (done?today():null);
+  }
 
   const changes = {
     description: desc, amount: value, category: catId,
@@ -7752,16 +7788,28 @@ async function saveEditLanc(){
     reference: ref||null, notes: notes||null,
     contact_id: peerId,
   };
+  if(isIncome){ changes.payment_method = forma; changes.operadora_id = opId; changes.fee = fee; }
   await sbUpdate('transactions', id, changes);
 
-  const list = isIncome ? S.receivables : S.payables;
-  const idx  = list.findIndex(x=>x.id===id);
-  if(idx>=0){
-    if(isIncome) list[idx] = {...list[idx], value, desc, categoryId:catId, accountId:accId||null,
-      dueDate, done, doneDate: done?doneDate:null, ref, notes, clientId:peerId};
-    else list[idx] = {...list[idx], value, desc, categoryId:catId, accountId:accId||null,
-      dueDate, done, doneDate: done?doneDate:null, ref, notes, supplierId:peerId};
+  // Ajusta o saldo das contas: reverte o crédito/débito antigo (se estava confirmado) e aplica o novo (se estiver confirmado agora)
+  const sign = isIncome ? 1 : -1; // recebimento soma no saldo, pagamento subtrai
+  const oldFee = oldItem.fee||0;
+  const oldNet = oldItem.done ? (oldItem.value - oldFee) : 0;
+  const newNet = done ? (value - fee) : 0;
+  if(oldItem.done && oldItem.accountId){
+    S.accounts = S.accounts.map(a=>a.id===oldItem.accountId?{...a,balance:a.balance-(sign*oldNet)}:a);
+    await sbUpdate('accounts', oldItem.accountId, {balance:S.accounts.find(a=>a.id===oldItem.accountId)?.balance});
   }
+  if(done && accId){
+    S.accounts = S.accounts.map(a=>a.id===accId?{...a,balance:a.balance+(sign*newNet)}:a);
+    await sbUpdate('accounts', accId, {balance:S.accounts.find(a=>a.id===accId)?.balance});
+  }
+
+  if(isIncome) list[idx] = {...list[idx], value, desc, categoryId:catId, accountId:accId||null,
+    dueDate, done, doneDate: done?doneDate:null, ref, notes, clientId:peerId,
+    paymentMethod:forma, operadoraId:opId, fee, netValue:value-fee};
+  else list[idx] = {...list[idx], value, desc, categoryId:catId, accountId:accId||null,
+    dueDate, done, doneDate: done?doneDate:null, ref, notes, supplierId:peerId};
 
   S._editId=null; S._editType=null;
   resetEditLancUI();
