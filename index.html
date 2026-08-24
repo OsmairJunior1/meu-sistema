@@ -1995,7 +1995,7 @@ textarea.inp{min-height:80px;resize:vertical}
     </button>
     <button class="nav-btn" data-page="contas">
       <svg class="nav-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="4" width="13" height="9" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M1.5 7h13" stroke="currentColor" stroke-width="1.4"/><circle cx="4.5" cy="10" r="1" fill="currentColor"/></svg>
-      <span class="nav-label">Contas Bancárias</span>
+      <span class="nav-label">Bancos e Cartões</span>
     </button>
     <div class="nav-section">Ferramentas</div>
     <button class="nav-btn" data-page="orcamento">
@@ -2901,15 +2901,15 @@ textarea.inp{min-height:80px;resize:vertical}
         <div class="card" style="margin-bottom:14px">
           <!-- Desktop header -->
           <div class="card-header mob-hidden">
-            <span class="card-title">Contas Bancárias</span>
+            <span class="card-title">Bancos e Cartões</span>
             <div style="display:flex;gap:8px">
-              <button class="btn btn-blue btn-sm" onclick="openModal('account')">+ Nova Conta</button>
+              <button class="btn btn-blue btn-sm" onclick="openModal('account')">+ Novo Banco/Cartão</button>
               <button class="btn btn-purple btn-sm" onclick="openModal('transfer')">↔ Transferência</button>
             </div>
           </div>
           <!-- Mobile title only -->
           <div class="mob-only" style="display:none;margin-bottom:14px">
-            <span style="font-size:16px;font-weight:800;color:var(--text)">Contas Bancárias</span>
+            <span style="font-size:16px;font-weight:800;color:var(--text)">Bancos e Cartões</span>
           </div>
 
           <!-- Desktop table header -->
@@ -3175,7 +3175,7 @@ textarea.inp{min-height:80px;resize:vertical}
             </button>
             <button class="cfg-nav" id="cfgNav-contas" onclick="setCfgSection('contas')">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="3.5" width="12" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M1 6.5h12" stroke="currentColor" stroke-width="1.4"/><circle cx="4" cy="9" r=".9" fill="currentColor"/></svg>
-              Contas Bancárias
+              Bancos e Cartões
             </button>
             <button class="cfg-nav" id="cfgNav-cartoes" onclick="setCfgSection('cartoes')">
               <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1.5" y="3" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 6h12" stroke="currentColor" stroke-width="1.3"/></svg>
@@ -3531,37 +3531,65 @@ textarea.inp{min-height:80px;resize:vertical}
 <div id="modal-account" class="modal-overlay" style="display:none">
   <div class="modal-box modal-narrow">
     <div class="modal-header" style="border-bottom:3px solid #3b82f6">
-      <span class="modal-title">🏦 Conta Bancária</span>
+      <span class="modal-title" id="accModalTitle">🏦 Conta Bancária</span>
       <button class="modal-close" onclick="closeModal('account')">✕</button>
     </div>
     <div class="modal-body" style="display:flex;flex-direction:column;gap:13px">
-      <div class="form-group"><label class="fl">Nome da conta <span class="req">*</span></label><input id="accName" class="inp" placeholder="Ex: Conta Corrente Nubank"></div>
-      <div class="form-row">
-        <div class="form-group"><label class="fl">Saldo inicial</label><input id="accBal" class="inp" placeholder="0,00" type="number" step="0.01"></div>
-        <div class="form-group"><label class="fl">Data do saldo inicial</label><input id="accBalDate" class="inp" type="date"></div>
+      <input type="hidden" id="accId">
+      <div class="form-group">
+        <label class="fl">Tipo</label>
+        <div style="display:flex;gap:0;border:1.5px solid #e2e8f0;border-radius:9px;overflow:hidden;margin-top:4px">
+          <button type="button" id="accTipoConta" onclick="setAccTipo('conta')" style="flex:1;padding:10px;font-size:12px;font-weight:700;border:none;background:#3b82f6;color:#fff;cursor:pointer;font-family:inherit;transition:.15s">🏦 Conta Bancária</button>
+          <button type="button" id="accTipoCartao" onclick="setAccTipo('cartao')" style="flex:1;padding:10px;font-size:12px;font-weight:500;border:none;background:transparent;color:#64748b;cursor:pointer;font-family:inherit;transition:.15s">💳 Cartão de Crédito</button>
+        </div>
+        <input type="hidden" id="accTipo" value="conta">
       </div>
-      <div class="form-group"><label class="fl">Conta ativa?</label>
+      <div class="form-group"><label class="fl" id="accNameLabel">Nome da conta <span class="req">*</span></label><input id="accName" class="inp" placeholder="Ex: Conta Corrente Nubank"></div>
+
+      <!-- Campos de CONTA BANCÁRIA -->
+      <div id="accCamposConta" style="display:flex;flex-direction:column;gap:13px">
+        <div class="form-row">
+          <div class="form-group"><label class="fl">Saldo inicial</label><input id="accBal" class="inp" placeholder="0,00" type="number" step="0.01"></div>
+          <div class="form-group"><label class="fl">Data do saldo inicial</label><input id="accBalDate" class="inp" type="date"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="fl">Número da conta</label><input id="accNum" class="inp" placeholder="Número"></div>
+          <div class="form-group"><label class="fl">Agência</label><input id="accAgency" class="inp" placeholder="Agência"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="fl">Tipo chave Pix</label>
+            <select id="accPixType" class="inp">
+              <option value="">Selecione...</option>
+              <option>CPF</option><option>CNPJ</option><option>Email</option><option>Telefone</option><option>Chave aleatória</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="fl">Chave Pix</label><input id="accPixKey" class="inp" placeholder="Chave Pix"></div>
+        </div>
+      </div>
+
+      <!-- Campos de CARTÃO DE CRÉDITO -->
+      <div id="accCamposCartao" style="display:none;flex-direction:column;gap:13px">
+        <div class="form-row">
+          <div class="form-group"><label class="fl">Limite do cartão</label><input id="accLimite" class="inp" placeholder="0,00" type="number" step="0.01"></div>
+          <div class="form-group"><label class="fl">Saldo da fatura atual (se já tiver uso)</label><input id="accFaturaAtual" class="inp" placeholder="0,00" type="number" step="0.01"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="fl">Dia de fechamento da fatura</label><input id="accDiaFechamento" class="inp" type="number" min="1" max="31" placeholder="Ex: 20" oninput="calcMelhorDataCompra()"></div>
+          <div class="form-group"><label class="fl">Dia de vencimento da fatura</label><input id="accDiaVencimento" class="inp" type="number" min="1" max="31" placeholder="Ex: 28"></div>
+        </div>
+        <div id="accMelhorDataInfo" style="font-size:11px;color:#64748b;background:#EFF6FF;border:1px solid #DBEAFE;border-radius:8px;padding:8px 10px"></div>
+        <div class="form-group"><label class="fl">Conta que paga a fatura</label><select id="accContaPagadora" class="inp"><option value="">Selecione...</option></select></div>
+      </div>
+
+      <div class="form-group"><label class="fl">Ativa?</label>
         <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
           <div id="accActiveToggle" class="toggle" style="background:#22C55E" onclick="toggleEl('accActiveToggle','accActive')"><div class="toggle-knob" style="left:21px"></div></div>
           <span id="accActiveLabel" style="font-size:12px;color:#64748b">Ativa</span>
           <input type="hidden" id="accActive" value="1">
         </div>
       </div>
-      <div class="form-row">
-        <div class="form-group"><label class="fl">Número da conta</label><input id="accNum" class="inp" placeholder="Número"></div>
-        <div class="form-group"><label class="fl">Agência</label><input id="accAgency" class="inp" placeholder="Agência"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label class="fl">Tipo chave Pix</label>
-          <select id="accPixType" class="inp">
-            <option value="">Selecione...</option>
-            <option>CPF</option><option>CNPJ</option><option>Email</option><option>Telefone</option><option>Chave aleatória</option>
-          </select>
-        </div>
-        <div class="form-group"><label class="fl">Chave Pix</label><input id="accPixKey" class="inp" placeholder="Chave Pix"></div>
-      </div>
     </div>
-    <div class="modal-footer"><button class="btn btn-blue btn-full" onclick="saveAccount()">Adicionar Conta Bancária</button></div>
+    <div class="modal-footer"><button class="btn btn-blue btn-full" id="accSaveBtn" onclick="saveAccount()">Adicionar Conta Bancária</button></div>
   </div>
 </div>
 
@@ -4173,7 +4201,7 @@ function toast(msg,type='success'){
 document.querySelectorAll('.nav-btn').forEach(btn=>{
   btn.addEventListener('click',()=>navigate(btn.dataset.page));
 });
-const TITLES={dashboard:'Painel',alertas:'Alertas',lancamentos:'Lançamentos',relatorios:'Relatórios',clientes:'Clientes',fornecedores:'Fornecedores',contas:'Contas Bancárias',config:'Configurações',orcamento:'Gerador de Orçamento',precificacao:'Precificação Inteligente'};
+const TITLES={dashboard:'Painel',alertas:'Alertas',lancamentos:'Lançamentos',relatorios:'Relatórios',clientes:'Clientes',fornecedores:'Fornecedores',contas:'Bancos e Cartões',config:'Configurações',orcamento:'Gerador de Orçamento',precificacao:'Precificação Inteligente'};
 
 // ─── CONTROLE DE PLANOS ───────────────────────────────────
 window._userModules  = [];
@@ -4637,7 +4665,11 @@ function openModal(name, preserveState){
   if(name==='payable' && !preserveState){ populateSelects(); $('payDue').value=t; $('payVal').value=''; $('payDesc').value=''; $('payDone').checked=false; if($('payRef')) $('payRef').value=''; if($('payNotes')) $('payNotes').value=''; }
   if(name==='payable' && preserveState){ populateSelects(); }
   if(name==='transfer'){ populateSelects(); $('transDate').value=t; $('transVal').value=''; $('transDesc').value=''; }
-  if(name==='account'){ $('accName').value=''; $('accBal').value=''; $('accBalDate').value=t; $('accNum').value=''; $('accAgency').value=''; $('accPixKey').value=''; }
+  if(name==='account'){
+    $('accId').value=''; $('accName').value=''; $('accBal').value=''; $('accBalDate').value=t; $('accNum').value=''; $('accAgency').value=''; $('accPixKey').value='';
+    $('accLimite').value=''; $('accFaturaAtual').value=''; $('accDiaFechamento').value=''; $('accDiaVencimento').value=''; $('accContaPagadora').value='';
+    setAccTipo('conta');
+  }
   if(name==='client' && !preserveState){
     S._editContactId=null;
     ['cliName','cliEmail','cliPhone','cliDoc','cliAddr','cliAddrNum','cliBairro','cliCep','cliCity','cliState','cliNotes'].forEach(id=>{ if($(id)) $(id).value=''; });
@@ -5144,24 +5176,85 @@ function quickNewCC(returnModal){
 // ─── SAVERS ──────────────────────────────────────────────
 async function saveAccount(){
   const name=$('accName').value.trim();
-  if(!name){toast('Informe o nome da conta','error');return;}
-  const balance=pv($('accBal').value);
-  const saved = await sbInsert('accounts',{name,balance,type:$('accActive').value});
-  if(!saved) return;
-  const acc={id:saved.id,name,balance,balanceDate:$('accBalDate').value||today(),active:$('accActive').value==='1',number:$('accNum').value,agency:$('accAgency').value,pixKey:$('accPixKey').value};
-  S.accounts.push(acc);
-  toast('Conta adicionada! 🏦'); 
+  if(!name){toast('Informe o nome','error');return;}
+  const tipo = $('accTipo').value;
+  const active = $('accActive').value==='1';
+
+  if(tipo==='cartao'){
+    const payload = {
+      name, tipo, active,
+      balance: 0, // cartão não tem "saldo" próprio, o que importa é a fatura
+      limite: pv($('accLimite').value)||null,
+      fatura_atual: pv($('accFaturaAtual').value)||0,
+      dia_fechamento: parseInt($('accDiaFechamento').value)||null,
+      dia_vencimento: parseInt($('accDiaVencimento').value)||null,
+      conta_pagadora_id: $('accContaPagadora').value||null
+    };
+    const saved = await sbInsert('accounts', payload);
+    if(!saved) return;
+    const acc = {id:saved.id, name, tipo, active, balance:0,
+      limite:payload.limite, faturaAtual:payload.fatura_atual,
+      diaFechamento:payload.dia_fechamento, diaVencimento:payload.dia_vencimento,
+      contaPagadoraId:payload.conta_pagadora_id};
+    S.accounts.push(acc);
+    toast('Cartão adicionado! 💳');
+  } else {
+    const balance=pv($('accBal').value);
+    const payload = {name, tipo:'conta', balance, active, number:$('accNum').value||null, agency:$('accAgency').value||null, pix_key:$('accPixKey').value||null};
+    const saved = await sbInsert('accounts', payload);
+    if(!saved) return;
+    const acc={id:saved.id,name,tipo:'conta',balance,balanceDate:$('accBalDate').value||today(),active,number:$('accNum').value,agency:$('accAgency').value,pixKey:$('accPixKey').value};
+    S.accounts.push(acc);
+    toast('Conta adicionada! 🏦');
+  }
+
   $('modal-account').style.zIndex=''; // Reseta z-index
   closeModal('account');
   // If came from receivable/payable, reopen that modal and pre-select the new account
   if(S._returnModal==='receivable'||S._returnModal==='payable'){
     const ret=S._returnModal; S._returnModal=null;
+    const acc = S.accounts[S.accounts.length-1];
     openModal(ret, true);
     setTimeout(()=>{ populateSelects(); const sel=$(ret==='receivable'?'recvAcc':'payAcc'); if(sel)sel.value=acc.id; },50);
   } else if(S._returnCfgSection){
     const sec=S._returnCfgSection; S._returnCfgSection=null;
     setCfgSection(sec);
   } else { S._returnModal=null; refresh(); }
+}
+
+function setAccTipo(tipo){
+  $('accTipo').value = tipo;
+  const bC=$('accTipoConta'), bT=$('accTipoCartao');
+  if(tipo==='conta'){
+    bC.style.background='#3b82f6'; bC.style.color='#fff';
+    bT.style.background='transparent'; bT.style.color='#64748b';
+    $('accCamposConta').style.display='flex';
+    $('accCamposCartao').style.display='none';
+    $('accNameLabel').innerHTML = 'Nome da conta <span class="req">*</span>';
+    $('accModalTitle').textContent = '🏦 Conta Bancária';
+    $('accSaveBtn').textContent = $('accId')&&$('accId').value ? 'Salvar alterações' : 'Adicionar Conta Bancária';
+  } else {
+    bT.style.background='#3b82f6'; bT.style.color='#fff';
+    bC.style.background='transparent'; bC.style.color='#64748b';
+    $('accCamposConta').style.display='none';
+    $('accCamposCartao').style.display='flex';
+    $('accNameLabel').innerHTML = 'Nome do cartão <span class="req">*</span>';
+    $('accModalTitle').textContent = '💳 Cartão de Crédito';
+    $('accSaveBtn').textContent = $('accId')&&$('accId').value ? 'Salvar alterações' : 'Adicionar Cartão';
+    $('accContaPagadora').innerHTML = '<option value="">Selecione...</option>'+S.accounts.filter(a=>a.tipo!=='cartao').map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
+    calcMelhorDataCompra();
+  }
+}
+
+function calcMelhorDataCompra(){
+  const fech = parseInt($('accDiaFechamento').value);
+  const el = $('accMelhorDataInfo');
+  if(fech){
+    const melhorDia = fech>=28 ? 1 : fech+1;
+    el.textContent = `💡 Melhor dia para compras: dia ${melhorDia} (logo após o fechamento) — a compra só entra na fatura seguinte, ganhando mais prazo.`;
+  } else {
+    el.textContent = 'Informe o dia de fechamento para calcular a melhor data de compra';
+  }
 }
 
 // Helper: avança uma data pelo período
@@ -10470,7 +10563,7 @@ function cfgContasHTML(){
   <div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
       <div>
-        <div style="font-size:14px;font-weight:700;color:var(--text)">Contas Bancárias</div>
+        <div style="font-size:14px;font-weight:700;color:var(--text)">Bancos e Cartões</div>
         <div style="font-size:11px;color:var(--muted);margin-top:2px">Gerencie suas contas e carteiras</div>
       </div>
       <button class="btn btn-primary btn-sm" onclick="S._returnCfgSection='contas';openModal('account')">+ Adicionar</button>
@@ -12765,8 +12858,11 @@ async function loadData() {
     // Contas bancárias
     S.accounts = (accRes.data || []).map(a => ({
       id: a.id, name: a.name, balance: parseFloat(a.balance)||0,
-      type: a.type, color: a.color, balanceDate: a.created_at?.split('T')[0],
-      active: true, number: '', agency: '', pixKey: ''
+      tipo: a.tipo||'conta', color: a.color, balanceDate: a.created_at?.split('T')[0],
+      active: a.active!==false, number: a.number||'', agency: a.agency||'', pixKey: a.pix_key||'',
+      limite: a.limite!=null?parseFloat(a.limite):null, faturaAtual: parseFloat(a.fatura_atual)||0,
+      diaFechamento: a.dia_fechamento||null, diaVencimento: a.dia_vencimento||null,
+      contaPagadoraId: a.conta_pagadora_id||null
     }));
 
     // Recebimentos
