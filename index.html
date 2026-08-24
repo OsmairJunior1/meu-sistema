@@ -3378,6 +3378,31 @@ textarea.inp{min-height:80px;resize:vertical}
 <!-- ═══ MODALS ═══ -->
 
 <!-- Account Modal -->
+<div id="modal-teammember" class="modal-overlay" style="display:none;z-index:750">
+  <div class="modal-box" style="max-width:400px;padding:24px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div style="font-size:15px;font-weight:800;color:var(--text)">Editar Usuário</div>
+      <button onclick="closeTeamMemberModal()" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:16px">✕</button>
+    </div>
+    <input type="hidden" id="tmEditId">
+    <div style="display:flex;flex-direction:column;gap:13px">
+      <div class="form-group"><label class="fl">Nome</label><input id="tmEditName" class="inp"></div>
+      <div class="form-group"><label class="fl">E-mail</label><input id="tmEditEmail" class="inp" disabled style="opacity:.6"></div>
+      <div class="form-group">
+        <label class="fl">Papel</label>
+        <select id="tmEditRole" class="inp">
+          <option value="funcionario">Funcionário (acesso restrito)</option>
+          <option value="gerente">Gerente (acesso completo)</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:6px">
+        <button class="btn btn-primary" style="flex:1;padding:12px" onclick="saveTeamMemberEdit()">Salvar</button>
+        <button class="btn" style="flex:1;padding:12px;background:none;border:1px solid var(--border);color:var(--text)" onclick="closeTeamMemberModal()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="modal-paymentdefault" class="modal-overlay" style="display:none;z-index:700">
   <div class="modal-box" style="max-width:420px;padding:24px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
@@ -10170,12 +10195,13 @@ function cfgContasHTML(){
 
 function cfgUsuariosHTML(){
   const rows = (S.teamMembers||[]).length ? S.teamMembers.map(t=>`
-    <div style="display:grid;grid-template-columns:1fr 1fr 90px 90px 90px;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f4f6f9;font-size:12px">
+    <div style="display:grid;grid-template-columns:1fr 1fr 90px 90px 140px;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f4f6f9;font-size:12px">
       <span style="font-weight:600;color:var(--text)">${t.name||'—'}</span>
       <span style="color:#64748b">${t.email||'—'}</span>
       <span style="background:${t.role==='gerente'?'#EFF6FF':'#F5F3FF'};color:${t.role==='gerente'?'#2563EB':'#7C3AED'};padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;text-align:center">${t.role==='gerente'?'Gerente':'Funcionário'}</span>
       <span style="background:${t.active?'#F0FDF4':'#FEF2F2'};color:${t.active?'#15803D':'#B91C1C'};padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;text-align:center">${t.active?'Ativo':'Inativo'}</span>
-      <span style="display:flex;justify-content:flex-end">
+      <span style="display:flex;justify-content:flex-end;gap:4px">
+        <button onclick="openTeamMemberModal('${t.id}')" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 8px;cursor:pointer;font-size:11px;color:var(--text);font-family:inherit">Editar</button>
         <button onclick="toggleTeamMember('${t.id}',${!t.active})" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 8px;cursor:pointer;font-size:11px;color:var(--text);font-family:inherit">${t.active?'Desativar':'Reativar'}</button>
       </span>
     </div>`).join('')
@@ -10205,7 +10231,7 @@ function cfgUsuariosHTML(){
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr 90px 90px 90px;gap:10px;padding:4px 0;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;border-bottom:1px solid var(--border);margin-bottom:2px">
+    <div style="display:grid;grid-template-columns:1fr 1fr 90px 90px 140px;gap:10px;padding:4px 0;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;border-bottom:1px solid var(--border);margin-bottom:2px">
       <span>Nome</span><span>E-mail</span><span>Papel</span><span>Status</span><span></span>
     </div>
     ${rows}
@@ -10248,6 +10274,30 @@ async function createTeamMember(){
     toast('Erro de conexão ao criar funcionário','error');
   }
   btn.disabled=false; btn.textContent='Criar';
+}
+
+function openTeamMemberModal(id){
+  const t = (S.teamMembers||[]).find(x=>x.id===id);
+  if(!t) return;
+  $('tmEditId').value = t.id;
+  $('tmEditName').value = t.name||'';
+  $('tmEditEmail').value = t.email||'';
+  $('tmEditRole').value = t.role||'funcionario';
+  $('modal-teammember').style.display='flex';
+}
+function closeTeamMemberModal(){ $('modal-teammember').style.display='none'; }
+
+async function saveTeamMemberEdit(){
+  const id = $('tmEditId').value;
+  const name = $('tmEditName').value.trim();
+  const role = $('tmEditRole').value;
+  if(!name){ toast('Informe o nome','error'); return; }
+  const { error } = await _sb.from('team_members').update({name, role}).eq('id', id).eq('owner_id', _currentUser.id);
+  if(error){ toast('Erro ao salvar','error'); return; }
+  S.teamMembers = S.teamMembers.map(t=>t.id===id?{...t,name,role}:t);
+  toast('Usuário atualizado! ✅');
+  closeTeamMemberModal();
+  setCfgSection('usuarios');
 }
 
 async function toggleTeamMember(id, novoStatus){
