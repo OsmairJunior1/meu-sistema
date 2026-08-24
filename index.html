@@ -3638,11 +3638,6 @@ textarea.inp{min-height:80px;resize:vertical}
               <option value="aprazo">A Prazo (sem boleto)</option>
             </select>
           </div>
-          <div class="form-group">
-            <label class="fl">Data de Recebimento</label>
-            <input type="date" id="recvDataReceb" class="inp">
-            <div id="recvDataRecebHint" style="font-size:10.5px;color:#94a3b8;margin-top:3px"></div>
-          </div>
           <div id="recvOperadoraWrap" style="display:none">
             <div class="form-group" style="margin-bottom:8px">
               <label class="fl">Operadora</label>
@@ -3652,6 +3647,11 @@ textarea.inp{min-height:80px;resize:vertical}
               <div class="form-group"><label class="fl">Nº de parcelas</label><input id="recvCredParcelas" type="number" class="inp" min="1" max="24" value="1" oninput="recvCalcNet()"></div>
             </div>
             <div id="recvNetInfo" style="background:#EFF6FF;border:1px solid #DBEAFE;border-radius:9px;padding:9px 11px;font-size:11.5px;color:#1E3A5F;line-height:1.5"></div>
+          </div>
+          <div class="form-group">
+            <label class="fl">Data de Recebimento</label>
+            <input type="date" id="recvDataReceb" class="inp">
+            <div id="recvDataRecebHint" style="font-size:10.5px;color:#94a3b8;margin-top:3px"></div>
           </div>
           <div id="recvAccWrap" class="form-group">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
