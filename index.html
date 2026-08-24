@@ -10710,9 +10710,10 @@ function auditFiltrar(){
   }
   return list;
 }
-function setAuditFiltroUser(v){ S._auditFiltroUser=v; renderAuditoriaLista(); }
+function setAuditFiltroUser(v){ S._auditFiltroUser=v; S._auditPage=1; renderAuditoriaLista(); }
 function setAuditFiltroPeriodo(v){
   S._auditFiltroPeriodo=v;
+  S._auditPage=1;
   document.querySelectorAll('.audit-periodo-btn').forEach(b=>b.classList.toggle('active', b.dataset.p===v));
   $('auditIntervaloWrap').style.display = v==='intervalo' ? 'flex' : 'none';
   renderAuditoriaLista();
@@ -10745,6 +10746,19 @@ function renderAuditoriaScreen(){
       </div>
     </div>
     <div id="auditoriaListWrap"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;flex-wrap:wrap;gap:10px">
+      <div style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#64748b">
+        Mostrar
+        <select id="auditPageSize" class="inp" style="width:70px;padding:5px 6px;font-size:12px" onchange="setAuditPageSize(this.value)">
+          <option value="5">5</option>
+          <option value="10" selected>10</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select>
+        por página
+      </div>
+      <div id="auditPaginacao" style="display:flex;gap:4px;align-items:center"></div>
+    </div>
   </div>
   <style>
   .audit-periodo-btn{padding:6px 12px;border-radius:20px;border:1.5px solid #e2e8f0;background:#fff;font-size:11.5px;font-weight:600;color:#64748b;cursor:pointer;font-family:inherit}
@@ -10753,8 +10767,27 @@ function renderAuditoriaScreen(){
   renderAuditoriaLista();
 }
 
+function setAuditPageSize(v){
+  S._auditPageSize = parseInt(v)||10;
+  S._auditPage = 1;
+  renderAuditoriaLista();
+}
+
+function setAuditPage(p){
+  S._auditPage = p;
+  renderAuditoriaLista();
+}
+
 function renderAuditoriaLista(){
-  const list = auditFiltrar();
+  const listaCompleta = auditFiltrar();
+  const pageSize = S._auditPageSize || 10;
+  let page = S._auditPage || 1;
+  const totalPaginas = Math.max(1, Math.ceil(listaCompleta.length / pageSize));
+  if(page > totalPaginas) page = totalPaginas;
+  S._auditPage = page;
+  const inicio = (page-1)*pageSize;
+  const list = listaCompleta.slice(inicio, inicio+pageSize);
+
   const rows = list.length ? list.map(a=>{
     const act = AUDIT_ACTION_LABELS[a.action]||{label:a.action,color:'#64748b',bg:'#f1f5f9'};
     const tableLabel = AUDIT_TABLE_LABELS[a.table_name]||a.table_name;
@@ -10809,6 +10842,23 @@ function renderAuditoriaLista(){
   }).join('')
   : `<div style="padding:30px 0;text-align:center;color:#94a3b8;font-size:12px">Nenhuma ação encontrada para esse filtro</div>`;
   $('auditoriaListWrap').innerHTML = rows;
+
+  // Controles de paginação
+  const pagWrap = $('auditPaginacao');
+  if(listaCompleta.length <= pageSize){
+    pagWrap.innerHTML = '';
+  } else {
+    let btns = `<button onclick="setAuditPage(${Math.max(1,page-1)})" ${page===1?'disabled':''} style="padding:5px 9px;border-radius:6px;border:1px solid #e2e8f0;background:#fff;font-size:11px;cursor:${page===1?'default':'pointer'};color:${page===1?'#cbd5e1':'#0F2A44'}">‹</button>`;
+    for(let i=1;i<=totalPaginas;i++){
+      if(i===1 || i===totalPaginas || Math.abs(i-page)<=1){
+        btns += `<button onclick="setAuditPage(${i})" style="padding:5px 10px;border-radius:6px;border:1px solid ${i===page?'#0F2A44':'#e2e8f0'};background:${i===page?'#0F2A44':'#fff'};color:${i===page?'#fff':'#64748b'};font-size:11px;font-weight:600;cursor:pointer">${i}</button>`;
+      } else if(Math.abs(i-page)===2){
+        btns += `<span style="color:#cbd5e1;font-size:11px">…</span>`;
+      }
+    }
+    btns += `<button onclick="setAuditPage(${Math.min(totalPaginas,page+1)})" ${page===totalPaginas?'disabled':''} style="padding:5px 9px;border-radius:6px;border:1px solid #e2e8f0;background:#fff;font-size:11px;cursor:${page===totalPaginas?'default':'pointer'};color:${page===totalPaginas?'#cbd5e1':'#0F2A44'}">›</button>`;
+    pagWrap.innerHTML = btns;
+  }
 }
 
 function toggleAuditRow(rowId){
