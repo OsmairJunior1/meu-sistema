@@ -4692,6 +4692,7 @@ function openModal(name, preserveState){
   if(name==='payable' && !preserveState){
     populateSelects(); $('payDue').value=t; $('payVal').value=''; $('payDesc').value=''; $('payDone').checked=false;
     if($('payRef')) $('payRef').value=''; if($('payNotes')) $('payNotes').value='';
+    $('payCat').value=''; $('payCatWrap')?._catPicker?._reset();
     $('payForma').value='dinheiro'; setRec('pay','no'); payFormaChanged();
   }
   if(name==='payable' && preserveState){ populateSelects(); }
@@ -5670,7 +5671,7 @@ async function savePayable(keepOpen=false){
   if(!keepOpen) closeModal('payable');
   else {
     $('payVal').value=''; $('payDesc').value=''; $('payDone').checked=false;
-    $('payDoneDateWrap').style.display='none'; $('payCat').value=''; $('payAcc').value='';
+    $('payDoneDateWrap').style.display='none'; $('payCat').value=''; $('payCatWrap')?._catPicker?._reset(); $('payAcc').value='';
     $('paySupplier').value=''; $('payCC').value='';
     $('payParcelas').value=''; if($('payRef')) $('payRef').value=''; if($('payNotes')) $('payNotes').value='';
     $('payForma').value='dinheiro'; payFormaChanged();
@@ -5834,7 +5835,7 @@ async function saveSupplier(){
       if(sv.due)    $('payDue').value=sv.due;
       if(sv.dataPag)$('payDataPagamento').value=sv.dataPag;
       if(sv.done){  $('payDone').checked=true; togglePayDoneDate(); if(sv.doneDate) $('payDoneDate').value=sv.doneDate; }
-      if(sv.cat)    $('payCat').value=sv.cat;
+      if(sv.cat){ $('payCat').value=sv.cat; $('payCatWrap')?._catPicker?._setValue(sv.cat); }
       if(sv.cc)     $('payCC').value=sv.cc;
       if(sv.ref)    $('payRef').value=sv.ref;
       if(sv.notes)  $('payNotes').value=sv.notes;
@@ -8168,6 +8169,7 @@ function openEditLanc(id, type){
       $('payDesc').value = item.desc||'';
       $('payDue').value  = item.transactionDate||item.dueDate||'';
       $('payCat').value  = item.categoryId||'';
+      $('payCatWrap')?._catPicker?._setValue(item.categoryId||'');
       $('payCatWrap')?._catPicker?._setValue(item.categoryId||'');
       $('paySupplier').value = item.supplierId||'';
       if($('payRef'))   $('payRef').value   = item.ref||'';
@@ -11413,7 +11415,7 @@ async function saveCostCenter(keepOpen){
         if(sv.due)    $('payDue').value=sv.due;
         if(sv.dataPag)$('payDataPagamento').value=sv.dataPag;
         if(sv.done){  $('payDone').checked=true; togglePayDoneDate(); if(sv.doneDate) $('payDoneDate').value=sv.doneDate; }
-        if(sv.cat)    $('payCat').value=sv.cat;
+        if(sv.cat){ $('payCat').value=sv.cat; $('payCatWrap')?._catPicker?._setValue(sv.cat); }
         if(sv.supplier) $('paySupplier').value=sv.supplier;
         if(sv.ref)    $('payRef').value=sv.ref;
         if(sv.notes)  $('payNotes').value=sv.notes;
