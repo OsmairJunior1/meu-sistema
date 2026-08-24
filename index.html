@@ -2054,12 +2054,12 @@ textarea.inp{min-height:80px;resize:vertical}
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 4h10M8 1.5L10.5 4 8 6.5M11 8H1M4 5.5L1.5 8 4 10.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span class="btn-label">Transferir</span>
       </button>
-      <button class="btn btn-sm" onclick="openAlertas('income')" style="position:relative;background:#F0FDF4;color:#15803D;border:1px solid #BBF7D0">
+      <button class="btn btn-sm" onclick="navigate('alertas')" style="position:relative;background:#F0FDF4;color:#15803D;border:1px solid #BBF7D0">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.3"/><path d="M6 3.5v3l2 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
         <span class="btn-label">A Receber</span>
         <span id="alertBadgeRecv" style="display:none;position:absolute;top:-5px;right:-5px;background:#EF4444;color:#fff;font-size:9px;font-weight:800;min-width:15px;height:15px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px"></span>
       </button>
-      <button class="btn btn-sm" onclick="openAlertas('expense')" style="position:relative;background:#FFF1F2;color:#BE123C;border:1px solid #FECDD3">
+      <button class="btn btn-sm" onclick="navigate('alertas')" style="position:relative;background:#FFF1F2;color:#BE123C;border:1px solid #FECDD3">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.3"/><path d="M6 3.5v3l2 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
         <span class="btn-label">A Pagar</span>
         <span id="alertBadgePay" style="display:none;position:absolute;top:-5px;right:-5px;background:#EF4444;color:#fff;font-size:9px;font-weight:800;min-width:15px;height:15px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px"></span>
@@ -3445,6 +3445,8 @@ textarea.inp{min-height:80px;resize:vertical}
 
 <style>
 .alert-filtro-btn{padding:6px 12px;border-radius:20px;border:1.5px solid #e2e8f0;background:#fff;font-size:11.5px;font-weight:600;color:#64748b;cursor:pointer;font-family:inherit;transition:.15s}
+.alerta-filtro{padding:6px 12px;border-radius:20px;border:1.5px solid #e2e8f0;background:#fff;font-size:11.5px;font-weight:600;color:#64748b;cursor:pointer;font-family:inherit;transition:.15s}
+.alerta-filtro.active{background:#0F2A44;border-color:#0F2A44;color:#fff}
 .alert-filtro-btn.active{background:#0F2A44;border-color:#0F2A44;color:#fff}
 </style>
 
@@ -4171,7 +4173,7 @@ function toast(msg,type='success'){
 document.querySelectorAll('.nav-btn').forEach(btn=>{
   btn.addEventListener('click',()=>navigate(btn.dataset.page));
 });
-const TITLES={dashboard:'Painel',lancamentos:'Lançamentos',relatorios:'Relatórios',clientes:'Clientes',fornecedores:'Fornecedores',contas:'Contas Bancárias',config:'Configurações',orcamento:'Gerador de Orçamento',precificacao:'Precificação Inteligente'};
+const TITLES={dashboard:'Painel',alertas:'Alertas',lancamentos:'Lançamentos',relatorios:'Relatórios',clientes:'Clientes',fornecedores:'Fornecedores',contas:'Contas Bancárias',config:'Configurações',orcamento:'Gerador de Orçamento',precificacao:'Precificação Inteligente'};
 
 // ─── CONTROLE DE PLANOS ───────────────────────────────────
 window._userModules  = [];
@@ -4184,7 +4186,7 @@ const { canAccessModule, sealModules: _sealModules } = (() => {
   let _sealed = [];
   return {
     canAccessModule: (page) => {
-      const FREE = ['dashboard','lancamentos','relatorios','contas','clientes','fornecedores','config'];
+      const FREE = ['dashboard','lancamentos','relatorios','contas','clientes','fornecedores','config','alertas'];
       if (FREE.includes(page)) return true;
       return _sealed.includes(page);
     },
@@ -4446,6 +4448,7 @@ function navigate(page){
   if(page==='orcamento')initOrcamento();
   if(page==='precificacao')initPrecificacao();
   if(page==='config'){ setCfgSection(S._lastCfgSection||'empresa'); if(isMobile()){$('cfg-mobile-warn').style.display='flex';$('cfg-desktop-body').style.display='none';}else{$('cfg-mobile-warn').style.display='none';$('cfg-desktop-body').style.display='flex';} }
+  if(page==='alertas'){ setAlertaFiltro(S._alertaFiltroPagina||'30'); }
   try{ localStorage.setItem('monbluu-lastpage', page); }catch(e){}
 }
 
@@ -5534,6 +5537,78 @@ function updateAlertBadges(){
   const elR = $('alertBadgeRecv'), elP = $('alertBadgePay');
   if(elR){ elR.style.display = bRecv>0 ? 'flex' : 'none'; elR.textContent = bRecv>99?'99+':bRecv; }
   if(elP){ elP.style.display = bPay>0 ? 'flex' : 'none'; elP.textContent = bPay>99?'99+':bPay; }
+  const total = bRecv+bPay;
+  const elMenu = $('alertasBadge');
+  if(elMenu){ elMenu.style.display = total>0 ? 'inline-block' : 'none'; elMenu.textContent = total>99?'99+':total; }
+}
+
+// ─── PÁGINA COMPLETA DE ALERTAS (Menu lateral → Alertas) ──
+function alertaFiltrarLista(list, filtro){
+  const hoje = today();
+  let limite = null;
+  if(filtro==='1'){ const d=new Date(); d.setDate(d.getDate()+1); limite=toLocalDateStr(d); }
+  else if(filtro==='5'){ const d=new Date(); d.setDate(d.getDate()+5); limite=toLocalDateStr(d); }
+  else if(filtro==='7'){ const d=new Date(); d.setDate(d.getDate()+7); limite=toLocalDateStr(d); }
+  else if(filtro==='30'){ const d=new Date(); d.setDate(d.getDate()+30); limite=toLocalDateStr(d); }
+  else if(filtro==='data'){ limite=$('alertaDataEspecifica')?.value||hoje; }
+
+  let filtrados = (list||[]).filter(x=>!x.done && x.dueDate);
+  if(filtro==='all') filtrados = filtrados.filter(x=>x.dueDate<=hoje);
+  else filtrados = filtrados.filter(x=>x.dueDate<=limite);
+  filtrados.sort((a,b)=>(a.dueDate||'').localeCompare(b.dueDate||''));
+  return filtrados;
+}
+
+function alertaItemRowHTML(x, tipo){
+  const hoje = today();
+  const vencido = x.dueDate < hoje;
+  const color = tipo==='income' ? '#15803D' : '#BE123C';
+  const bg = tipo==='income' ? '#F0FDF4' : '#FFF1F2';
+  const cat = (tipo==='income' ? S.cats.income : S.cats.expense).find(c=>c.id===x.categoryId);
+  return `
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 12px;border:1px solid #f1f5f9;border-radius:10px;background:#fff">
+    <div style="min-width:0">
+      <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px">${x.desc||'—'}</div>
+      <div style="font-size:11px;color:#94a3b8;margin-top:2px">${cat?cat.name:'Sem categoria'} · ${vencido?`<span style="color:#DC2626;font-weight:700">Venceu em ${fmtD(x.dueDate)}</span>`:`Vence em ${fmtD(x.dueDate)}`}</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+      <span style="font-size:13px;font-weight:800;color:${color}">${fmt(x.value)}</span>
+      <button onclick="openEfetivar('${x.id}','${tipo}')" style="background:${bg};color:${color};border:1px solid ${color}33;border-radius:7px;padding:5px 9px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">Confirmar</button>
+    </div>
+  </div>`;
+}
+
+function setAlertaFiltro(f){
+  S._alertaFiltroPagina = f;
+  document.querySelectorAll('.alerta-filtro').forEach(b=>b.classList.toggle('active', b.dataset.f===f));
+  renderAlertasPage();
+}
+
+function renderAlertasPage(){
+  const filtro = S._alertaFiltroPagina||'30';
+  const recv = alertaFiltrarLista(S.receivables, filtro);
+  const pay  = alertaFiltrarLista(S.payables, filtro);
+
+  const totalRecv = recv.reduce((s,x)=>s+x.value,0);
+  const totalPay  = pay.reduce((s,x)=>s+x.value,0);
+  $('alertasResumo').innerHTML = `
+    <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:12px;padding:16px">
+      <div style="font-size:11px;color:#15803D;font-weight:700;text-transform:uppercase">A Receber no período</div>
+      <div style="font-size:22px;font-weight:800;color:#15803D;margin-top:4px">${fmt(totalRecv)}</div>
+      <div style="font-size:11px;color:#64748b;margin-top:2px">${recv.length} item(ns)</div>
+    </div>
+    <div style="background:#FFF1F2;border:1px solid #FECDD3;border-radius:12px;padding:16px">
+      <div style="font-size:11px;color:#BE123C;font-weight:700;text-transform:uppercase">A Pagar no período</div>
+      <div style="font-size:22px;font-weight:800;color:#BE123C;margin-top:4px">${fmt(totalPay)}</div>
+      <div style="font-size:11px;color:#64748b;margin-top:2px">${pay.length} item(ns)</div>
+    </div>`;
+
+  $('alertasRecvList').innerHTML = recv.length
+    ? recv.map(x=>alertaItemRowHTML(x,'income')).join('')
+    : `<div style="padding:20px 0;text-align:center;color:#94a3b8;font-size:12px">Nenhum item encontrado 🎉</div>`;
+  $('alertasPayList').innerHTML = pay.length
+    ? pay.map(x=>alertaItemRowHTML(x,'expense')).join('')
+    : `<div style="padding:20px 0;text-align:center;color:#94a3b8;font-size:12px">Nenhum item encontrado 🎉</div>`;
 }
 
 let _alertTipo = 'income';
