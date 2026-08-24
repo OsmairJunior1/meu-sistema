@@ -10792,21 +10792,31 @@ function renderAuditoriaLista(){
       }
     }catch(e){}
     const dt = new Date(a.created_at);
+    const rowId = 'audit-'+a.id;
     return `
-    <div style="padding:11px 0;border-bottom:1px solid #f4f6f9;font-size:12px">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+    <div style="border-bottom:1px solid #f4f6f9">
+      <div onclick="toggleAuditRow('${rowId}')" style="padding:11px 0;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px">
         <div style="display:flex;align-items:center;gap:8px;min-width:0">
+          <span id="${rowId}-chevron" style="color:#cbd5e1;font-size:10px;transition:transform .15s;flex-shrink:0">▶</span>
           <span style="background:${act.bg};color:${act.color};padding:2px 9px;border-radius:20px;font-size:10.5px;font-weight:700;white-space:nowrap">${act.label}</span>
           <span style="font-weight:600;color:var(--text)">${tableLabel}</span>
           <span style="color:#94a3b8;font-size:11px">por ${a.actor_name||'—'}</span>
         </div>
         <span style="color:#94a3b8;font-size:11px;white-space:nowrap">${dt.toLocaleDateString('pt-BR')} ${dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</span>
       </div>
-      <div style="margin-top:6px;color:#64748b;font-size:11px;padding:8px 10px;background:#FAFBFC;border-radius:8px">${detailsHtml}</div>
+      <div id="${rowId}" style="display:none;margin:0 0 10px 22px;color:#64748b;font-size:11px;padding:8px 10px;background:#FAFBFC;border-radius:8px">${detailsHtml}</div>
     </div>`;
   }).join('')
   : `<div style="padding:30px 0;text-align:center;color:#94a3b8;font-size:12px">Nenhuma ação encontrada para esse filtro</div>`;
   $('auditoriaListWrap').innerHTML = rows;
+}
+
+function toggleAuditRow(rowId){
+  const el = $(rowId);
+  const chevron = $(rowId+'-chevron');
+  const aberto = el.style.display !== 'none';
+  el.style.display = aberto ? 'none' : 'block';
+  if(chevron) chevron.style.transform = aberto ? 'rotate(0deg)' : 'rotate(90deg)';
 }
 
 function renderAuditoriaList(){ renderAuditoriaScreen(); } // compat
