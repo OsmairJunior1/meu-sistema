@@ -5432,7 +5432,7 @@ async function saveClient(){
       if(sv.val)    $('recvVal').value=sv.val;
       if(sv.desc)   $('recvDesc').value=sv.desc;
       if(sv.due)    $('recvDue').value=sv.due;
-      if(sv.cat)    $('recvCat').value=sv.cat;
+      if(sv.cat){ $('recvCat').value=sv.cat; $('recvCatWrap')?._catPicker?._setValue(sv.cat); }
       if(sv.cc)     $('recvCC').value=sv.cc;
       if(sv.ref)    $('recvRef').value=sv.ref;
       if(sv.notes)  $('recvNotes').value=sv.notes;
