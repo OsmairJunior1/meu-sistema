@@ -4638,6 +4638,20 @@ function openModal(name, preserveState){
   if(name==='payable' && preserveState){ populateSelects(); }
   if(name==='transfer'){ populateSelects(); $('transDate').value=t; $('transVal').value=''; $('transDesc').value=''; }
   if(name==='account'){ $('accName').value=''; $('accBal').value=''; $('accBalDate').value=t; $('accNum').value=''; $('accAgency').value=''; $('accPixKey').value=''; }
+  if(name==='client' && !preserveState){
+    S._editContactId=null;
+    ['cliName','cliEmail','cliPhone','cliDoc','cliAddr','cliAddrNum','cliBairro','cliCep','cliCity','cliState','cliNotes'].forEach(id=>{ if($(id)) $(id).value=''; });
+    $('cliPessoa').value='fisica'; setCliPessoa('fisica');
+    document.querySelector('#modal-client .modal-title').textContent='Cadastro';
+    document.querySelector('#modal-client .modal-footer button').textContent='Adicionar';
+  }
+  if(name==='supplier' && !preserveState){
+    S._editContactId=null;
+    ['supName','supEmail','supPhone','supDoc','supAddr','supAddrNum','supBairro','supCep','supCity','supState','supNotes'].forEach(id=>{ if($(id)) $(id).value=''; });
+    $('supPessoa').value='fisica'; setSupPessoa('fisica');
+    document.querySelector('#modal-supplier .modal-title').textContent='Cadastro';
+    document.querySelector('#modal-supplier .modal-footer button').textContent='Adicionar';
+  }
   $('modal-'+name).style.display='flex';
   document.body.classList.add('modal-open');
 }
@@ -5450,15 +5464,53 @@ function exportContacts(type){
   const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv); a.download=type+'.csv'; a.click();
   toast('CSV exportado! 📥');
 }
+function openEditContact(type, id){
+  const list = type==='clients' ? S.clients : S.suppliers;
+  const x = list.find(c=>c.id===id);
+  if(!x) return;
+  const modalName = type==='clients' ? 'client' : 'supplier';
+  const p = type==='clients' ? 'cli' : 'sup';
+  openModal(modalName, true); // preserveState=true evita o reset padrão
+  S._editContactId = id;
+  $(p+'Name').value = x.name||'';
+  $(p+'Email').value = x.email||'';
+  $(p+'Phone').value = x.phone||'';
+  $(p+'Doc').value = x.doc||'';
+  if($(p+'Addr'))    $(p+'Addr').value = x.addr||'';
+  if($(p+'AddrNum')) $(p+'AddrNum').value = x.addrNum||'';
+  if($(p+'Bairro'))  $(p+'Bairro').value = x.bairro||'';
+  if($(p+'Cep'))     $(p+'Cep').value = x.cep||'';
+  if($(p+'City'))    $(p+'City').value = x.city||'';
+  if($(p+'State'))   $(p+'State').value = x.state||'';
+  if($(p+'Notes'))   $(p+'Notes').value = x.notes||'';
+  (type==='clients' ? setCliPessoa : setSupPessoa)(x.pessoa||'fisica');
+  document.querySelector(`#modal-${modalName} .modal-title`).textContent = 'Editar ' + (type==='clients'?'Cliente':'Fornecedor');
+  document.querySelector(`#modal-${modalName} .modal-footer button`).textContent = 'Salvar alterações';
+}
+
 async function saveClient(){
   const name=$('cliName').value.trim();
   if(!name){toast('Informe o nome','error');return;}
-  const saved = await sbInsert('contacts',{type:'client',name,email:$('cliEmail').value||null,phone:$('cliPhone').value||null,document:$('cliDoc').value||null,notes:$('cliNotes')?.value||null,active:true});
-  if(!saved) return;
-  const cli={id:saved.id,name,email:$('cliEmail').value,phone:$('cliPhone').value,doc:$('cliDoc').value,
+  const fields = {name,email:$('cliEmail').value||null,phone:$('cliPhone').value||null,document:$('cliDoc').value||null,
+    notes:$('cliNotes')?.value||null};
+  const cliData = {name,email:$('cliEmail').value,phone:$('cliPhone').value,doc:$('cliDoc').value,
     pessoa:$('cliPessoa').value,addr:$('cliAddr')?.value,addrNum:$('cliAddrNum')?.value,
     bairro:$('cliBairro')?.value,cep:$('cliCep')?.value,city:$('cliCity')?.value,state:$('cliState')?.value,
-    notes:$('cliNotes')?.value, active:true};
+    notes:$('cliNotes')?.value};
+
+  if(S._editContactId){
+    await sbUpdate('contacts', S._editContactId, fields);
+    const idx = S.clients.findIndex(c=>c.id===S._editContactId);
+    if(idx>=0) S.clients[idx] = {...S.clients[idx], ...cliData};
+    S._editContactId = null;
+    toast('Cliente atualizado! ✅'); closeModal('client');
+    if(S.currentPage==='clientes') renderClientes();
+    return;
+  }
+
+  const saved = await sbInsert('contacts',{type:'client',...fields,active:true});
+  if(!saved) return;
+  const cli={id:saved.id,...cliData,active:true};
   S.clients.push(cli);
   toast('Cliente adicionado! 👤'); closeModal('client');
   if(S._returnModal==='receivable'){
@@ -5485,12 +5537,26 @@ async function saveClient(){
 async function saveSupplier(){
   const name=$('supName').value.trim();
   if(!name){toast('Informe o nome','error');return;}
-  const saved = await sbInsert('contacts',{type:'supplier',name,email:$('supEmail').value||null,phone:$('supPhone').value||null,document:$('supDoc').value||null,notes:$('supNotes')?.value||null,active:true});
-  if(!saved) return;
-  const sup={id:saved.id,name,email:$('supEmail').value,phone:$('supPhone').value,doc:$('supDoc').value,
+  const fields = {name,email:$('supEmail').value||null,phone:$('supPhone').value||null,document:$('supDoc').value||null,
+    notes:$('supNotes')?.value||null};
+  const supData = {name,email:$('supEmail').value,phone:$('supPhone').value,doc:$('supDoc').value,
     pessoa:$('supPessoa').value,addr:$('supAddr')?.value,addrNum:$('supAddrNum')?.value,
     bairro:$('supBairro')?.value,cep:$('supCep')?.value,city:$('supCity')?.value,state:$('supState')?.value,
-    notes:$('supNotes')?.value, active:true};
+    notes:$('supNotes')?.value};
+
+  if(S._editContactId){
+    await sbUpdate('contacts', S._editContactId, fields);
+    const idx = S.suppliers.findIndex(s=>s.id===S._editContactId);
+    if(idx>=0) S.suppliers[idx] = {...S.suppliers[idx], ...supData};
+    S._editContactId = null;
+    toast('Fornecedor atualizado! ✅'); closeModal('supplier');
+    if(S.currentPage==='fornecedores') renderFornecedores();
+    return;
+  }
+
+  const saved = await sbInsert('contacts',{type:'supplier',...fields,active:true});
+  if(!saved) return;
+  const sup={id:saved.id,...supData,active:true};
   S.suppliers.push(sup);
   toast('Fornecedor adicionado! 📦'); closeModal('supplier');
   if(S._returnModal==='payable'){
@@ -9048,6 +9114,7 @@ function contactRow(x, accentColor, deleteType){
     <span style="color:#64748b;font-size:11px">${escHtml(x.doc||'—')}</span>
     <span style="background:${badgeColor.bg};color:${badgeColor.text};border:1px solid ${badgeColor.border};border-radius:20px;padding:3px 10px;font-size:10px;font-weight:700;white-space:nowrap;display:inline-block">${pessoa}</span>
     <div style="display:flex;align-items:center;gap:4px">
+      <button onclick="openEditContact('${deleteType}','${x.id}')" style="background:none;border:none;cursor:pointer;color:#cbd5e1;font-size:13px;padding:4px;border-radius:6px;transition:.1s" onmouseenter="this.style.color='#3b82f6'" onmouseleave="this.style.color='#cbd5e1'" title="Editar">✏️</button>
       <button onclick="toggleContactActive('${deleteType}','${x.id}')" style="background:none;border:none;cursor:pointer;color:${toggleColor};font-size:13px;padding:4px;border-radius:6px;transition:.1s" title="${toggleTitle}">${toggleIcon}</button>
       <button onclick="deleteContact('${deleteType}','${x.id}')" style="background:none;border:none;cursor:pointer;color:#cbd5e1;font-size:15px;padding:4px;border-radius:6px;transition:.1s" onmouseenter="this.style.color='#ef4444'" onmouseleave="this.style.color='#cbd5e1'" title="Excluir">🗑</button>
     </div>
@@ -9064,6 +9131,7 @@ function contactRow(x, accentColor, deleteType){
       <div class="ccm-sub">${escHtml(subLine)}</div>
     </div>
     <div class="ccm-actions">
+      <button class="ccm-action-btn" onclick="openEditContact('${deleteType}','${x.id}')" style="color:#94a3b8" title="Editar">✏️</button>
       <button class="ccm-action-btn" onclick="toggleContactActive('${deleteType}','${x.id}')" style="color:${toggleColor}" title="${toggleTitle}">${toggleIcon}</button>
       <button class="ccm-action-btn" onclick="deleteContact('${deleteType}','${x.id}')" style="color:#cbd5e1" title="Excluir">🗑</button>
     </div>
