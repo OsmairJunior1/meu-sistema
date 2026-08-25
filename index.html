@@ -4749,10 +4749,14 @@ function recvCalcNet(){
         <b>${nParc}x de ${fmt(parcNet)}</b>, recebendo 1 por mês<br>
         1ª em <b>${fmtD(primeira)}</b>, última em <b>${fmtD(ultima)}</b>, na conta <b>${acc?acc.name:'não definida'}</b>`;
     } else {
-      const transactionDate = $('recvDue').value || today();
-      const d = new Date(transactionDate+'T12:00:00'); d.setDate(d.getDate() + (op.prazo_credito_dias||0));
+      let dataFinal = $('recvDataReceb').value;
+      if(!dataFinal){
+        const transactionDate = $('recvDue').value || today();
+        const d = new Date(transactionDate+'T12:00:00'); d.setDate(d.getDate() + (op.prazo_credito_dias||0));
+        dataFinal = toLocalDateStr(d);
+      }
       const modoTxt = nParc>1 ? ` (${nParc}x, mas ${op.nome} antecipa tudo de uma vez)` : '';
-      info.innerHTML = `Taxa ${op.nome} (${taxaPct}%): <b>-${fmt(fee)}</b> · Valor líquido: <b>${fmt(net)}</b>${modoTxt}<br>Cai tudo em <b>${acc?acc.name:'conta não definida'}</b>, em ${fmtD(toLocalDateStr(d))}`;
+      info.innerHTML = `Taxa ${op.nome} (${taxaPct}%): <b>-${fmt(fee)}</b> · Valor líquido: <b>${fmt(net)}</b>${modoTxt}<br>Cai tudo em <b>${acc?acc.name:'conta não definida'}</b>, em ${fmtD(dataFinal)}`;
     }
     return;
   }
