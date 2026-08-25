@@ -5334,12 +5334,13 @@ async function saveAccount(){
       toast('Cartão atualizado! ✅');
     } else {
       payload.balance = 0;
+      payload.ordem = Math.max(0, ...S.accounts.map(a=>a.ordem??100))+10;
       const saved = await sbInsert('accounts', payload);
       if(!saved) return;
       S.accounts.push({id:saved.id, name, tipo, active, balance:0,
         limite:payload.limite, faturaAtual:payload.fatura_atual,
         diaFechamento:payload.dia_fechamento, diaVencimento:payload.dia_vencimento,
-        contaPagadoraId:payload.conta_pagadora_id});
+        contaPagadoraId:payload.conta_pagadora_id, ordem:payload.ordem});
       toast('Cartão adicionado! 💳');
     }
   } else {
@@ -5352,9 +5353,11 @@ async function saveAccount(){
         number:$('accNum').value, agency:$('accAgency').value, pixKey:$('accPixKey').value};
       toast('Conta atualizada! ✅');
     } else {
+      const ordem = Math.max(0, ...S.accounts.map(a=>a.ordem??100))+10;
+      payload.ordem = ordem;
       const saved = await sbInsert('accounts', payload);
       if(!saved) return;
-      const acc={id:saved.id,name,tipo:'conta',balance,balanceDate:$('accBalDate').value||today(),active,number:$('accNum').value,agency:$('accAgency').value,pixKey:$('accPixKey').value};
+      const acc={id:saved.id,name,tipo:'conta',balance,balanceDate:$('accBalDate').value||today(),active,number:$('accNum').value,agency:$('accAgency').value,pixKey:$('accPixKey').value,ordem};
       S.accounts.push(acc);
       toast('Conta adicionada! 🏦');
     }
@@ -11073,12 +11076,16 @@ function execDeleteCat(type, id){
 }
 
 function cfgContasHTML(){
-  const rows = S.accounts.length ? S.accounts.map(a=>{
+  const contasOrdenadas = [...S.accounts].sort((a,b)=>(a.ordem??100)-(b.ordem??100));
+  const rows = contasOrdenadas.length ? contasOrdenadas.map((a,idx)=>{
     const isCartao = a.tipo==='cartao';
     const valor = isCartao ? fmt(a.faturaAtual||0) : fmt(a.balance);
     const valorLabel = isCartao ? 'Fatura' : '';
     return `
-    <div style="display:grid;grid-template-columns:1fr 110px 90px 80px;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f4f6f9;font-size:12px">
+    <div class="acc-row" draggable="true" data-idx="${idx}" data-id="${a.id}"
+         ondragstart="accDragStart(event)" ondragover="accDragOver(event)" ondrop="accDrop(event)" ondragend="accDragEnd(event)"
+         style="display:grid;grid-template-columns:24px 1fr 110px 90px 80px;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f4f6f9;font-size:12px;cursor:grab;background:#fff">
+      <span style="color:#cbd5e1;font-size:14px;text-align:center">⠿</span>
       <div style="display:flex;align-items:center;gap:9px">
         <div style="width:32px;height:32px;border-radius:8px;background:#EFF6FF;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--primary);font-size:13px">${isCartao?'💳':(a.name||'?')[0].toUpperCase()}</div>
         <div>
@@ -11104,15 +11111,41 @@ function cfgContasHTML(){
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
       <div>
         <div style="font-size:14px;font-weight:700;color:var(--text)">Bancos e Cartões</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px">Gerencie suas contas e carteiras</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">Arraste (⠿) para reordenar como aparecem nas telas de lançamento</div>
       </div>
       <button class="btn btn-primary btn-sm" onclick="S._returnCfgSection='contas';openModal('account')">+ Adicionar</button>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 110px 90px 80px;gap:10px;padding:4px 0;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;border-bottom:1px solid var(--border);margin-bottom:2px">
-      <span>Nome da conta</span><span>Saldo atual</span><span>Status</span><span></span>
+    <div style="display:grid;grid-template-columns:24px 1fr 110px 90px 80px;gap:10px;padding:4px 0;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;border-bottom:1px solid var(--border);margin-bottom:2px">
+      <span></span><span>Nome da conta</span><span>Saldo atual</span><span>Status</span><span></span>
     </div>
-    ${rows}
+    <div id="accRowsWrap">${rows}</div>
   </div>`;
+}
+
+// ─── Drag & drop para reordenar Bancos e Cartões ──
+let _accDragIdx = null;
+function accDragStart(e){ _accDragIdx = parseInt(e.currentTarget.dataset.idx); e.currentTarget.style.opacity='0.4'; }
+function accDragEnd(e){ e.currentTarget.style.opacity='1'; }
+function accDragOver(e){ e.preventDefault(); }
+async function accDrop(e){
+  e.preventDefault();
+  const targetIdx = parseInt(e.currentTarget.dataset.idx);
+  if(_accDragIdx===null || targetIdx===_accDragIdx) return;
+
+  const ordenadas = [...S.accounts].sort((a,b)=>(a.ordem??100)-(b.ordem??100));
+  const [moved] = ordenadas.splice(_accDragIdx,1);
+  ordenadas.splice(targetIdx,0,moved);
+
+  for(let i=0;i<ordenadas.length;i++){
+    const novaOrdem = i*10;
+    if(ordenadas[i].ordem!==novaOrdem){
+      ordenadas[i].ordem = novaOrdem;
+      await sbUpdate('accounts', ordenadas[i].id, {ordem:novaOrdem});
+      S.accounts = S.accounts.map(a=>a.id===ordenadas[i].id?{...a,ordem:novaOrdem}:a);
+    }
+  }
+  _accDragIdx = null;
+  setCfgSection('contas');
 }
 
 const AUDIT_TABLE_LABELS = {
@@ -13555,8 +13588,8 @@ async function loadData() {
       active: a.active!==false, number: a.number||'', agency: a.agency||'', pixKey: a.pix_key||'',
       limite: a.limite!=null?parseFloat(a.limite):null, faturaAtual: parseFloat(a.fatura_atual)||0,
       diaFechamento: a.dia_fechamento||null, diaVencimento: a.dia_vencimento||null,
-      contaPagadoraId: a.conta_pagadora_id||null
-    }));
+      contaPagadoraId: a.conta_pagadora_id||null, ordem: a.ordem??100
+    })).sort((a,b)=>(a.ordem??100)-(b.ordem??100));
 
     // Recebimentos
     S.receivables = (txRes.data || [])
