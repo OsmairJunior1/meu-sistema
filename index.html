@@ -3216,18 +3216,22 @@ textarea.inp{min-height:80px;resize:vertical}
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.4"/><path d="M7 4v3l2 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
               Centros de Custo
             </button>
+            <div style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.07em;padding:12px 10px 4px">Notificações</div>
             <button class="cfg-nav" id="cfgNav-alertas" onclick="setCfgSection('alertasConfig')">
               <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M10 2a5 5 0 0 0-5 5v3.2c0 .6-.24 1.17-.66 1.6L3 13.2c-.7.7-.2 1.9.78 1.9h12.44c.98 0 1.48-1.2.78-1.9l-1.34-1.4a2.27 2.27 0 0 1-.66-1.6V7a5 5 0 0 0-5-5z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
               Alertas
             </button>
-            <button class="cfg-nav" id="cfgNav-usuarios" onclick="setCfgSection('usuarios')" style="display:none">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="4.5" r="2.3" stroke="currentColor" stroke-width="1.3"/><path d="M2.5 12c0-2.2 2-3.5 4.5-3.5s4.5 1.3 4.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-              Usuários
-            </button>
-            <button class="cfg-nav" id="cfgNav-auditoria" onclick="setCfgSection('auditoria')" style="display:none">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 2h6l2 2v8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.3"/><path d="M4.5 6h5M4.5 8.5h5M4.5 11h3" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
-              Histórico de Auditoria
-            </button>
+            <div id="cfgGroupEquipe" style="display:none">
+              <div style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.07em;padding:12px 10px 4px">Equipe</div>
+              <button class="cfg-nav" id="cfgNav-usuarios" onclick="setCfgSection('usuarios')" style="display:none">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="4.5" r="2.3" stroke="currentColor" stroke-width="1.3"/><path d="M2.5 12c0-2.2 2-3.5 4.5-3.5s4.5 1.3 4.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                Usuários
+              </button>
+              <button class="cfg-nav" id="cfgNav-auditoria" onclick="setCfgSection('auditoria')" style="display:none">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 2h6l2 2v8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.3"/><path d="M4.5 6h5M4.5 8.5h5M4.5 11h3" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
+                Histórico de Auditoria
+              </button>
+            </div>
           </div>
           <!-- Settings content -->
           <div style="flex:1;overflow-y:auto;padding:24px 28px" id="cfgContent"></div>
@@ -13990,6 +13994,8 @@ function applyRolePermissions(){
   if(usuariosNav) usuariosNav.style.display = (S.userRole==='master') ? 'flex' : 'none';
   const auditoriaNav = $('cfgNav-auditoria');
   if(auditoriaNav) auditoriaNav.style.display = (S.userRole==='master') ? 'flex' : 'none';
+  const grupoEquipe = $('cfgGroupEquipe');
+  if(grupoEquipe) grupoEquipe.style.display = (S.userRole==='master') ? 'block' : 'none';
 }
 
 async function showApp(user) {
