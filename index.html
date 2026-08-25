@@ -4278,6 +4278,14 @@ const today=()=>{
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 };
 function toLocalDateStr(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+// Soma N meses a uma data (string 'YYYY-MM-DD'), mantendo o mesmo dia — se o mês destino for mais curto, ajusta pro último dia dele
+function addMonths(dateStr, n){
+  const d = new Date(dateStr+'T12:00:00');
+  const day = d.getDate();
+  d.setMonth(d.getMonth()+n);
+  if(d.getDate() !== day) d.setDate(0); // mês mais curto: volta pro último dia do mês anterior (correto)
+  return toLocalDateStr(d);
+}
 const fmtD=d=>d?new Date(d+'T12:00:00').toLocaleDateString('pt-BR'):'—';
 // Escapa HTML para prevenir XSS ao injetar dados do usuário via innerHTML
 const escHtml=s=>s==null?'—':String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -4627,7 +4635,8 @@ function recvSugerirDataReceb(){
   } else if(forma==='credito'){
     const op = (S.operadoras||[]).find(o=>o.id===$('recvOperadora').value);
     if(op){
-      const d = new Date(); d.setDate(d.getDate()+(op.prazo_credito_dias||0));
+      const transactionDate = $('recvDue').value || today();
+      const d = new Date(transactionDate+'T12:00:00'); d.setDate(d.getDate()+(op.prazo_credito_dias||0));
       $('recvDataReceb').value = toLocalDateStr(d);
       hint.textContent = `Sugestão automática (${op.nome}, D+${op.prazo_credito_dias||0}) — pode ajustar`;
     } else { hint.textContent = ''; }
@@ -4727,15 +4736,21 @@ function recvCalcNet(){
   if(forma==='credito'){
     const nParc = Math.max(1, parseInt($('recvCredParcelas').value)||1);
     if(nParc>1 && op.modo_credito==='parcelado'){
-      const intervalo = op.intervalo_parcelas_dias||30;
       const parcNet = net/nParc;
-      const primeira = new Date(); primeira.setDate(primeira.getDate() + (op.prazo_credito_dias||0));
-      const ultima = new Date(); ultima.setDate(ultima.getDate() + (op.prazo_credito_dias||0) + intervalo*(nParc-1));
+      // Respeita a Data de Recebimento se o usuário já definiu; senão sugere a partir da Data de Lançamento + prazo
+      const transactionDate = $('recvDue').value || today();
+      let primeira = $('recvDataReceb').value;
+      if(!primeira){
+        const d = new Date(transactionDate+'T12:00:00'); d.setDate(d.getDate() + (op.prazo_credito_dias||0));
+        primeira = toLocalDateStr(d);
+      }
+      const ultima = addMonths(primeira, nParc-1);
       info.innerHTML = `Taxa ${op.nome} (${taxaPct}%): <b>-${fmt(fee)}</b> · Valor líquido: <b>${fmt(net)}</b><br>
-        <b>${nParc}x de ${fmt(parcNet)}</b>, recebendo 1 a cada ${intervalo} dias<br>
-        1ª em <b>${fmtD(toLocalDateStr(primeira))}</b>, última em <b>${fmtD(toLocalDateStr(ultima))}</b>, na conta <b>${acc?acc.name:'não definida'}</b>`;
+        <b>${nParc}x de ${fmt(parcNet)}</b>, recebendo 1 por mês<br>
+        1ª em <b>${fmtD(primeira)}</b>, última em <b>${fmtD(ultima)}</b>, na conta <b>${acc?acc.name:'não definida'}</b>`;
     } else {
-      const d = new Date(); d.setDate(d.getDate() + (op.prazo_credito_dias||0));
+      const transactionDate = $('recvDue').value || today();
+      const d = new Date(transactionDate+'T12:00:00'); d.setDate(d.getDate() + (op.prazo_credito_dias||0));
       const modoTxt = nParc>1 ? ` (${nParc}x, mas ${op.nome} antecipa tudo de uma vez)` : '';
       info.innerHTML = `Taxa ${op.nome} (${taxaPct}%): <b>-${fmt(fee)}</b> · Valor líquido: <b>${fmt(net)}</b>${modoTxt}<br>Cai tudo em <b>${acc?acc.name:'conta não definida'}</b>, em ${fmtD(toLocalDateStr(d))}`;
     }
@@ -5549,10 +5564,14 @@ async function saveReceivable(keepOpen=false){
     const somaParcelas = parcelas.reduce((s,p)=>s+p.value,0);
     if(somaParcelas<=0){ toast('Configure as parcelas do boleto','error'); return; }
   } else if(isCreditoParcelado){
-    const intervalo = op.intervalo_parcelas_dias||30;
+    // Respeita a Data de Recebimento se o usuário já definiu; senão sugere a partir da Data de Lançamento + prazo
+    let primeira = $('recvDataReceb').value;
+    if(!primeira){
+      const d = new Date((transactionDate||today())+'T12:00:00'); d.setDate(d.getDate() + (op.prazo_credito_dias||0));
+      primeira = toLocalDateStr(d);
+    }
     for(let i=0;i<nCredParc;i++){
-      const d = new Date(); d.setDate(d.getDate() + (op.prazo_credito_dias||0) + intervalo*i);
-      parcelas.push({ value: value/nCredParc, dueDate: toLocalDateStr(d) });
+      parcelas.push({ value: value/nCredParc, dueDate: addMonths(primeira, i) });
     }
   } else {
     const nParcelas = recAtivo ? (parseInt($('recvParcelas').value)||1) : 1;
