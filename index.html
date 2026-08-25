@@ -3789,7 +3789,7 @@ textarea.inp{min-height:80px;resize:vertical}
           </div>
           <div class="form-group">
             <label class="fl">Data de Lançamento</label>
-            <input type="date" id="payDue" class="inp">
+            <input type="date" id="payDue" class="inp" onchange="if($('payCartaoWrap').style.display!=='none')payCalcCartao()">
           </div>
           <div class="form-group">
             <label class="fl">Valor do pagamento <span class="req">*</span></label>
@@ -5604,12 +5604,13 @@ function payCalcCartao(){
   const value = pv($('payVal').value)||0;
   if(!cartao || !value){ info.innerHTML='Informe o valor e o cartão para calcular'; return; }
   const nParc = Math.max(1, parseInt($('payCartaoParcelas').value)||1);
-  const venc = payCalcVencimentoFatura(cartao, 0);
+  const dataLanc = $('payDue').value || today();
+  const venc = payCalcVencimentoFatura(cartao, 0, dataLanc);
   const parcVal = value/nParc;
   const pagadora = S.accounts.find(a=>a.id===cartao.contaPagadoraId);
   let txt = `Vai para a fatura de <b>${cartao.name}</b>`;
   if(nParc>1){
-    const vencUltima = payCalcVencimentoFatura(cartao, nParc-1);
+    const vencUltima = payCalcVencimentoFatura(cartao, nParc-1, dataLanc);
     txt += `<br><b>${nParc}x de ${fmt(parcVal)}</b> — 1ª fatura vence ${fmtD(venc)}, última em ${fmtD(vencUltima)}`;
   } else {
     txt += `<br>Vencimento da fatura: <b>${fmtD(venc)}</b>`;
@@ -5619,12 +5620,12 @@ function payCalcCartao(){
 }
 
 // Calcula a data de vencimento da fatura de um cartão, N meses à frente (parcelas)
-function payCalcVencimentoFatura(cartao, mesesAFrente){
+function payCalcVencimentoFatura(cartao, mesesAFrente, dataRef){
   const fech = cartao.diaFechamento||1;
   const venc = cartao.diaVencimento||10;
-  const hoje = new Date();
-  let mes = hoje.getMonth(), ano = hoje.getFullYear();
-  if(hoje.getDate() > fech){ mes++; if(mes>11){mes=0;ano++;} }
+  const ref = dataRef ? new Date(dataRef+'T12:00:00') : new Date();
+  let mes = ref.getMonth(), ano = ref.getFullYear();
+  if(ref.getDate() > fech){ mes++; if(mes>11){mes=0;ano++;} }
   let vencMes = mes, vencAno = ano;
   if(venc <= fech){ vencMes++; if(vencMes>11){vencMes=0;vencAno++;} }
   vencMes += mesesAFrente;
@@ -5649,7 +5650,7 @@ async function savePayable(keepOpen=false){
   if(done && !accId) { toast('Selecione a conta para registrar o pagamento','error'); return; }
 
   const transactionDate = $('payDue').value || today();
-  const baseDue    = isCartao ? payCalcVencimentoFatura(cartao,0) : ($('payDataPagamento').value || today());
+  const baseDue    = isCartao ? payCalcVencimentoFatura(cartao,0,transactionDate) : ($('payDataPagamento').value || today());
   const doneDate   = done && $('payDoneDate').value ? $('payDoneDate').value : (done ? today() : null);
   const supplierId = $('paySupplier').value;
   const ccId       = $('payCC').value;
@@ -5665,7 +5666,7 @@ async function savePayable(keepOpen=false){
 
   for(let i=0; i<total; i++){
     const parcelDesc = total>1 ? `${desc} (${i+1}/${total})` : desc;
-    const dueDate    = isCartao ? payCalcVencimentoFatura(cartao,i) : (i===0 ? baseDue : addPeriod(baseDue, period, i));
+    const dueDate    = isCartao ? payCalcVencimentoFatura(cartao,i,transactionDate) : (i===0 ? baseDue : addPeriod(baseDue, period, i));
     const isDone     = done && i===0;
     const pDoneDate  = isDone ? doneDate : null;
     const parcelVal  = isCartao ? cartaoParcelaValor : value;
@@ -8398,7 +8399,7 @@ async function saveEditLanc(){
     const cartao = isCartao ? (S.accounts||[]).find(a=>a.id===$('payCartao').value) : null;
     if(isCartao && !cartao){ toast('Selecione o cartão','error'); return; }
     accId = isCartao ? (cartao?.id||null) : ($('payAcc').value||null);
-    dueDate = isCartao ? payCalcVencimentoFatura(cartao,0) : ($('payDataPagamento').value || today());
+    dueDate = isCartao ? payCalcVencimentoFatura(cartao,0,transactionDate) : ($('payDataPagamento').value || today());
     done = isCartao ? false : $('payDone').checked;
     if(done && !accId){ toast('Selecione a conta para registrar o pagamento','error'); return; }
     doneDate = $('payDoneDate').value || (done?today():null);
