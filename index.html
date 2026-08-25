@@ -2054,15 +2054,9 @@ textarea.inp{min-height:80px;resize:vertical}
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 4h10M8 1.5L10.5 4 8 6.5M11 8H1M4 5.5L1.5 8 4 10.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span class="btn-label">Transferir</span>
       </button>
-      <button class="btn btn-sm" onclick="navigate('alertas')" style="position:relative;background:#F0FDF4;color:#15803D;border:1px solid #BBF7D0">
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.3"/><path d="M6 3.5v3l2 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-        <span class="btn-label">A Receber</span>
-        <span id="alertBadgeRecv" style="display:none;position:absolute;top:-5px;right:-5px;background:#EF4444;color:#fff;font-size:9px;font-weight:800;min-width:15px;height:15px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px"></span>
-      </button>
-      <button class="btn btn-sm" onclick="navigate('alertas')" style="position:relative;background:#FFF1F2;color:#BE123C;border:1px solid #FECDD3">
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.3"/><path d="M6 3.5v3l2 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-        <span class="btn-label">A Pagar</span>
-        <span id="alertBadgePay" style="display:none;position:absolute;top:-5px;right:-5px;background:#EF4444;color:#fff;font-size:9px;font-weight:800;min-width:15px;height:15px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px"></span>
+      <button class="btn btn-sm" onclick="navigate('alertas')" title="Alertas" style="position:relative;background:#FFFBEB;color:#B45309;border:1px solid #FDE68A;padding:8px 12px">
+        <svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M10 2a5 5 0 0 0-5 5v3.2c0 .6-.24 1.17-.66 1.6L3 13.2c-.7.7-.2 1.9.78 1.9h12.44c.98 0 1.48-1.2.78-1.9l-1.34-1.4a2.27 2.27 0 0 1-.66-1.6V7a5 5 0 0 0-5-5z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M8 17a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        <span id="alertBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:#EF4444;color:#fff;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:8px;align-items:center;justify-content:center;padding:0 3px"></span>
       </button>
     </div>
   </div>
@@ -3219,6 +3213,10 @@ textarea.inp{min-height:80px;resize:vertical}
             <button class="cfg-nav" id="cfgNav-centros" onclick="setCfgSection('centros')">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.4"/><path d="M7 4v3l2 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
               Centros de Custo
+            </button>
+            <button class="cfg-nav" id="cfgNav-alertas" onclick="setCfgSection('alertasConfig')">
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M10 2a5 5 0 0 0-5 5v3.2c0 .6-.24 1.17-.66 1.6L3 13.2c-.7.7-.2 1.9.78 1.9h12.44c.98 0 1.48-1.2.78-1.9l-1.34-1.4a2.27 2.27 0 0 1-.66-1.6V7a5 5 0 0 0-5-5z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+              Alertas
             </button>
             <button class="cfg-nav" id="cfgNav-usuarios" onclick="setCfgSection('usuarios')" style="display:none">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="4.5" r="2.3" stroke="currentColor" stroke-width="1.3"/><path d="M2.5 12c0-2.2 2-3.5 4.5-3.5s4.5 1.3 4.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
@@ -6086,13 +6084,14 @@ function refresh(){
 
 // ─── ALERTAS DE VENCIMENTO/RECEBIMENTO ─────────────────────
 function updateAlertBadges(){
-  const hoje = today();
-  const emAtraso = (list)=> (list||[]).filter(x=>!x.done && x.dueDate && x.dueDate<=hoje).length;
-  const bRecv = emAtraso(S.receivables), bPay = emAtraso(S.payables);
-  const elR = $('alertBadgeRecv'), elP = $('alertBadgePay');
-  if(elR){ elR.style.display = bRecv>0 ? 'flex' : 'none'; elR.textContent = bRecv>99?'99+':bRecv; }
-  if(elP){ elP.style.display = bPay>0 ? 'flex' : 'none'; elP.textContent = bPay>99?'99+':bPay; }
+  const dias = S.alertDiasAntes ?? 3;
+  const limite = new Date(); limite.setDate(limite.getDate()+dias);
+  const limiteStr = toLocalDateStr(limite);
+  const dentroDoPrazo = (list)=> (list||[]).filter(x=>!x.done && x.dueDate && x.dueDate<=limiteStr).length;
+  const bRecv = dentroDoPrazo(S.receivables), bPay = dentroDoPrazo(S.payables);
   const total = bRecv+bPay;
+  const elBell = $('alertBadge');
+  if(elBell){ elBell.style.display = total>0 ? 'flex' : 'none'; elBell.textContent = total>99?'99+':total; }
   const elMenu = $('alertasBadge');
   if(elMenu){ elMenu.style.display = total>0 ? 'inline-block' : 'none'; elMenu.textContent = total>99?'99+':total; }
 }
@@ -10992,6 +10991,7 @@ function setCfgSection(sec){
   if(sec==='cartoes')   { c.innerHTML = cfgCartoesHTML(); }
   if(sec==='usuarios')  { c.innerHTML = cfgUsuariosHTML(); }
   if(sec==='auditoria') { c.innerHTML = '<div style="padding:24px;text-align:center;color:#94a3b8;font-size:12px">Carregando histórico...</div>'; loadAuditoria(); }
+  if(sec==='alertasConfig') { c.innerHTML = cfgAlertasHTML(); }
 }
 
 function cfgEmpresaHTML(){
@@ -11637,6 +11637,35 @@ function toggleAuditRow(rowId){
 }
 
 function renderAuditoriaList(){ renderAuditoriaScreen(); } // compat
+
+function cfgAlertasHTML(){
+  const dias = S.alertDiasAntes ?? 3;
+  return `
+  <div>
+    <div style="margin-bottom:20px">
+      <div style="font-size:14px;font-weight:700;color:var(--text)">Alertas</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">Escolha com quantos dias de antecedência o sino deve avisar sobre vencimentos e recebimentos</div>
+    </div>
+    <div style="background:#FAFBFC;border:1px solid var(--border);border-radius:12px;padding:20px;max-width:420px">
+      <label class="fl">Avisar com quantos dias de antecedência?</label>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+        <input type="number" id="alertDiasInput" class="inp" min="0" max="60" value="${dias}" style="max-width:100px">
+        <span style="font-size:12px;color:#64748b">dia(s) antes do vencimento</span>
+      </div>
+      <div style="font-size:11px;color:#94a3b8;margin-top:8px">Exemplo: com 2 dias, uma conta que vence dia 10 já aparece no sino a partir do dia 8. Contas já vencidas sempre aparecem, independente desse número.</div>
+      <button class="btn btn-primary btn-sm" style="margin-top:16px" onclick="saveAlertConfig()">Salvar</button>
+    </div>
+  </div>`;
+}
+
+async function saveAlertConfig(){
+  const dias = parseInt($('alertDiasInput').value);
+  if(isNaN(dias) || dias<0){ toast('Informe um número válido de dias','error'); return; }
+  S.alertDiasAntes = dias;
+  await sbSaveProfile({ alert_dias_antes: dias });
+  updateAlertBadges();
+  toast('Preferência de alertas salva! 🔔');
+}
 
 function cfgUsuariosHTML(){
   const rows = (S.teamMembers||[]).length ? S.teamMembers.map(t=>`
@@ -13857,6 +13886,7 @@ async function loadData() {
     if (p) {
       S.empresa = { nome: p.emp_nome||'', doc: p.emp_doc||'', tel: p.emp_tel||'', nicho: p.emp_nicho||'', email: p.emp_email||'', photo: p.emp_photo||'' };
       S.user    = { nome: p.user_nome||'', tel: p.user_tel||'', cargo: p.user_cargo||'', email: _currentUser.email||'' };
+      S.alertDiasAntes = p.alert_dias_antes ?? 3;
       // Apply sidebar name/avatar
       const un = document.querySelector('.user-name'); if(un) un.textContent = S.user.nome || _currentUser.email?.split('@')[0] || 'Admin';
       if(S.empresa.photo) applyEmpPhoto(S.empresa.photo);
