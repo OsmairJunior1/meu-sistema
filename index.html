@@ -3460,6 +3460,33 @@ textarea.inp{min-height:80px;resize:vertical}
   </div>
 </div>
 
+<div id="modal-antecipar" class="modal-overlay" style="display:none;z-index:750">
+  <div class="modal-box" style="max-width:560px;padding:0;max-height:82vh;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--border)">
+      <div>
+        <div style="font-size:15px;font-weight:800;color:var(--text)" id="antecTitle">Antecipar Parcelas</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">Marque as parcelas futuras que deseja pagar agora, antes do vencimento</div>
+      </div>
+      <button onclick="closeAntecipar()" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:18px">✕</button>
+    </div>
+    <div id="antecList" style="flex:1;overflow-y:auto;padding:14px 22px"></div>
+    <div style="padding:14px 22px;border-top:1px solid var(--border)">
+      <div class="form-group" style="margin-bottom:12px">
+        <label class="fl">Conta que vai pagar</label>
+        <select id="antecConta" class="inp"><option value="">Selecione...</option></select>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:13px">
+        <span style="color:#64748b">Total selecionado</span>
+        <span id="antecTotal" style="font-weight:800;color:#ef4444;font-size:16px">R$ 0,00</span>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-red" style="flex:1;justify-content:center" onclick="confirmAntecipar()">Confirmar Antecipação</button>
+        <button class="btn" style="flex:1;justify-content:center;background:none;border:1px solid var(--border);color:var(--text)" onclick="closeAntecipar()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="modal-alertas" class="modal-overlay" style="display:none;z-index:750">
   <div class="modal-box" style="max-width:640px;padding:0;max-height:82vh;display:flex;flex-direction:column">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--border)">
@@ -6466,6 +6493,87 @@ function renderDayChart(elId, items, color){
   el.innerHTML=`<div style="display:flex;flex-direction:column;height:100%;gap:6px"><div style="font-size:11px;color:#64748b;text-align:right">${now.toLocaleDateString('pt-BR',{month:'long',year:'numeric'})}</div><div style="flex:1;display:flex;align-items:flex-end;gap:3px">${bars}</div></div>`;
 }
 
+// ─── ANTECIPAR PARCELAS DE CARTÃO ──────────────────────────
+let _antecCardId = null;
+let _antecSelected = new Set();
+
+function openAntecipar(cardId){
+  const cartao = (S.accounts||[]).find(a=>a.id===cardId);
+  if(!cartao) return;
+  _antecCardId = cardId;
+  _antecSelected = new Set();
+  $('antecTitle').textContent = `Antecipar Parcelas — ${cartao.name}`;
+
+  // Parcelas futuras pendentes desse cartão (ainda não vencidas hoje)
+  const pendentes = (S.payables||[]).filter(p=>p.accountId===cardId && !p.done)
+    .sort((a,b)=>(a.dueDate||'').localeCompare(b.dueDate||''));
+
+  if(!pendentes.length){
+    $('antecList').innerHTML = `<div style="padding:30px 0;text-align:center;color:#94a3b8;font-size:12px">Nenhuma parcela pendente nesse cartão 🎉</div>`;
+  } else {
+    $('antecList').innerHTML = pendentes.map(p=>`
+      <label style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f4f6f9;cursor:pointer">
+        <input type="checkbox" onchange="toggleAntecItem('${p.id}','${p.value}',this.checked)" style="width:16px;height:16px;accent-color:#ef4444">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12.5px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.desc||'—'}</div>
+          <div style="font-size:11px;color:#94a3b8">Vence em ${fmtD(p.dueDate)}</div>
+        </div>
+        <span style="font-weight:800;color:#ef4444;font-size:13px">${fmt(p.value)}</span>
+      </label>`).join('');
+  }
+
+  $('antecConta').innerHTML = '<option value="">Selecione...</option>' +
+    S.accounts.filter(a=>a.tipo!=='cartao').map(a=>`<option value="${a.id}" ${a.id===cartao.contaPagadoraId?'selected':''}>${a.name}</option>`).join('');
+
+  updateAntecTotal();
+  $('modal-antecipar').style.display='flex';
+}
+function closeAntecipar(){ $('modal-antecipar').style.display='none'; }
+
+function toggleAntecItem(id, value, checked){
+  if(checked) _antecSelected.add(id);
+  else _antecSelected.delete(id);
+  updateAntecTotal();
+}
+
+function updateAntecTotal(){
+  const pendentes = (S.payables||[]).filter(p=>_antecSelected.has(p.id));
+  const total = pendentes.reduce((s,p)=>s+p.value,0);
+  $('antecTotal').textContent = fmt(total);
+}
+
+async function confirmAntecipar(){
+  if(!_antecSelected.size){ toast('Selecione ao menos uma parcela','error'); return; }
+  const contaId = $('antecConta').value;
+  if(!contaId){ toast('Selecione a conta que vai pagar','error'); return; }
+
+  const cartao = (S.accounts||[]).find(a=>a.id===_antecCardId);
+  const hoje = today();
+  let totalPago = 0;
+
+  for(const id of _antecSelected){
+    const p = S.payables.find(x=>x.id===id);
+    if(!p || p.done) continue;
+    p.done=true; p.doneDate=hoje; p.accountId=contaId;
+    await sbUpdate('transactions', id, {status:'paid', paid_date:hoje, account_id:contaId});
+    S.accounts = S.accounts.map(a=>a.id===contaId?{...a,balance:a.balance-p.value}:a);
+    totalPago += p.value;
+  }
+  await sbUpdate('accounts', contaId, {balance: S.accounts.find(a=>a.id===contaId)?.balance});
+
+  // Desconta o total antecipado da fatura em aberto do cartão
+  if(cartao){
+    const novaFatura = Math.max(0, (cartao.faturaAtual||0) - totalPago);
+    S.accounts = S.accounts.map(a=>a.id===cartao.id?{...a,faturaAtual:novaFatura}:a);
+    await sbUpdate('accounts', cartao.id, {fatura_atual: novaFatura});
+  }
+
+  toast(`${_antecSelected.size} parcela(s) antecipada(s)! ⚡`);
+  closeAntecipar();
+  refresh();
+  renderRelCartoes();
+}
+
 function renderRelCartoes(){
   const cartoes = (S.accounts||[]).filter(a=>a.tipo==='cartao');
   const filtroCartao = $('relCartaoFilter').value;
@@ -6500,6 +6608,7 @@ function renderRelCartoes(){
           <div style="width:${pct}%;background:${corBarra};height:100%"></div>
         </div>
         <div style="font-size:10px;color:#94a3b8;margin-top:4px">${pct.toFixed(0)}% do limite usado</div>
+        <button onclick="openAntecipar('${c.id}')" style="width:100%;margin-top:12px;padding:8px;border-radius:8px;border:1px solid #FECDD3;background:#FFF1F2;color:#BE123C;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit">⚡ Antecipar Parcelas</button>
       </div>`;
     }).join('');
   }
