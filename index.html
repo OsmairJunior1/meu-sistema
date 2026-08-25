@@ -3989,6 +3989,19 @@ textarea.inp{min-height:80px;resize:vertical}
       </div>
     </div>
     <div style="padding:20px 24px;display:flex;flex-direction:column;gap:14px">
+      <div id="efet-forma-wrap" style="display:none">
+        <label style="display:block;font-size:11px;font-weight:700;color:#475569;margin-bottom:6px;letter-spacing:.05em;text-transform:uppercase">Forma de recebimento</label>
+        <select id="efet-forma" class="inp" onchange="efetFormaChanged()">
+          <option value="dinheiro">Dinheiro</option>
+          <option value="pix">PIX</option>
+          <option value="debito">Cartão de Débito</option>
+          <option value="credito">Cartão de Crédito</option>
+        </select>
+        <div id="efet-operadora-wrap" style="display:none;margin-top:8px">
+          <select id="efet-operadora" class="inp" onchange="efetCalcFee()"></select>
+          <div id="efet-fee-info" style="margin-top:6px;font-size:11px;color:#1E3A5F;background:#EFF6FF;border:1px solid #DBEAFE;border-radius:8px;padding:7px 9px"></div>
+        </div>
+      </div>
       <div>
         <label style="display:block;font-size:11px;font-weight:700;color:#475569;margin-bottom:6px;letter-spacing:.05em;text-transform:uppercase">Conta bancária <span style="color:#ef4444">*</span></label>
         <select id="efet-acc" class="inp"><option value="">Selecione a conta...</option></select>
@@ -8414,7 +8427,7 @@ function openEfetivar(id, type){
   // Se for pagável ligado a um cartão de crédito, mostra só contas bancárias reais (não cartões),
   // e já sugere a conta que paga a fatura desse cartão
   const cartaoOrigem = (!isIncome) ? (S.accounts||[]).find(a=>a.id===item.accountId && a.tipo==='cartao') : null;
-  const contasParaEscolher = cartaoOrigem ? S.accounts.filter(a=>a.tipo!=='cartao') : S.accounts;
+  const contasParaEscolher = cartaoOrigem ? S.accounts.filter(a=>a.tipo!=='cartao') : S.accounts.filter(a=>a.tipo!=='cartao');
   const contaSugerida = cartaoOrigem ? cartaoOrigem.contaPagadoraId : item.accountId;
   if(cartaoOrigem){
     $('efet-desc').textContent = `Pagamento da fatura: ${item.desc||''} (${cartaoOrigem.name})`;
@@ -8422,10 +8435,51 @@ function openEfetivar(id, type){
   $('efet-acc').innerHTML = '<option value="">Selecione a conta...</option>' +
     contasParaEscolher.map(a=>`<option value="${a.id}" ${a.id===contaSugerida?'selected':''}>${a.name} (${fmt(a.balance)})</option>`).join('');
 
+  // Forma de recebimento — só aparece para Receber, permite trocar (ex: era boleto, cliente pagou em dinheiro/cartão)
+  if(isIncome){
+    $('efet-forma-wrap').style.display='block';
+    const formaAtual = ['dinheiro','pix','debito','credito'].includes(item.paymentMethod) ? item.paymentMethod : 'dinheiro';
+    $('efet-forma').value = formaAtual;
+    if(item.operadoraId) $('efet-operadora').dataset.presel = item.operadoraId;
+    efetFormaChanged();
+  } else {
+    $('efet-forma-wrap').style.display='none';
+  }
+
   // Data: hoje
   $('efet-date').value = today();
 
   $('modal-efetivar').style.display='flex';
+}
+
+function efetFormaChanged(){
+  const forma = $('efet-forma').value;
+  const isCard = forma==='debito' || forma==='credito';
+  $('efet-operadora-wrap').style.display = isCard ? 'block' : 'none';
+  if(isCard){
+    const ops = (S.operadoras||[]).slice().sort((a,b)=>(a.ordem??100)-(b.ordem??100));
+    const sel = $('efet-operadora');
+    sel.innerHTML = ops.map(o=>`<option value="${o.id}">${o.nome}</option>`).join('') || '<option value="">Nenhuma operadora cadastrada</option>';
+    if(sel.dataset.presel){ sel.value = sel.dataset.presel; sel.dataset.presel=''; }
+    else if(ops.length) sel.value = ops[0].id;
+    efetCalcFee();
+  } else {
+    $('efet-val-row').style.display='flex';
+  }
+}
+
+function efetCalcFee(){
+  const item = _efetType==='income' ? S.receivables.find(x=>x.id===_efetId) : null;
+  if(!item) return;
+  const forma = $('efet-forma').value;
+  const op = (S.operadoras||[]).find(o=>o.id===$('efet-operadora').value);
+  const info = $('efet-fee-info');
+  if(!op){ info.textContent=''; return; }
+  const taxaPct = forma==='debito' ? (op.taxa_debito||0) : (op.taxa_credito||0);
+  const fee = item.value * taxaPct/100;
+  const net = item.value - fee;
+  info.innerHTML = `Taxa ${op.nome} (${taxaPct}%): <b>-${fmt(fee)}</b> · Valor líquido: <b>${fmt(net)}</b>`;
+  if(op.conta_destino_id) $('efet-acc').value = op.conta_destino_id;
 }
 
 async function confirmEfetivar(){
@@ -8439,14 +8493,26 @@ async function confirmEfetivar(){
 
   // Suporta ID único ou múltiplos separados por vírgula
   const ids = _efetId ? _efetId.split(',') : [];
+  const formaEscolhida = (_efetType==='income' && ids.length===1) ? $('efet-forma').value : null;
+  const opEscolhida = formaEscolhida && ['debito','credito'].includes(formaEscolhida)
+    ? (S.operadoras||[]).find(o=>o.id===$('efet-operadora').value) : null;
 
   for(const id of ids){
     if(_efetType==='income'){
       const r=S.receivables.find(x=>x.id===id);
       if(r&&!r.done){
-        r.done=true; r.doneDate=date; r.accountId=accId;
-        await sbUpdate('transactions',id,{status:'paid',paid_date:date,account_id:accId});
-        const fee = r.fee||0;
+        // Se o usuário trocou a forma no momento da confirmação, recalcula taxa/operadora com base nela
+        let fee = r.fee||0, opId = r.operadoraId||null, paymentMethod = r.paymentMethod;
+        if(formaEscolhida){
+          paymentMethod = formaEscolhida;
+          if(opEscolhida){
+            const taxaPct = formaEscolhida==='debito' ? (opEscolhida.taxa_debito||0) : (opEscolhida.taxa_credito||0);
+            fee = r.value * taxaPct/100;
+            opId = opEscolhida.id;
+          } else { fee = 0; opId = null; }
+        }
+        r.done=true; r.doneDate=date; r.accountId=accId; r.fee=fee; r.operadoraId=opId; r.paymentMethod=paymentMethod;
+        await sbUpdate('transactions',id,{status:'paid',paid_date:date,account_id:accId,fee,operadora_id:opId,payment_method:paymentMethod});
         const creditAmount = r.value - fee; // valor líquido (desconta taxa de cartão, se houver)
         S.accounts=S.accounts.map(a=>a.id===accId?{...a,balance:a.balance+creditAmount}:a);
         await sbUpdate('accounts',accId,{balance:S.accounts.find(a=>a.id===accId)?.balance});
@@ -8454,7 +8520,7 @@ async function confirmEfetivar(){
         if(fee>0){
           const taxaCat = S.cats.expense.find(c=>c.name.toLowerCase().includes('taxa') && c.name.toLowerCase().includes('cart'));
           if(taxaCat){
-            const op = (S.operadoras||[]).find(o=>o.id===r.operadoraId);
+            const op = opEscolhida || (S.operadoras||[]).find(o=>o.id===r.operadoraId);
             const feeSaved = await sbInsert('transactions',{
               type:'payable', amount:fee, description:`Taxa ${op?.nome||'Cartão'} - ${r.desc}`,
               due_date:date, paid_date:date, status:'paid',
