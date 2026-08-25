@@ -3793,7 +3793,7 @@ textarea.inp{min-height:80px;resize:vertical}
           </div>
           <div class="form-group">
             <label class="fl">Valor do pagamento <span class="req">*</span></label>
-            <div class="big-value"><span>R$</span><input id="payVal" placeholder="0,00" oninput="if($('payCartaoWrap').style.display!=='none')payCalcCartao()"></div>
+            <div class="big-value"><span>R$</span><input id="payVal" placeholder="0,00" oninput="payEntradaUpdateRestante(); if($('payCartaoWrap').style.display!=='none')payCalcCartao()"></div>
           </div>
           <div class="form-group">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
@@ -3810,8 +3810,29 @@ textarea.inp{min-height:80px;resize:vertical}
 
         <!-- Coluna 2: Forma de pagamento, cartão/conta, data de pagamento -->
         <div style="display:flex;flex-direction:column;gap:13px">
+          <!-- Entrada (opcional) — parte paga agora, restante segue a forma escolhida abaixo -->
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:10px 12px">
+            <p style="font-size:11.5px;font-weight:700;margin-bottom:8px;color:var(--text)">Houve entrada?</p>
+            <div style="display:flex;gap:6px">
+              <button id="payEntradaNo"  onclick="setEntradaPay(false)" style="flex:1;padding:6px;border-radius:7px;border:1.5px solid #e2e8f0;background:#fff;font-size:12px;font-weight:600;color:#64748b;cursor:pointer;font-family:inherit;transition:all .15s">✕ Não</button>
+              <button id="payEntradaYes" onclick="setEntradaPay(true)"  style="flex:1;padding:6px;border-radius:7px;border:1.5px solid #e2e8f0;background:#fff;font-size:12px;font-weight:600;color:#64748b;cursor:pointer;font-family:inherit;transition:all .15s">✓ Sim</button>
+            </div>
+            <div id="payEntradaFields" style="display:none;flex-direction:column;gap:10px;margin-top:10px">
+              <div class="form-group"><label class="fl">Valor da entrada</label><div class="big-value" style="font-size:20px"><span>R$</span><input id="payEntradaVal" placeholder="0,00" oninput="payEntradaUpdateRestante()"></div></div>
+              <div class="form-row">
+                <div class="form-group"><label class="fl">Forma da entrada</label>
+                  <select id="payEntradaForma" class="inp" onchange="payEntradaFormaChanged()">
+                    <option value="dinheiro">Dinheiro</option>
+                    <option value="pix">PIX</option>
+                  </select>
+                </div>
+                <div class="form-group"><label class="fl">Conta</label><select id="payEntradaAcc" class="inp"><option value="">Selecione...</option></select></div>
+              </div>
+              <div id="payRestanteInfo" style="font-size:11px;color:#64748b"></div>
+            </div>
+          </div>
           <div class="form-group">
-            <label class="fl">Forma de pagamento</label>
+            <label class="fl" id="payFormaLabel">Forma de pagamento</label>
             <select id="payForma" class="inp" onchange="payFormaChanged()">
               <option value="dinheiro">Dinheiro</option>
               <option value="pix">PIX</option>
@@ -4722,7 +4743,7 @@ function openModal(name, preserveState){
     populateSelects(); $('payDue').value=t; $('payVal').value=''; $('payDesc').value=''; $('payDone').checked=false;
     if($('payRef')) $('payRef').value=''; if($('payNotes')) $('payNotes').value='';
     $('payCat').value=''; $('payCatWrap')?._catPicker?._reset();
-    $('payForma').value='dinheiro'; setRec('pay','no'); payFormaChanged();
+    $('payForma').value='dinheiro'; setRec('pay','no'); setEntradaPay(false); payFormaChanged();
   }
   if(name==='payable' && preserveState){ populateSelects(); }
   if(name==='transfer'){ populateSelects(); $('transDate').value=t; $('transVal').value=''; $('transDesc').value=''; }
@@ -4758,6 +4779,7 @@ function closeModal(name){
   }
   if(name==='payable'){
     setRec('pay','no');
+    setEntradaPay(false);
     const no=$('payRecNo'); if(no){ no.style.background='#f8fafc'; no.style.borderColor='#e2e8f0'; no.style.color='#64748b'; }
   }
   if(!document.querySelector('.modal-overlay[style*="flex"]')) document.body.classList.remove('modal-open');
@@ -5157,11 +5179,13 @@ function populateSelects(){
   buildCatSelect('recvCat', S.cats.income, 'Selecione a categoria do recebimento', recvCatChanged);
   buildCatSelect('payCat',  S.cats.expense, 'Selecione a categoria do pagamento',  payCatChanged);
 
-  $('recvAcc').innerHTML=opts(S.accounts,'Selecione a conta...');
-  $('recvEntradaAcc').innerHTML=opts(S.accounts,'Selecione a conta...');
+  const contasBancarias = S.accounts.filter(a=>a.tipo!=='cartao');
+  $('recvAcc').innerHTML=opts(contasBancarias,'Selecione a conta...');
+  $('recvEntradaAcc').innerHTML=opts(contasBancarias,'Selecione a conta...');
   $('recvClient').innerHTML=opts(S.clients,'Selecione o cliente...');
   $('recvCC').innerHTML=ccOpts;
-  $('payAcc').innerHTML=opts(S.accounts,'Selecione a conta...');
+  $('payAcc').innerHTML=opts(contasBancarias,'Selecione a conta...');
+  $('payEntradaAcc').innerHTML=opts(contasBancarias,'Selecione a conta...');
   $('paySupplier').innerHTML=opts(S.suppliers,'Selecione o fornecedor...');
   $('payCC').innerHTML=ccOpts;
   $('transFrom').innerHTML=opts(S.accounts,'Selecione...');
@@ -5573,6 +5597,51 @@ async function saveReceivable(keepOpen=false){
 }
 
 // ─── MODAL DE PAGAR: forma de pagamento e cartão de crédito ──
+// ─── ENTRADA no Pagar (parte paga agora + restante segue a forma escolhida) ──
+function setEntradaPay(val){
+  const yesBtn=$('payEntradaYes'), noBtn=$('payEntradaNo'), fields=$('payEntradaFields');
+  if(val){
+    yesBtn.style.background='#22C55E'; yesBtn.style.borderColor='#22C55E'; yesBtn.style.color='#fff';
+    noBtn.style.background='#f8fafc';  noBtn.style.borderColor='#e2e8f0';  noBtn.style.color='#64748b';
+    fields.style.display='flex';
+    payEntradaFormaChanged();
+  } else {
+    noBtn.style.background='#ef4444'; noBtn.style.borderColor='#ef4444'; noBtn.style.color='#fff';
+    yesBtn.style.background='#f8fafc'; yesBtn.style.borderColor='#e2e8f0'; yesBtn.style.color='#64748b';
+    fields.style.display='none';
+    $('payEntradaVal').value='';
+  }
+  $('payFormaLabel').textContent = val ? 'Forma de pagamento (restante)' : 'Forma de pagamento';
+  payEntradaUpdateRestante();
+}
+
+function payEntradaAtiva(){
+  return $('payEntradaYes')?.style.background==='#22C55E' || $('payEntradaYes')?.style.background==='rgb(34, 197, 94)';
+}
+
+// Valor que efetivamente segue a forma de pagamento escolhida (total menos a entrada, se houver)
+function payRestanteValue(){
+  const total = pv($('payVal').value)||0;
+  const entrada = payEntradaAtiva() ? (pv($('payEntradaVal').value)||0) : 0;
+  return Math.max(0, total - entrada);
+}
+
+function payEntradaFormaChanged(){
+  const pd = (S.paymentDefaults||[]).find(p=>p.tipo===$('payEntradaForma').value);
+  if(pd?.conta_destino_id) $('payEntradaAcc').value = pd.conta_destino_id;
+}
+
+function payEntradaUpdateRestante(){
+  if(!payEntradaAtiva()) return;
+  const total = pv($('payVal').value)||0;
+  const entrada = pv($('payEntradaVal').value)||0;
+  const restante = Math.max(0, total-entrada);
+  $('payRestanteInfo').innerHTML = entrada>total
+    ? `<span style="color:#DC2626">Entrada maior que o valor total</span>`
+    : `Restante a pagar: <b>${fmt(restante)}</b>`;
+  if($('payCartaoWrap').style.display!=='none') payCalcCartao();
+}
+
 function payFormaChanged(){
   const forma = $('payForma').value;
   const isCartao = forma==='cartao_credito';
@@ -5602,7 +5671,7 @@ function payFormaChanged(){
 function payCalcCartao(){
   const cartao = (S.accounts||[]).find(a=>a.id===$('payCartao').value);
   const info = $('payCartaoInfo');
-  const value = pv($('payVal').value)||0;
+  const value = payRestanteValue();
   if(!cartao || !value){ info.innerHTML='Informe o valor e o cartão para calcular'; return; }
   const nParc = Math.max(1, parseInt($('payCartaoParcelas').value)||1);
   const dataLanc = $('payDue').value || today();
@@ -5635,7 +5704,7 @@ function payCalcVencimentoFatura(cartao, mesesAFrente, dataRef){
 }
 
 async function savePayable(keepOpen=false){
-  const value  = pv($('payVal').value);
+  const saleValue = pv($('payVal').value);
   const desc   = $('payDesc').value.trim();
   const catId  = $('payCat').value;
   const forma  = $('payForma')?.value || 'dinheiro';
@@ -5643,12 +5712,48 @@ async function savePayable(keepOpen=false){
   const cartao = isCartao ? (S.accounts||[]).find(a=>a.id===$('payCartao').value) : null;
   if(isCartao && !cartao){ toast('Selecione o cartão','error'); return; }
 
+  // Entrada (parte paga agora) — o restante segue a forma de pagamento escolhida abaixo
+  const entradaAtiva = payEntradaAtiva();
+  const entradaValue = entradaAtiva ? (pv($('payEntradaVal').value)||0) : 0;
+  const entradaForma = $('payEntradaForma')?.value || 'dinheiro';
+  const entradaAcc   = $('payEntradaAcc')?.value || '';
+  if(entradaAtiva){
+    if(!entradaValue){ toast('Informe o valor da entrada','error'); return; }
+    if(entradaValue > saleValue){ toast('Entrada não pode ser maior que o valor total','error'); return; }
+    if(!entradaAcc){ toast('Selecione a conta da entrada','error'); return; }
+  }
+  const value = saleValue - entradaValue; // valor que segue a forma de pagamento escolhida abaixo
+
   const done   = isCartao ? false : $('payDone').checked;
   const accId  = isCartao ? null : $('payAcc').value;
-  if(!value){ toast('Informe o valor','error'); return; }
+  if(!saleValue){ toast('Informe o valor','error'); return; }
   if(!desc)  { toast('Informe a descrição','error'); $('payDesc').focus(); return; }
   if(!catId) { toast('Selecione a categoria','error'); return; }
-  if(done && !accId) { toast('Selecione a conta para registrar o pagamento','error'); return; }
+  if(done && !accId && value>0) { toast('Selecione a conta para registrar o pagamento','error'); return; }
+
+  // Lança a Entrada primeiro, como pagamento imediato
+  if(entradaAtiva && entradaValue>0){
+    const entradaDesc = `${desc} (Entrada)`;
+    const entradaSaved = await sbInsert('transactions',{
+      type:'payable', amount:entradaValue, description:entradaDesc,
+      due_date:today(), paid_date:today(), status:'paid', category:catId||null,
+      account_id:entradaAcc, contact_id:$('paySupplier').value||null,
+      payment_method:entradaForma, transaction_date:$('payDue').value||today()
+    });
+    if(entradaSaved){
+      S.accounts = S.accounts.map(a=>a.id===entradaAcc?{...a,balance:a.balance-entradaValue}:a);
+      await sbUpdate('accounts', entradaAcc, {balance: S.accounts.find(a=>a.id===entradaAcc)?.balance});
+      S.payables.push({id:entradaSaved.id, value:entradaValue, done:true, dueDate:today(), compDate:today(), doneDate:today(),
+        desc:entradaDesc, categoryId:catId, accountId:entradaAcc, supplierId:$('paySupplier').value, paymentMethod:entradaForma});
+    }
+  }
+  // Se o restante for zero (entrada cobriu o valor todo), não gera lançamento do restante
+  if(value<=0){
+    toast('Entrada registrada! ✅');
+    if(!keepOpen) closeModal('payable'); else refresh();
+    refresh();
+    return;
+  }
 
   const transactionDate = $('payDue').value || today();
   const baseDue    = isCartao ? payCalcVencimentoFatura(cartao,0,transactionDate) : ($('payDataPagamento').value || today());
@@ -5705,7 +5810,7 @@ async function savePayable(keepOpen=false){
     $('payDoneDateWrap').style.display='none'; $('payCat').value=''; $('payCatWrap')?._catPicker?._reset(); $('payAcc').value='';
     $('paySupplier').value=''; $('payCC').value='';
     $('payParcelas').value=''; if($('payRef')) $('payRef').value=''; if($('payNotes')) $('payNotes').value='';
-    $('payForma').value='dinheiro'; payFormaChanged();
+    $('payForma').value='dinheiro'; setEntradaPay(false); payFormaChanged();
   }
   refresh();
 }
