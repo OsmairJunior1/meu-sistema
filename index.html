@@ -3742,7 +3742,7 @@ textarea.inp{min-height:80px;resize:vertical}
           </div>
           <div class="form-group">
             <label class="fl">Data de Recebimento</label>
-            <input type="date" id="recvDataReceb" class="inp">
+            <input type="date" id="recvDataReceb" class="inp" onchange="if($('recvOperadoraWrap').style.display!=='none')recvCalcNet()">
             <div id="recvDataRecebHint" style="font-size:10.5px;color:#94a3b8;margin-top:3px"></div>
           </div>
           <div id="recvAccWrap" class="form-group">
