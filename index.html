@@ -6054,29 +6054,32 @@ async function saveSupplier(){
     },50);
   } else { S._returnModal=null; if(S.currentPage==='fornecedores')renderFornecedores(); }
 }
-function saveCategory(){
+async function saveCategory(){
   const name=$('catName').value.trim();
   if(!name){toast('Informe o nome','error');return;}
   const group=$('catGroup').value;
   if(!group){toast('Selecione o grupo da categoria','error');return;}
-  const type=$('catType').value, cat={id:uid(),name,color:$('catColor').value,group};
+  const type=$('catType').value;
+  const color=$('catColor').value;
+  const saved = await sbInsert('categories', {type, name, color, group});
+  if(!saved) return;
+  const cat={id:saved.id,name,color,group};
   S.cats[type].push(cat);
   // reset modal fields
   $('catName').value=''; $('catGroup').value=''; $('catGroupHint').style.display='none';
   toast('Categoria adicionada! 🏷️'); closeModal('category');
   const ret=S._returnModal;
   if(ret==='receivable'||ret==='payable'){
-    S._returnModal=null; openModal(ret);
+    S._returnModal=null; openModal(ret, true);
     setTimeout(()=>{
       populateSelects();
-      // pre-select the new cat in the custom picker by simulating a value set
       const selId = ret==='receivable'?'recvCat':'payCat';
+      const wrapId = ret==='receivable'?'recvCatWrap':'payCatWrap';
       $(selId).value = cat.id;
-      // trigger the picker display refresh by dispatching change
-      $(selId).dispatchEvent(new Event('change'));
+      $(wrapId)?._catPicker?._setValue(cat.id);
       if(ret==='receivable') recvCatChanged(); else payCatChanged();
     },80);
-  } else { S._returnModal=null; if(S.currentPage==='config')renderConfig(); }
+  } else { S._returnModal=null; if(S.currentPage==='config') setCfgSection('categorias'); }
 }
 
 function refresh(){
@@ -13779,7 +13782,7 @@ async function loadData() {
     S.ownerId = teamRes.data ? teamRes.data.owner_id : uid;
     const ownerId = S.ownerId;
 
-    const [accRes, txRes, trRes, ctRes, profileRes, opRes, ccRes, pdRes] = await Promise.all([
+    const [accRes, txRes, trRes, ctRes, profileRes, opRes, ccRes, pdRes, catRes] = await Promise.all([
       _sb.from('accounts').select('*').eq('user_id', ownerId),
       _sb.from('transactions').select('*').eq('user_id', ownerId),
       _sb.from('transfers').select('*').eq('user_id', ownerId),
@@ -13788,7 +13791,15 @@ async function loadData() {
       _sb.from('operadoras_cartao').select('*').eq('user_id', ownerId),
       _sb.from('cost_centers').select('*').eq('user_id', ownerId),
       _sb.from('payment_defaults').select('*').eq('user_id', ownerId),
+      _sb.from('categories').select('*').eq('user_id', ownerId),
     ]);
+
+    // Categorias personalizadas — soma às categorias padrão já embutidas no sistema
+    (catRes.data||[]).forEach(c=>{
+      const cat = {id:c.id, name:c.name, color:c.color, group:c.group};
+      if(c.type==='income' && !S.cats.income.some(x=>x.id===cat.id)) S.cats.income.push(cat);
+      if(c.type==='expense' && !S.cats.expense.some(x=>x.id===cat.id)) S.cats.expense.push(cat);
+    });
 
     // Operadoras de cartão
     S.operadoras = (opRes.data || []).map(o => ({
