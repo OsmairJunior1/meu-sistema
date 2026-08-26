@@ -11176,11 +11176,14 @@ async function saveCfgEmpresa(){
 
 function cfgCategoriasHTML(){
   const renderList = (type) => {
-    const list = S.cats[type];
+    const list = [...S.cats[type]].sort((a,b)=>(S.categoryOrder?.[a.id]??9999)-(S.categoryOrder?.[b.id]??9999));
     if(!list.length) return `<div style="padding:20px 0;text-align:center;color:#94a3b8;font-size:12px">Nenhuma categoria cadastrada</div>`;
-    return list.map(c=>{
+    return list.map((c,idx)=>{
       const gStyle = groupBadgeStyle(c.group||'');
-      return `<div style="display:grid;grid-template-columns:12px 1fr auto auto;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f4f6f9;font-size:12px">
+      return `<div class="cat-row" draggable="true" data-idx="${idx}" data-id="${c.id}" data-type="${type}"
+           ondragstart="catDragStart(event)" ondragover="catDragOver(event)" ondrop="catDrop(event)" ondragend="catDragEnd(event)"
+           style="display:grid;grid-template-columns:16px 12px 1fr auto auto;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f4f6f9;font-size:12px;cursor:grab;background:#fff">
+        <span style="color:#cbd5e1;font-size:13px;text-align:center">⠿</span>
         <div style="width:10px;height:10px;border-radius:50%;background:${c.color};flex-shrink:0"></div>
         <span style="font-weight:500;color:var(--text)">${c.name}</span>
         ${c.group?`<span style="${gStyle}">${c.group}</span>`:'<span></span>'}
@@ -11195,7 +11198,7 @@ function cfgCategoriasHTML(){
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
       <div>
         <div style="font-size:14px;font-weight:700;color:var(--text)">Categorias</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px">Gerencie as categorias usadas nos lançamentos</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">Arraste (⠿) para reordenar como aparecem nos lançamentos</div>
       </div>
       <button class="btn btn-primary btn-sm" onclick="openModal('category')">+ Nova Categoria</button>
     </div>
@@ -11205,14 +11208,38 @@ function cfgCategoriasHTML(){
       <button id="cfgCatTab-expense" onclick="switchCfgCatTab('expense')" style="padding:7px 14px;font-size:12px;font-weight:500;color:var(--muted);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px">Despesas</button>
     </div>
     <div id="cfgCatList-income" style="display:block">
-      <div style="display:grid;grid-template-columns:12px 1fr auto auto;gap:10px;padding:4px 0;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;border-bottom:1px solid var(--border);margin-bottom:2px"><span></span><span>Nome</span><span>Grupo</span><span></span></div>
+      <div style="display:grid;grid-template-columns:16px 12px 1fr auto auto;gap:10px;padding:4px 0;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;border-bottom:1px solid var(--border);margin-bottom:2px"><span></span><span></span><span>Nome</span><span>Grupo</span><span></span></div>
       ${renderList('income')}
     </div>
     <div id="cfgCatList-expense" style="display:none">
-      <div style="display:grid;grid-template-columns:12px 1fr auto auto;gap:10px;padding:4px 0;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;border-bottom:1px solid var(--border);margin-bottom:2px"><span></span><span>Nome</span><span>Grupo</span><span></span></div>
+      <div style="display:grid;grid-template-columns:16px 12px 1fr auto auto;gap:10px;padding:4px 0;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;border-bottom:1px solid var(--border);margin-bottom:2px"><span></span><span></span><span>Nome</span><span>Grupo</span><span></span></div>
       ${renderList('expense')}
     </div>
   </div>`;
+}
+
+// ─── Drag & drop para reordenar Categorias ──
+let _catDragIdx = null;
+function catDragStart(e){ _catDragIdx = parseInt(e.currentTarget.dataset.idx); e.currentTarget.style.opacity='0.4'; }
+function catDragEnd(e){ e.currentTarget.style.opacity='1'; }
+function catDragOver(e){ e.preventDefault(); }
+async function catDrop(e){
+  e.preventDefault();
+  const targetIdx = parseInt(e.currentTarget.dataset.idx);
+  const type = e.currentTarget.dataset.type;
+  if(_catDragIdx===null || targetIdx===_catDragIdx) return;
+
+  const ordenadas = [...S.cats[type]].sort((a,b)=>(S.categoryOrder?.[a.id]??9999)-(S.categoryOrder?.[b.id]??9999));
+  const [moved] = ordenadas.splice(_catDragIdx,1);
+  ordenadas.splice(targetIdx,0,moved);
+
+  S.categoryOrder = S.categoryOrder || {};
+  ordenadas.forEach((c,i)=>{ S.categoryOrder[c.id] = i*10; });
+  await sbSaveProfile({ category_order: S.categoryOrder });
+
+  _catDragIdx = null;
+  setCfgSection('categorias');
+  switchCfgCatTab(type);
 }
 
 function switchCfgCatTab(type){
@@ -13912,6 +13939,9 @@ async function loadData() {
       S.empresa = { nome: p.emp_nome||'', doc: p.emp_doc||'', tel: p.emp_tel||'', nicho: p.emp_nicho||'', email: p.emp_email||'', photo: p.emp_photo||'' };
       S.user    = { nome: p.user_nome||'', tel: p.user_tel||'', cargo: p.user_cargo||'', email: _currentUser.email||'' };
       S.alertDiasAntes = p.alert_dias_antes ?? 3;
+      S.categoryOrder = p.category_order || {};
+      S.cats.income.sort((a,b)=>(S.categoryOrder[a.id]??9999)-(S.categoryOrder[b.id]??9999));
+      S.cats.expense.sort((a,b)=>(S.categoryOrder[a.id]??9999)-(S.categoryOrder[b.id]??9999));
       // Apply sidebar name/avatar
       const un = document.querySelector('.user-name'); if(un) un.textContent = S.user.nome || _currentUser.email?.split('@')[0] || 'Admin';
       if(S.empresa.photo) applyEmpPhoto(S.empresa.photo);
